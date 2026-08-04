@@ -87,6 +87,20 @@ Access tokens carry the user's roles and permissions in the payload, so an autho
 
 Login failures are deliberately indistinguishable: a wrong password, a blocked account and a pending account all produce the same message, and `createPasswordResetToken()` returns `null` for an unknown address rather than throwing. Neither should become a way of finding out who has an account.
 
+### Mail
+
+A mail is **two templates**: `<template>.phtml` for the HTML body and an optional `<template>.txt.phtml` for the plain text alternative. Both go through `ViewInterface`, so a theme overrides a mail template exactly the way it overrides a page template — same lookup, same namespaces, and each body can be overridden independently.
+
+`AbstractMailer` does the rendering; a subclass implements one method, `deliver(Mail $mail): bool`. Shipped: `LogMailer` (the default — writes to the log, so a password-reset flow can be walked through without an SMTP server and the reset URL is right there to click) and `NativeMailer` (PHP `mail()`, `multipart/alternative` when a text body exists).
+
+`mail.mailer` picks one by short name (`log`, `native`) or by class name, so an application can plug in PHPMailer or Symfony Mailer with a subclass and one config line.
+
+The send signature is `send($name, $email, $subject, $template, $variables)`. `create()` renders without sending, which is what `dpress mail:test -render` uses.
+
+**In `multipart/alternative` the text part must come first** — a client displays the *last* part it can render, so putting HTML first would show everyone the plain text version.
+
+`mail:before_send` carries the rendered `Mail` and fires before the transport sees it, so a subscriber can still change it.
+
 ### Schema
 
 `SchemaService` sits between the migration runner and whatever drives it — the CLI now, a web installer later.

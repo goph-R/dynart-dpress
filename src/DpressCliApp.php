@@ -5,10 +5,14 @@ namespace Dynart\Dpress;
 use Dynart\Micro\CliApp;
 use Dynart\Micro\CliOutput;
 use Dynart\Micro\CliOutputInterface;
+use Dynart\Micro\ConfigInterface;
 use Dynart\Micro\Micro;
+use Dynart\Micro\TranslationInterface;
+use Dynart\Micro\ViewInterface;
 use Dynart\Micro\Entities\AuditService;
 use Dynart\Micro\Entities\EntityManager;
 use Dynart\Micro\Entities\Migrations;
+use Dynart\Dpress\Cli\MailCommands;
 use Dynart\Dpress\Cli\SchemaCommands;
 use Dynart\Dpress\Cli\SystemCommands;
 use Dynart\Dpress\Cli\UserCommands;
@@ -72,6 +76,13 @@ class DpressCliApp extends CliApp {
             'description' => 'List the roles and their permissions',
             'needsConfig' => true,
         ],
+        'mail:test' => [
+            'callable' => [MailCommands::class, 'test'],
+            'description' => 'Render a test mail, and send it unless -render is given',
+            'params' => ['email'],
+            'flags' => ['render'],
+            'needsConfig' => true,
+        ],
         'version' => [
             'callable' => [SystemCommands::class, 'version'],
             'description' => 'Print the dpress version',
@@ -103,6 +114,7 @@ class DpressCliApp extends CliApp {
     public function init(): void {
         parent::init();
         DpressServices::register();
+        DpressServices::registerMailer(Micro::get(ConfigInterface::class));
         $this->addCommands();
         $this->initServices();
     }
@@ -122,6 +134,10 @@ class DpressCliApp extends CliApp {
      * Instantiates the services that have to subscribe to events before anything runs
      */
     protected function initServices(): void {
+        DpressServices::registerViews(
+            Micro::get(ViewInterface::class),
+            Micro::get(TranslationInterface::class)
+        );
         // there is no attribute processor in a CLI run, so the entities are registered by hand
         DpressServices::registerEntities(Micro::get(EntityManager::class));
         DpressServices::addMigrations(Micro::get(Migrations::class));

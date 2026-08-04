@@ -2,9 +2,12 @@
 
 namespace Dynart\Dpress;
 
+use Dynart\Micro\ConfigInterface;
 use Dynart\Micro\JwtAuth;
 use Dynart\Micro\JwtAuthInterface;
 use Dynart\Micro\Micro;
+use Dynart\Micro\View;
+use Dynart\Micro\ViewInterface;
 use Dynart\Micro\Request;
 use Dynart\Micro\RequestInterface;
 use Dynart\Micro\Session;
@@ -29,7 +32,11 @@ use Dynart\Dpress\Entity\RolePermission;
 use Dynart\Dpress\Entity\User;
 use Dynart\Dpress\Entity\UserRole;
 use Dynart\Dpress\Entity\UserToken;
+use Dynart\Dpress\Cli\MailCommands;
 use Dynart\Dpress\Form\FormFactory;
+use Dynart\Dpress\Mail\LogMailer;
+use Dynart\Dpress\Mail\MailerInterface;
+use Dynart\Dpress\Mail\NativeMailer;
 use Dynart\Dpress\Migration\CreateIdentityTables;
 use Dynart\Dpress\Migration\CreateRevisionTable;
 use Dynart\Dpress\Query\CoreQueries;
@@ -97,8 +104,15 @@ class DpressServices {
     /**
      * The CMS services and the CLI command holders
      */
+    /** Short names accepted by the `mail.mailer` config, next to a full class name */
+    const MAILERS = [
+        'log'    => LogMailer::class,
+        'native' => NativeMailer::class,
+    ];
+
     public static function registerServices(): void {
         Micro::add(TranslationInterface::class, Translation::class);
+        Micro::add(ViewInterface::class, View::class);
         Micro::add(JwtAuthInterface::class, JwtAuth::class);
         Micro::add(QueryFactory::class);
         Micro::add(CoreQueries::class);
@@ -111,6 +125,30 @@ class DpressServices {
         Micro::add(SchemaCommands::class);
         Micro::add(SystemCommands::class);
         Micro::add(UserCommands::class);
+        Micro::add(MailCommands::class);
+    }
+
+    /**
+     * Picks the mailer from `mail.mailer`
+     *
+     * Defaults to the one that only logs, so a development site can walk through a password
+     * reset without an SMTP server - and never accidentally mails a real address while somebody
+     * is testing with production data.
+     */
+    public static function registerMailer(ConfigInterface $config): void {
+        $name = (string)$config->get('mail.mailer', 'log');
+        Micro::add(MailerInterface::class, self::MAILERS[$name] ?? $name);
+    }
+
+    /**
+     * Adds the CMS view and translation folders
+     *
+     * Both live inside the package rather than under the site root, so a theme can override any
+     * of them through the view's usual lookup.
+     */
+    public static function registerViews(ViewInterface $view, TranslationInterface $translation): void {
+        $view->addFolder(Dpress::VIEW_NAMESPACE, Dpress::viewsPath());
+        $translation->add(Dpress::TRANSLATION_NAMESPACE, Dpress::translationsPath());
     }
 
     /**

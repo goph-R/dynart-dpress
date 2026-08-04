@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?= esc_html($subject ?? '') ?></title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:24px 12px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:8px;padding:32px;">
+                    <tr>
+                        <td style="color:#18181b;font-size:15px;line-height:1.6;">
+                            <?= $this->block('content') ?>
+                        </td>
+                    </tr>
+                </table>
+                <p style="color:#71717a;font-size:12px;margin:16px 0 0;"><?= esc_html($site_name ?? '') ?></p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
