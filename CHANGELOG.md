@@ -5,6 +5,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.9.0] &ndash; 2026-08-04
+
+Phase 4: presentation — page routing, menus, settings and themes.
+
+### Added
+- **Pages at their own paths.** `PageController` takes the catch-all route, so `/about/contact` works. Because slugs are globally unique the last segment finds the page on its own, but the ancestors are still **checked**: a path that resolves to a real page by a route it does not live at gets a **301 to the canonical one**, so the same content cannot answer at unlimited URLs.
+- **`Setting`** — audited, keyed by name, so its mirror is a per-setting timeline needing no replay. `SettingService` loads the table once per request and falls back to `dpress.ini`, so a fresh install works before anything is saved and an operator can still pin a value in the config.
+- **`Menu` and `MenuItem`** — a menu is assigned to a *place* declared by the theme; items nest, and each stores **what it points at** rather than a URL, so renaming a page moves its menu entry with it. `MenuService::tree()` resolves targets at render time and **leaves out** an item whose target is gone: a menu entry that goes nowhere is worse than no entry.
+- **`ThemeService`** — a theme is a folder under `themes/` with a `theme.ini`; dropping one in installs it. The active theme is a **setting**, not a config value, so switching it is a runtime action and is audited like any other setting. A setting naming a theme that is not installed falls back to the built-in templates rather than fataling on every page.
+- **CLI** — `theme:list`, `theme:set`, `menu:list`, `setting:list`, `setting:set`.
+- Permissions for `menu.*` and `theme.*`, a `page.phtml` with breadcrumbs and child listing, and a `menu.phtml` a theme can override.
+
+### Changed
+- `AbstractController` reads the site name and registration flag from `SettingService` rather than the config, so an editor can change them while the site runs.
+- `RequestInterface` and `RouterInterface` moved into the shared registration — the CLI needs them too, because a menu item stores a target rather than a URL and listing a menu has to build one.
+
+### Notes
+- **One menu per place.** Assigning a menu to a place moves any other menu out of it, rather than silently rendering only the first.
+- Menus are deliberately **not audited** (plan §4.4) — a menu editor rewrites the tree wholesale, so the history would record churn rather than meaning. Settings *are*.
+- Requires dynart/micro 0.15.0 for catch-all routes and the redirect status code.
+
+---
+
 ## [0.8.0] &ndash; 2026-08-04
 
 Phase 3: taxonomy and the media library.

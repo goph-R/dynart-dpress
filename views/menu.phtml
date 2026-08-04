@@ -1,0 +1,13 @@
+<?php /** Renders one menu place. Themes override this to change the markup. */ ?>
+<?php if (!empty($items)): ?>
+    <ul class="menu menu-<?= esc_attr($place) ?>">
+        <?php foreach ($items as $item): ?>
+            <li>
+                <a href="<?= esc_attr($item['url']) ?>"<?= $item['external'] ? ' rel="noopener noreferrer"' : '' ?>><?= esc_html($item['label']) ?></a>
+                <?php if (!empty($item['children'])): ?>
+                    <?= $this->fetch('dpress:menu', ['items' => $item['children'], 'place' => $place]) ?>
+                <?php endif ?>
+            </li>
+        <?php endforeach ?>
+    </ul>
+<?php endif ?>

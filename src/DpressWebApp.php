@@ -17,6 +17,7 @@ use Dynart\Dpress\Controller\AuthController;
 use Dynart\Dpress\Controller\ContentController;
 use Dynart\Dpress\Controller\HomeController;
 use Dynart\Dpress\Controller\MediaController;
+use Dynart\Dpress\Controller\PageController;
 use Dynart\Dpress\Controller\ProfileController;
 use Dynart\Dpress\Form\CoreForms;
 use Dynart\Dpress\Form\FormFactory;
@@ -24,6 +25,7 @@ use Dynart\Dpress\Middleware\TokenRefresher;
 use Dynart\Dpress\Query\CoreQueries;
 use Dynart\Dpress\Query\QueryFactory;
 use Dynart\Dpress\Service\AuthService;
+use Dynart\Dpress\Theme\ThemeService;
 
 /**
  * The dpress web application
@@ -40,6 +42,7 @@ class DpressWebApp extends WebApp {
         ProfileController::class,
         ContentController::class,
         MediaController::class,
+        PageController::class,
     ];
 
     /**
@@ -93,13 +96,13 @@ class DpressWebApp extends WebApp {
     }
 
     /**
-     * Points the view at the configured theme, so every template can be overridden
+     * Points the view at the active theme
+     *
+     * The theme is a setting rather than a config value, so this needs the database - which is
+     * why it runs here rather than in the constructor.
      */
     protected function applyTheme(ViewInterface $view): void {
-        $theme = (string)$this->config->get(self::CONFIG_THEME, '');
-        if ($theme !== '') {
-            $view->setTheme($theme);
-        }
+        Micro::get(ThemeService::class)->apply();
     }
 
     /**

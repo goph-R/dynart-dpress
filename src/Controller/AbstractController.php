@@ -10,6 +10,9 @@ use Dynart\Micro\RouterInterface;
 use Dynart\Micro\ViewInterface;
 use Dynart\Micro\WebApp;
 use Dynart\Dpress\Security\DpressUser;
+use Dynart\Dpress\Entity\Setting;
+use Dynart\Dpress\Service\MenuService;
+use Dynart\Dpress\Service\SettingService;
 
 /**
  * What every CMS controller needs
@@ -50,12 +53,15 @@ abstract class AbstractController {
         return $this->jwtAuth->user() !== null;
     }
 
+    /**
+     * Settings win over the config, so an editor can change these while the site runs
+     */
     protected function siteName(): string {
-        return (string)$this->config->get(self::CONFIG_SITE_NAME, 'dpress');
+        return (string)Micro::get(SettingService::class)->get(Setting::SITE_NAME, 'dpress');
     }
 
     protected function registrationOpen(): bool {
-        return (bool)$this->config->get(self::CONFIG_REGISTRATION_OPEN, false);
+        return Micro::get(SettingService::class)->getBool(Setting::REGISTRATION_OPEN, false);
     }
 
     /**
@@ -65,7 +71,18 @@ abstract class AbstractController {
         $this->view->set('current_user', $this->currentUser());
         $this->view->set('site_name', $this->siteName());
         $this->view->set('registration_open', $this->registrationOpen());
+        $this->view->set('main_menu', $this->menu('main'));
         return $this->view->fetch($template, $variables);
+    }
+
+    /**
+     * Renders a menu place, or nothing when no menu is assigned to it
+     *
+     * Rendered here rather than in the layout so a template stays free of service lookups.
+     */
+    protected function menu(string $place): string {
+        $items = Micro::get(MenuService::class)->tree($place);
+        return empty($items) ? '' : $this->view->fetch('dpress:menu', ['items' => $items, 'place' => $place]);
     }
 
     protected function message(string $title, string $message, array $link = []): string {

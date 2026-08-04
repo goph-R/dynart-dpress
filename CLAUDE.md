@@ -6,7 +6,7 @@
 
 The overall design lives in `../dynart-dpress-plan.md`. Read it before making structural decisions; it records *why* things are the way they are (single content table, single language per site, permanent audit history, the event naming convention).
 
-Status: phases 0–3 of the plan are done — the CLI, both factories, the mailer, the identity stack with its HTTP flows, the content model with its markdown pipeline and revision history, and taxonomy plus the media library. Menus, themes and the admin UI do not exist yet.
+Status: phases 0–4 of the plan are done — the CLI, both factories, the mailer, the identity stack with its HTTP flows, the content model with its markdown pipeline and revision history, taxonomy plus the media library, and presentation — page routing, menus, settings and themes. The admin UI does not exist yet.
 
 ## Related repositories
 
@@ -124,6 +124,18 @@ Every change emits **both** `content:updated` and the type alias `post:updated`,
 **SVG uploads are allowed but not sanitised yet** (plan §11.5). The uploads `.htaccess` sends a strict CSP for `.svg`, and an SVG used through `<img src>` cannot run scripts anyway — the gap is a direct navigation, which the header covers. Do not treat the confirmation dialog as the mitigation; it protects the uploader from a mistake, not the site from an attacker.
 
 **A joined query must qualify overlapping field names.** `tag_cloud` joins `content`, which also has `id` and `slug`; MariaDB rejects the unqualified select as ambiguous. `CoreQueries::table()` gives the unescaped name for that.
+
+### Presentation
+
+**Pages live at their own paths** via the catch-all route, which the router matches only after every exact and segment route — so adding a controller later cannot end up behind it. Slugs are globally unique, so the last segment finds the page; the ancestors are checked anyway, and a non-canonical path **301s** to the real one. A 302 there would leave both URLs live as far as a search engine is concerned.
+
+**Settings vs config.** `SettingService` reads the database first and falls back to `dpress.ini`. Anything needed *before* the database is reachable — the connection, the JWT secret — stays in the config. Everything an editor may change while the site runs is a setting, and settings are audited.
+
+**A theme is a folder under `themes/` with a `theme.ini`.** Dropping one in installs it; there is no registry. The active theme is a setting, so switching is a runtime action. A setting naming a missing theme falls back to the built-in templates rather than fataling.
+
+**Menu items store a target, not a URL** — `content` / `category` / `tag` / `url` / `home` plus an id — so renaming a page moves its entry with it. `MenuService::tree()` resolves at render time and drops an item whose target is gone. One menu per place: assigning one moves any other out.
+
+**Menus are not audited, settings are** (plan §4.4). A menu editor rewrites the tree wholesale, so its history would be churn.
 
 ### The HTTP layer
 

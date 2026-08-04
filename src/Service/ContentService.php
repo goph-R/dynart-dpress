@@ -123,6 +123,39 @@ class ContentService {
         return '/'.join('/', $parts);
     }
 
+    /**
+     * Where this piece of content lives on the site
+     *
+     * Posts are chronological and live under `/post/`; pages are hierarchical and live at their
+     * own path. That difference in *routing* is the whole reason the two share one table - it
+     * belongs here rather than in a second entity.
+     */
+    public function publicPath(Content $content): string {
+        return $content->isPage() ? $this->path($content) : '/post/'.$content->slug;
+    }
+
+    /**
+     * Finds a page by its full path, and says whether that path was the canonical one
+     *
+     * The slug is globally unique, so the last segment identifies the page on its own and the
+     * ancestors do not have to be walked to find it. They still have to be *checked*: without
+     * that, `/anything/you/like/contact` would serve the contact page too, and the same content
+     * answering at unlimited URLs is what search engines penalise.
+     *
+     * @return array [Content|null, bool] the page, and whether the given path was canonical
+     */
+    public function findByPath(string $path, bool $publishedOnly = true): array {
+        $segments = array_values(array_filter(explode('/', trim($path, '/')), fn($s) => $s !== ''));
+        if (empty($segments)) {
+            return [null, true];
+        }
+        $content = $this->findBySlug(end($segments), $publishedOnly);
+        if ($content === null || !$content->isPage()) {
+            return [null, true];
+        }
+        return [$content, $this->path($content) === '/'.join('/', $segments)];
+    }
+
     // --- Writing ---
 
     /**

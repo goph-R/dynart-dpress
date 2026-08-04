@@ -16,6 +16,7 @@ use Dynart\Dpress\Cli\ContentCommands;
 use Dynart\Dpress\Cli\MailCommands;
 use Dynart\Dpress\Cli\MediaCommands;
 use Dynart\Dpress\Cli\TaxonomyCommands;
+use Dynart\Dpress\Cli\ThemeCommands;
 use Dynart\Dpress\Cli\SchemaCommands;
 use Dynart\Dpress\Cli\SystemCommands;
 use Dynart\Dpress\Cli\UserCommands;
@@ -158,6 +159,33 @@ class DpressCliApp extends CliApp {
         'taxonomy:list' => [
             'callable' => [TaxonomyCommands::class, 'list'],
             'description' => 'List the categories and the tags',
+            'needsConfig' => true,
+        ],
+        'theme:list' => [
+            'callable' => [ThemeCommands::class, 'listThemes'],
+            'description' => 'List the installed themes',
+            'needsConfig' => true,
+        ],
+        'theme:set' => [
+            'callable' => [ThemeCommands::class, 'setTheme'],
+            'description' => 'Switch the theme, or go back to the built in templates',
+            'params' => ['name'],
+            'needsConfig' => true,
+        ],
+        'menu:list' => [
+            'callable' => [ThemeCommands::class, 'listMenus'],
+            'description' => 'List the menus, their places and their items',
+            'needsConfig' => true,
+        ],
+        'setting:list' => [
+            'callable' => [ThemeCommands::class, 'listSettings'],
+            'description' => 'List the settings and where each value comes from',
+            'needsConfig' => true,
+        ],
+        'setting:set' => [
+            'callable' => [ThemeCommands::class, 'setSetting'],
+            'description' => 'Change a setting',
+            'params' => ['name', 'value'],
             'needsConfig' => true,
         ],
         'mail:test' => [

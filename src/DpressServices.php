@@ -10,6 +10,8 @@ use Dynart\Micro\View;
 use Dynart\Micro\ViewInterface;
 use Dynart\Micro\Request;
 use Dynart\Micro\RequestInterface;
+use Dynart\Micro\Router;
+use Dynart\Micro\RouterInterface;
 use Dynart\Micro\Session;
 use Dynart\Micro\SessionInterface;
 use Dynart\Micro\Translation;
@@ -34,6 +36,9 @@ use Dynart\Dpress\Entity\ContentAttachment;
 use Dynart\Dpress\Entity\ContentCategory;
 use Dynart\Dpress\Entity\ContentTag;
 use Dynart\Dpress\Entity\Media;
+use Dynart\Dpress\Entity\Menu;
+use Dynart\Dpress\Entity\MenuItem;
+use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Entity\Tag;
 use Dynart\Dpress\Entity\RefreshToken;
 use Dynart\Dpress\Entity\Role;
@@ -44,6 +49,7 @@ use Dynart\Dpress\Entity\UserToken;
 use Dynart\Dpress\Cli\ContentCommands;
 use Dynart\Dpress\Cli\MediaCommands;
 use Dynart\Dpress\Cli\TaxonomyCommands;
+use Dynart\Dpress\Cli\ThemeCommands;
 use Dynart\Dpress\Cli\MailCommands;
 use Dynart\Dpress\Form\CoreForms;
 use Dynart\Dpress\Form\FormFactory;
@@ -54,6 +60,7 @@ use Dynart\Dpress\Mail\MailerInterface;
 use Dynart\Dpress\Mail\NativeMailer;
 use Dynart\Dpress\Migration\CreateContentTables;
 use Dynart\Dpress\Migration\CreateMediaTables;
+use Dynart\Dpress\Migration\CreateMenuAndSettingTables;
 use Dynart\Dpress\Migration\CreateTaxonomyTables;
 use Dynart\Dpress\Migration\CreateIdentityTables;
 use Dynart\Dpress\Migration\CreateRevisionTable;
@@ -69,7 +76,10 @@ use Dynart\Dpress\Media\MediaTypes;
 use Dynart\Dpress\Media\MediaView;
 use Dynart\Dpress\Service\ContentService;
 use Dynart\Dpress\Service\MediaService;
+use Dynart\Dpress\Service\MenuService;
+use Dynart\Dpress\Service\SettingService;
 use Dynart\Dpress\Service\TaxonomyService;
+use Dynart\Dpress\Theme\ThemeService;
 use Dynart\Dpress\Service\RoleService;
 use Dynart\Dpress\Service\SchemaService;
 use Dynart\Dpress\Service\UserService;
@@ -93,6 +103,7 @@ class DpressServices {
         CreateMediaTables::class,
         CreateContentTables::class,
         CreateTaxonomyTables::class,
+        CreateMenuAndSettingTables::class,
     ];
 
     /** The entities the CMS provides, registered explicitly rather than by a namespace scan */
@@ -110,6 +121,9 @@ class DpressServices {
         ContentCategory::class,
         ContentTag::class,
         ContentAttachment::class,
+        Setting::class,
+        Menu::class,
+        MenuItem::class,
     ];
 
     /**
@@ -149,6 +163,10 @@ class DpressServices {
     public static function registerServices(): void {
         Micro::add(TranslationInterface::class, Translation::class);
         Micro::add(ViewInterface::class, View::class);
+        // the request and the router are needed by the CLI too, because a menu item stores what
+        // it points at rather than a URL, so listing a menu has to build one
+        Micro::add(RequestInterface::class, Request::class);
+        Micro::add(RouterInterface::class, Router::class);
         Micro::add(JwtAuthInterface::class, JwtAuth::class);
         Micro::add(QueryFactory::class);
         Micro::add(CoreQueries::class);
@@ -168,6 +186,9 @@ class DpressServices {
         Micro::add(MediaView::class);
         Micro::add(MediaService::class);
         Micro::add(TaxonomyService::class);
+        Micro::add(SettingService::class);
+        Micro::add(ThemeService::class);
+        Micro::add(MenuService::class);
         Micro::add(SchemaCommands::class);
         Micro::add(SystemCommands::class);
         Micro::add(UserCommands::class);
@@ -175,6 +196,7 @@ class DpressServices {
         Micro::add(ContentCommands::class);
         Micro::add(MediaCommands::class);
         Micro::add(TaxonomyCommands::class);
+        Micro::add(ThemeCommands::class);
     }
 
     /**
@@ -224,7 +246,6 @@ class DpressServices {
      * request and the session, so it lives here too.
      */
     public static function registerWeb(): void {
-        Micro::add(RequestInterface::class, Request::class);
         Micro::add(SessionInterface::class, Session::class);
         Micro::add(FormFactory::class);
         Micro::add(CoreForms::class);

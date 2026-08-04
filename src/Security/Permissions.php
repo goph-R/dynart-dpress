@@ -65,6 +65,14 @@ class Permissions {
     /** Actually removing files, which breaks the history that references them */
     const MEDIA_PURGE = 'media.purge';
 
+    const MENU_VIEW = 'menu.view';
+    const MENU_UPDATE = 'menu.update';
+
+    const THEME_VIEW = 'theme.view';
+
+    /** Switching the theme changes how every page of the site looks */
+    const THEME_SWITCH = 'theme.switch';
+
     /** The permissions the CMS defines, in [permission => group] format */
     const CORE = [
         self::USER_VIEW      => 'user',
@@ -102,6 +110,10 @@ class Permissions {
         self::MEDIA_UPDATE    => 'media',
         self::MEDIA_DELETE    => 'media',
         self::MEDIA_PURGE     => 'media',
+        self::MENU_VIEW       => 'menu',
+        self::MENU_UPDATE     => 'menu',
+        self::THEME_VIEW      => 'theme',
+        self::THEME_SWITCH    => 'theme',
     ];
 
     /**

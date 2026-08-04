@@ -1,0 +1,39 @@
+<?php $this->useLayout('dpress:layout') ?>
+<?php $this->startBlock('content') ?>
+    <?php if (!empty($ancestors)): ?>
+        <nav class="breadcrumb">
+            <a href="<?= esc_attr(route_url('/')) ?>">Home</a>
+            <?php foreach ($ancestors as $ancestor): ?>
+                / <a href="<?= esc_attr(route_url($ancestor->slug === '' ? '/' : '/'.$ancestor->slug)) ?>"><?= esc_html($ancestor->title) ?></a>
+            <?php endforeach ?>
+        </nav>
+    <?php endif ?>
+    <article>
+        <h1><?= esc_html($content->title) ?></h1>
+        <?php if (!$content->isPublished()): ?><p class="meta"><strong>draft</strong></p><?php endif ?>
+        <?php if (!empty($featured)): ?>
+            <p class="featured"><?= $mediaView->tag($featured, 'medium') ?></p>
+        <?php endif ?>
+        <?= $content->lead_html ?>
+        <?php if ($content->hasBody()): ?><?= $content->body_html ?><?php endif ?>
+        <?php if (!empty($children)): ?>
+            <h2 class="attachments-title">In this section</h2>
+            <ul class="attachments">
+                <?php foreach ($children as $child): ?>
+                    <li><a href="<?= esc_attr(route_url('/'.$child['slug'])) ?>"><?= esc_html($child['title']) ?></a></li>
+                <?php endforeach ?>
+            </ul>
+        <?php endif ?>
+        <?php if (!empty($attachments)): ?>
+            <h2 class="attachments-title">Attachments</h2>
+            <ul class="attachments">
+                <?php foreach ($attachments as $row): ?>
+                    <li>
+                        <span class="attachment-icon"><?= $mediaView->icon($row['category']) ?></span>
+                        <a href="<?= esc_attr($mediaView->urlOfPath($row['path'])) ?>"><?= esc_html($row['title'] ?: $row['file_name']) ?></a>
+                    </li>
+                <?php endforeach ?>
+            </ul>
+        <?php endif ?>
+    </article>
+<?php $this->endBlock() ?>

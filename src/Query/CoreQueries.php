@@ -10,6 +10,8 @@ use Dynart\Dpress\Entity\ContentAttachment;
 use Dynart\Dpress\Entity\ContentCategory;
 use Dynart\Dpress\Entity\ContentTag;
 use Dynart\Dpress\Entity\Media;
+use Dynart\Dpress\Entity\Menu;
+use Dynart\Dpress\Entity\MenuItem;
 use Dynart\Dpress\Entity\Tag;
 use Dynart\Dpress\Entity\Role;
 use Dynart\Dpress\Entity\RolePermission;
@@ -47,6 +49,24 @@ class CoreQueries {
         $factory->add('content_by_tag', [self::class, 'contentByTag']);
         $factory->add('media_list', [self::class, 'mediaList']);
         $factory->add('content_attachments', [self::class, 'contentAttachments']);
+        $factory->add('menu_list', [self::class, 'menuList']);
+        $factory->add('menu_items', [self::class, 'menuItems']);
+    }
+
+    // --- Menus ---
+
+    public function menuList(array $context): Query {
+        $query = new Query(Menu::class);
+        $query->addOrderBy('name');
+        return $query;
+    }
+
+    public function menuItems(array $context): Query {
+        $query = new Query(MenuItem::class);
+        $query->addCondition('`menu_id` = :menuId', [':menuId' => $context['menu_id'] ?? 0]);
+        $query->addOrderBy('position');
+        $query->addOrderBy('label');
+        return $query;
     }
 
     // --- Taxonomy ---
