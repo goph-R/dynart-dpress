@@ -170,8 +170,8 @@ class ContentService {
         $content->author_id = $authorId;
         $content->title = trim($data['title'] ?? '');
         $content->markdown = (string)($data['markdown'] ?? '');
-        $content->parent_id = $data['parent_id'] ?? null;
-        $content->featured_media_id = $data['featured_media_id'] ?? null;
+        $content->parent_id = $this->nullableId($data['parent_id'] ?? null);
+        $content->featured_media_id = $this->nullableId($data['featured_media_id'] ?? null);
         $content->slug = $this->resolveSlug($data['slug'] ?? '', $content->title);
         $content->created_at = $this->now();
         $content->updated_at = $content->created_at;
@@ -206,7 +206,7 @@ class ContentService {
         }
         foreach (['parent_id', 'featured_media_id'] as $field) {
             if (array_key_exists($field, $data)) {
-                $content->$field = $data[$field];
+                $content->$field = $this->nullableId($data[$field]);
             }
         }
         if (array_key_exists('parent_id', $data)) {
@@ -270,6 +270,25 @@ class ContentService {
     }
 
     // --- Helpers ---
+
+    /**
+     * A nullable foreign key, from whatever the caller had
+     *
+     * Both of these columns are `?int`, and both are filled from a `<select>` or a hidden input
+     * whose "nothing chosen" value is the empty string. Assigning that to a typed property is a
+     * fatal, so it is coerced here rather than in each caller: this is the one place that knows
+     * the column is an id, and a service that fatals on ordinary form input is a trap for the
+     * next caller as much as it was for this one.
+     *
+     * `0` means nothing too - it is what `(int)''` gives, and there is no row with that id.
+     */
+    protected function nullableId(mixed $value): ?int {
+        if ($value === null || $value === '' || $value === false) {
+            return null;
+        }
+        $id = (int)$value;
+        return $id > 0 ? $id : null;
+    }
 
     /**
      * Renders the markdown into the cached HTML columns

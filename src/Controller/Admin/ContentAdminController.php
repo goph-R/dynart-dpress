@@ -191,8 +191,9 @@ class ContentAdminController extends AbstractAdminController {
         if ($form->process()) {
             $content = $form->handle(function ($form) use ($type) {
                 $values = $form->values();
-                $values['type'] = $type;
-                $created = $this->content->create($values, (int)$this->currentUser()->id());
+                $data = $this->contentData($values);
+                $data['type'] = $type;
+                $created = $this->content->create($data, (int)$this->currentUser()->id());
                 $this->applyTaxonomy($created, $values);
                 return $created;
             });
@@ -211,7 +212,7 @@ class ContentAdminController extends AbstractAdminController {
         if ($form->process()) {
             $form->handle(function ($form) use ($content) {
                 $values = $form->values();
-                $this->content->update($content, $values);
+                $this->content->update($content, $this->contentData($values));
                 $this->applyTaxonomy($content, $values);
                 return $content;
             });
@@ -276,6 +277,31 @@ class ContentAdminController extends AbstractAdminController {
             $options[$category['id']] = $category['name'];
         }
         return $options;
+    }
+
+    /**
+     * The content columns out of what the form collected
+     *
+     * Named rather than passed through wholesale: the form also carries `_csrf`, `tags` and
+     * `categories`, none of which are columns, and a field a plugin adds should not reach the
+     * entity by accident. The two ids arrive as strings because that is what a `<select>` posts.
+     *
+     * A key that is not in the form is left out entirely, because `update()` treats "absent" as
+     * "leave it alone" - a page editor has no `categories` field and must not clear them.
+     */
+    protected function contentData(array $values): array {
+        $data = [];
+        foreach (['title', 'markdown', 'slug', 'status'] as $field) {
+            if (array_key_exists($field, $values)) {
+                $data[$field] = (string)$values[$field];
+            }
+        }
+        foreach (['parent_id', 'featured_media_id'] as $field) {
+            if (array_key_exists($field, $values)) {
+                $data[$field] = $values[$field] === '' ? null : (int)$values[$field];
+            }
+        }
+        return $data;
     }
 
     /**

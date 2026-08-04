@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.11.1] &ndash; 2026-08-04
+
+### Fixed
+- **Saving a post or a page from the browser was a fatal error.** `Content::$parent_id` and `$featured_media_id` are typed `?int`, and both are filled from a control whose "nothing chosen" value is the empty string — assigning that is a `TypeError`. `ContentService` coerces a nullable foreign key now, because it is the one place that knows the column is an id and a service that fatals on ordinary form input is a trap for the next caller too.
+- `ContentAdminController` no longer hands raw form values to the service. It names the columns it passes on, so the CSRF token, the tag string, the category boxes and whatever a plugin adds cannot reach the entity by accident — and a field the form does not have stays absent, because `update()` reads absent as "leave it alone".
+
+**Every automated test passed while this was broken**, which is the part worth remembering: the curl checks sent the fields they cared about and left the empty ones out entirely, so `?? null` covered for them. A browser sends every field in the form, empty ones included. The new tests use the values a form actually posts.
+
+---
+
 ## [0.11.0] &ndash; 2026-08-04
 
 Phase 6 begins: SVG uploads are sanitised.
