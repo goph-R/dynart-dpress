@@ -6,7 +6,7 @@
 
 The overall design lives in `../dynart-dpress-plan.md`. Read it before making structural decisions; it records *why* things are the way they are (single content table, single language per site, permanent audit history, the event naming convention).
 
-Status: the package skeleton and the CLI exist. The content model, web front end and admin UI do not.
+Status: phases 0–2 of the plan are done — the CLI, both factories, the mailer, the whole identity stack with its HTTP flows, and the content model with its markdown pipeline and revision history. Taxonomy, media, menus, themes and the admin UI do not exist yet.
 
 ## Related repositories
 
