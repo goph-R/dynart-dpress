@@ -21,11 +21,15 @@ class DpressUser implements JwtUserInterface {
      * @param string[] $roles Role names
      * @param string[] $permissions Permission strings
      */
+    /**
+     * @param string $displayName Carried in the token, so a name can be shown without a query
+     */
     public function __construct(
         private string $sub,
         private array $roles = [],
         private array $permissions = [],
         private ?User $user = null,
+        private string $displayName = '',
     ) {}
 
     public function sub(): string {
@@ -51,8 +55,12 @@ class DpressUser implements JwtUserInterface {
         return $this->user;
     }
 
+    /**
+     * The loaded record wins, because it is the fresher of the two - a name changed after the
+     * token was issued is still the old one inside it.
+     */
     public function name(): string {
-        return $this->user !== null ? $this->user->name : '';
+        return $this->user !== null ? $this->user->name : $this->displayName;
     }
 
     public function isAdmin(): bool {

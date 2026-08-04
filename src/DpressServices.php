@@ -33,7 +33,10 @@ use Dynart\Dpress\Entity\User;
 use Dynart\Dpress\Entity\UserRole;
 use Dynart\Dpress\Entity\UserToken;
 use Dynart\Dpress\Cli\MailCommands;
+use Dynart\Dpress\Form\CoreForms;
 use Dynart\Dpress\Form\FormFactory;
+use Dynart\Dpress\Middleware\TokenRefresher;
+use Dynart\Dpress\Security\AuthCookies;
 use Dynart\Dpress\Mail\LogMailer;
 use Dynart\Dpress\Mail\MailerInterface;
 use Dynart\Dpress\Mail\NativeMailer;
@@ -149,6 +152,9 @@ class DpressServices {
     public static function registerViews(ViewInterface $view, TranslationInterface $translation): void {
         $view->addFolder(Dpress::VIEW_NAMESPACE, Dpress::viewsPath());
         $translation->add(Dpress::TRANSLATION_NAMESPACE, Dpress::translationsPath());
+        // replaces the framework's folder for its own namespace, so the built in form messages
+        // read like something meant for a visitor rather than a developer
+        $translation->add(Translation::NAMESPACE_MICRO, Dpress::translationsPath().'/micro');
     }
 
     /**
@@ -175,6 +181,9 @@ class DpressServices {
         Micro::add(RequestInterface::class, Request::class);
         Micro::add(SessionInterface::class, Session::class);
         Micro::add(FormFactory::class);
+        Micro::add(CoreForms::class);
+        Micro::add(AuthCookies::class);
+        Micro::add(TokenRefresher::class);
     }
 
     /**

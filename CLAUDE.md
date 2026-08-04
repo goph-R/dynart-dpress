@@ -87,6 +87,26 @@ Access tokens carry the user's roles and permissions in the payload, so an autho
 
 Login failures are deliberately indistinguishable: a wrong password, a blocked account and a pending account all produce the same message, and `createPasswordResetToken()` returns `null` for an unknown address rather than throwing. Neither should become a way of finding out who has an account.
 
+### The HTTP layer
+
+`DpressWebApp` wires a middleware order that makes cookie-based login work:
+
+| Priority | Middleware | Does |
+|---|---|---|
+| 40 | `JwtCookieReader` | access-token cookie → `Authorization` header |
+| 45 | `TokenRefresher` | no header + refresh cookie → refresh, set new cookies, set header |
+| 50 | `JwtValidator` | decodes whatever ended up in the header |
+
+**`TokenRefresher` never decodes anything.** `AuthCookies` sets the access cookie to expire ~30s *before* its token does, so the browser stops sending it while it would still be valid — a request from a logged-in user whose token aged out simply arrives with no `Authorization` header and a refresh cookie. Without this, a 15-minute access TTL means a 401 error page every 15 minutes.
+
+Refresh tokens **rotate**: `AuthService::refresh()` revokes the old one and issues a new one, so a stolen token is usable at most once. A spent or revoked token makes `TokenRefresher` clear the cookies and carry on anonymously rather than throw — a stale cookie must never lock somebody out of the site.
+
+Controllers extend `AbstractController` and stay thin: read the request, call a service, render. `#[Authorize]` with no permission means "any logged-in user". Anonymous is the default — `JwtAuth::checkAuthorization()` only intervenes when a class or method declares an authorization.
+
+`/logout` is **POST only**, so a link planted on another page cannot log a visitor out.
+
+The routing note that costs an hour if you don't know it: **`Router::currentRoute()` reads the path from a request *parameter*** (`route` by default), not from `REQUEST_URI`. The rewrite has to supply it — `RewriteRule ^(.*)$ index.php?route=/$1 [QSA,L]`. `public/router.php` does the same for PHP's built-in server, which has no rewriting.
+
 ### Mail
 
 A mail is **two templates**: `<template>.phtml` for the HTML body and an optional `<template>.txt.phtml` for the plain text alternative. Both go through `ViewInterface`, so a theme overrides a mail template exactly the way it overrides a page template — same lookup, same namespaces, and each body can be overridden independently.

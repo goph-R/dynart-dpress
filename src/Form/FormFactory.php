@@ -47,7 +47,24 @@ class FormFactory {
      * @param callable|array $builder A Micro callable: `[SomeClass::class, 'method']` or a closure
      */
     public function add(string $name, callable|array $builder): void {
+        self::registerBuilderClass($builder);
         $this->builders[$name] = $builder;
+    }
+
+    /**
+     * Registers a `[SomeClass::class, 'method']` builder's class in the DI container
+     *
+     * The builder is resolved through the container when the form is created, so registering it
+     * here saves every caller from remembering a second `Micro::add()` - the same thing
+     * `Migrations::add()` does for migrations.
+     */
+    public static function registerBuilderClass(callable|array $builder): void {
+        if (!is_array($builder) || !isset($builder[0]) || !is_string($builder[0])) {
+            return; // a closure or an already constructed object, nothing to register
+        }
+        if (!Micro::hasInterface($builder[0])) {
+            Micro::add($builder[0]);
+        }
     }
 
     public function has(string $name): bool {

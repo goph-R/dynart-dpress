@@ -177,7 +177,9 @@ class AuthService {
         return new DpressUser(
             $sub,
             isset($payload->roles) ? (array)$payload->roles : [],
-            isset($payload->perms) ? (array)$payload->perms : []
+            isset($payload->perms) ? (array)$payload->perms : [],
+            null,
+            isset($payload->name) ? (string)$payload->name : ''
         );
     }
 

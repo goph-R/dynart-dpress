@@ -1,0 +1,13 @@
+<?php $this->useLayout('dpress:layout') ?>
+<?php $this->startBlock('content') ?>
+    <h1><?= esc_html($site_name) ?></h1>
+    <?php if (!empty($current_user)): ?>
+        <p>You are logged in as <strong><?= esc_html($current_user->name() ?: $current_user->sub()) ?></strong>.</p>
+        <p class="links">
+            Roles: <?= esc_html(join(', ', $current_user->roles()) ?: 'none') ?>
+        </p>
+    <?php else: ?>
+        <p>There is no content yet. The content model arrives in the next phase.</p>
+        <p class="links"><a href="<?= esc_attr(route_url('/login')) ?>">Log in</a></p>
+    <?php endif ?>
+<?php $this->endBlock() ?>

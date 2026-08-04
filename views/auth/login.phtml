@@ -1,0 +1,14 @@
+<?php $this->useLayout('dpress:layout') ?>
+<?php $this->startBlock('content') ?>
+    <h1><?= esc_html($title) ?></h1>
+    <form method="post">
+        <?= $form->fetch() ?>
+        <button class="primary" type="submit">Log in</button>
+    </form>
+    <p class="links">
+        <a href="<?= esc_attr(route_url('/forgot-password')) ?>">Forgotten your password?</a>
+        <?php if (!empty($registration_open)): ?>
+            &middot; <a href="<?= esc_attr(route_url('/register')) ?>">Create an account</a>
+        <?php endif ?>
+    </p>
+<?php $this->endBlock() ?>

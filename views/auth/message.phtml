@@ -1,0 +1,8 @@
+<?php $this->useLayout('dpress:layout') ?>
+<?php $this->startBlock('content') ?>
+    <h1><?= esc_html($title) ?></h1>
+    <p><?= esc_html($message) ?></p>
+    <?php if (!empty($link)): ?>
+        <p class="links"><a href="<?= esc_attr($link['url']) ?>"><?= esc_html($link['label']) ?></a></p>
+    <?php endif ?>
+<?php $this->endBlock() ?>
