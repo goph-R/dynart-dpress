@@ -6,7 +6,7 @@
 
 The overall design lives in `../dynart-dpress-plan.md`. Read it before making structural decisions; it records *why* things are the way they are (single content table, single language per site, permanent audit history, the event naming convention).
 
-Status: phases 0–2 of the plan are done — the CLI, both factories, the mailer, the whole identity stack with its HTTP flows, and the content model with its markdown pipeline and revision history. Taxonomy, media, menus, themes and the admin UI do not exist yet.
+Status: phases 0–3 of the plan are done — the CLI, both factories, the mailer, the identity stack with its HTTP flows, the content model with its markdown pipeline and revision history, and taxonomy plus the media library. Menus, themes and the admin UI do not exist yet.
 
 ## Related repositories
 
@@ -106,6 +106,24 @@ Every change emits **both** `content:updated` and the type alias `post:updated`,
 **Deleting a page re-parents its children** rather than cascading — a cascade would take a whole subtree out because somebody removed one page in the middle, and it would happen inside the database where no event fires and nothing is audited. Same reasoning as the audited relation tables.
 
 `ContentHistoryService` is the only place that queries the `_aud` mirror; `AuditService` writes it and never reads it.
+
+### Taxonomy and media
+
+`Category` is hierarchical, `Tag` is flat — that structural difference is why they are separate entities rather than one with a `type` column, unlike the post/page split.
+
+**The media library is central.** Content *references* media; `ContentAttachment` is a link, never a copy. Deleting an attachment removes the link, not the file.
+
+**Write once.** A stored path is never reused: `MediaService::replace()` creates a *new* item and marks the old one deleted, because overwriting would rewrite every historical revision that shows it, silently, with nothing in the audit.
+
+**Deleting marks `deleted_at`.** `purge()` is the only thing that removes bytes, and the CLI refuses it without `-confirm` — it is the operation that breaks history.
+
+**Mime types are sniffed from the bytes**, never taken from the client or the extension, and checked against an allowlist.
+
+**Derivatives are lazy and are a cache.** `…-thumb.jpg` is served by Apache when it exists; when it does not, the `!-f` rewrite lands on `MediaController`, which generates it. `media:regenerate` just deletes them. Never write those files from anywhere else.
+
+**SVG uploads are allowed but not sanitised yet** (plan §11.5). The uploads `.htaccess` sends a strict CSP for `.svg`, and an SVG used through `<img src>` cannot run scripts anyway — the gap is a direct navigation, which the header covers. Do not treat the confirmation dialog as the mitigation; it protects the uploader from a mistake, not the site from an attacker.
+
+**A joined query must qualify overlapping field names.** `tag_cloud` joins `content`, which also has `id` and `slug`; MariaDB rejects the unqualified select as ambiguous. `CoreQueries::table()` gives the unescaped name for that.
 
 ### The HTTP layer
 

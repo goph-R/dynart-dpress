@@ -4,7 +4,13 @@ namespace Dynart\Dpress\Query;
 
 use Dynart\Micro\Entities\EntityManager;
 use Dynart\Micro\Entities\Query;
+use Dynart\Dpress\Entity\Category;
 use Dynart\Dpress\Entity\Content;
+use Dynart\Dpress\Entity\ContentAttachment;
+use Dynart\Dpress\Entity\ContentCategory;
+use Dynart\Dpress\Entity\ContentTag;
+use Dynart\Dpress\Entity\Media;
+use Dynart\Dpress\Entity\Tag;
 use Dynart\Dpress\Entity\Role;
 use Dynart\Dpress\Entity\RolePermission;
 use Dynart\Dpress\Entity\User;
@@ -32,6 +38,128 @@ class CoreQueries {
         $factory->add('content_by_slug', [self::class, 'contentBySlug']);
         $factory->add('content_children', [self::class, 'contentChildren']);
         $factory->add('content_archive', [self::class, 'contentArchive']);
+        $factory->add('category_list', [self::class, 'categoryList']);
+        $factory->add('tag_list', [self::class, 'tagList']);
+        $factory->add('tag_cloud', [self::class, 'tagCloud']);
+        $factory->add('content_tags', [self::class, 'contentTags']);
+        $factory->add('content_categories', [self::class, 'contentCategories']);
+        $factory->add('content_by_category', [self::class, 'contentByCategory']);
+        $factory->add('content_by_tag', [self::class, 'contentByTag']);
+        $factory->add('media_list', [self::class, 'mediaList']);
+        $factory->add('content_attachments', [self::class, 'contentAttachments']);
+    }
+
+    // --- Taxonomy ---
+
+    public function categoryList(array $context): Query {
+        $query = new Query(Category::class);
+        if (array_key_exists('parent_id', $context)) {
+            if ($context['parent_id'] === null) {
+                $query->addCondition('`parent_id` is null');
+            } else {
+                $query->addCondition('`parent_id` = :parentId', [':parentId' => $context['parent_id']]);
+            }
+        }
+        $query->addOrderBy('position');
+        $query->addOrderBy('name');
+        return $query;
+    }
+
+    public function tagList(array $context): Query {
+        $query = new Query(Tag::class);
+        if (!empty($context['search'])) {
+            $query->addCondition('`name` like :search', [':search' => '%'.$context['search'].'%']);
+        }
+        $query->addOrderBy('name');
+        return $query;
+    }
+
+    /**
+     * Tags with how many published items carry them, for a tag cloud
+     */
+    public function tagCloud(array $context): Query {
+        $query = new Query(Tag::class);
+        // qualified, because the join brings in a `content` that also has an id and a slug
+        $table = $this->table(Tag::class);
+        $query->setFields([
+            'id'    => $table.'.id',
+            'name'  => $table.'.name',
+            'slug'  => $table.'.slug',
+            'total' => ['count(1)'],
+        ]);
+        $query->addInnerJoin([ContentTag::class, 'ct'], '`ct`.`tag_id` = '.$this->safeTable(Tag::class).'.`id`');
+        $query->addInnerJoin([Content::class, 'c'], '`c`.`id` = `ct`.`content_id`');
+        $query->addCondition('`c`.`status` = :publishedStatus', [':publishedStatus' => Content::STATUS_PUBLISHED]);
+        $query->addGroupBy($this->safeTable(Tag::class).'.`id`');
+        $query->addOrderBy('name');
+        return $query;
+    }
+
+    public function contentTags(array $context): Query {
+        $query = new Query(Tag::class);
+        $query->setFields(['id' => 'id', 'name' => 'name', 'slug' => 'slug']);
+        $query->addInnerJoin([ContentTag::class, 'ct'], '`ct`.`tag_id` = '.$this->safeTable(Tag::class).'.`id`');
+        $query->addCondition('`ct`.`content_id` = :contentId', [':contentId' => $context['content_id'] ?? 0]);
+        $query->addOrderBy('name');
+        return $query;
+    }
+
+    public function contentCategories(array $context): Query {
+        $query = new Query(Category::class);
+        $query->setFields(['id' => 'id', 'name' => 'name', 'slug' => 'slug', 'parent_id' => 'parent_id']);
+        $query->addInnerJoin([ContentCategory::class, 'cc'], '`cc`.`category_id` = '.$this->safeTable(Category::class).'.`id`');
+        $query->addCondition('`cc`.`content_id` = :contentId', [':contentId' => $context['content_id'] ?? 0]);
+        $query->addOrderBy('name');
+        return $query;
+    }
+
+    public function contentByCategory(array $context): Query {
+        $query = new Query(Content::class);
+        $query->addInnerJoin([ContentCategory::class, 'cc'], '`cc`.`content_id` = '.$this->safeTable(Content::class).'.`id`');
+        $query->addCondition('`cc`.`category_id` = :categoryId', [':categoryId' => $context['category_id'] ?? 0]);
+        $this->onlyPublished($query);
+        $query->addOrderBy('published_at', 'desc');
+        return $query;
+    }
+
+    public function contentByTag(array $context): Query {
+        $query = new Query(Content::class);
+        $query->addInnerJoin([ContentTag::class, 'ct'], '`ct`.`content_id` = '.$this->safeTable(Content::class).'.`id`');
+        $query->addCondition('`ct`.`tag_id` = :tagId', [':tagId' => $context['tag_id'] ?? 0]);
+        $this->onlyPublished($query);
+        $query->addOrderBy('published_at', 'desc');
+        return $query;
+    }
+
+    // --- Media ---
+
+    /**
+     * Deleted items are hidden unless the caller asks for them
+     */
+    public function mediaList(array $context): Query {
+        $query = new Query(Media::class);
+        if (empty($context['with_deleted'])) {
+            $query->addCondition('`deleted_at` is null');
+        }
+        if (!empty($context['category'])) {
+            $query->addCondition('`category` = :category', [':category' => $context['category']]);
+        }
+        if (!empty($context['search'])) {
+            $query->addCondition(
+                '(`file_name` like :search or `title` like :search or `alt` like :search)',
+                [':search' => '%'.$context['search'].'%']
+            );
+        }
+        $query->addOrderBy('created_at', 'desc');
+        return $query;
+    }
+
+    public function contentAttachments(array $context): Query {
+        $query = new Query(Media::class);
+        $query->addInnerJoin([ContentAttachment::class, 'ca'], '`ca`.`media_id` = '.$this->safeTable(Media::class).'.`id`');
+        $query->addCondition('`ca`.`content_id` = :contentId', [':contentId' => $context['content_id'] ?? 0]);
+        $query->addCondition('`deleted_at` is null');
+        return $query;
     }
 
     /**
@@ -192,5 +320,14 @@ class CoreQueries {
      */
     protected function safeTable(string $className): string {
         return $this->em->safeTableName($className);
+    }
+
+    /**
+     * The unescaped table name, for a field that has to be qualified
+     *
+     * `Database::escapeName()` splits on the dot, so `dp_tag.id` becomes `` `dp_tag`.`id` ``.
+     */
+    protected function table(string $className): string {
+        return $this->em->tableName($className);
     }
 }

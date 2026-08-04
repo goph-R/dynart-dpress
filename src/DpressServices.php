@@ -28,7 +28,13 @@ use Dynart\Dpress\Cli\SystemCommands;
 use Dynart\Dpress\Cli\UserCommands;
 use Dynart\Dpress\Content\MarkdownRenderer;
 use Dynart\Dpress\Content\Slugger;
+use Dynart\Dpress\Entity\Category;
 use Dynart\Dpress\Entity\Content;
+use Dynart\Dpress\Entity\ContentAttachment;
+use Dynart\Dpress\Entity\ContentCategory;
+use Dynart\Dpress\Entity\ContentTag;
+use Dynart\Dpress\Entity\Media;
+use Dynart\Dpress\Entity\Tag;
 use Dynart\Dpress\Entity\RefreshToken;
 use Dynart\Dpress\Entity\Role;
 use Dynart\Dpress\Entity\RolePermission;
@@ -36,6 +42,8 @@ use Dynart\Dpress\Entity\User;
 use Dynart\Dpress\Entity\UserRole;
 use Dynart\Dpress\Entity\UserToken;
 use Dynart\Dpress\Cli\ContentCommands;
+use Dynart\Dpress\Cli\MediaCommands;
+use Dynart\Dpress\Cli\TaxonomyCommands;
 use Dynart\Dpress\Cli\MailCommands;
 use Dynart\Dpress\Form\CoreForms;
 use Dynart\Dpress\Form\FormFactory;
@@ -45,6 +53,8 @@ use Dynart\Dpress\Mail\LogMailer;
 use Dynart\Dpress\Mail\MailerInterface;
 use Dynart\Dpress\Mail\NativeMailer;
 use Dynart\Dpress\Migration\CreateContentTables;
+use Dynart\Dpress\Migration\CreateMediaTables;
+use Dynart\Dpress\Migration\CreateTaxonomyTables;
 use Dynart\Dpress\Migration\CreateIdentityTables;
 use Dynart\Dpress\Migration\CreateRevisionTable;
 use Dynart\Dpress\Query\CoreQueries;
@@ -53,7 +63,13 @@ use Dynart\Dpress\Security\Permissions;
 use Dynart\Dpress\Security\PasswordHasher;
 use Dynart\Dpress\Service\AuthService;
 use Dynart\Dpress\Service\ContentHistoryService;
+use Dynart\Dpress\Media\ImageProcessor;
+use Dynart\Dpress\Media\MediaStorage;
+use Dynart\Dpress\Media\MediaTypes;
+use Dynart\Dpress\Media\MediaView;
 use Dynart\Dpress\Service\ContentService;
+use Dynart\Dpress\Service\MediaService;
+use Dynart\Dpress\Service\TaxonomyService;
 use Dynart\Dpress\Service\RoleService;
 use Dynart\Dpress\Service\SchemaService;
 use Dynart\Dpress\Service\UserService;
@@ -74,7 +90,9 @@ class DpressServices {
     const MIGRATIONS = [
         CreateRevisionTable::class,
         CreateIdentityTables::class,
+        CreateMediaTables::class,
         CreateContentTables::class,
+        CreateTaxonomyTables::class,
     ];
 
     /** The entities the CMS provides, registered explicitly rather than by a namespace scan */
@@ -86,6 +104,12 @@ class DpressServices {
         RefreshToken::class,
         UserToken::class,
         Content::class,
+        Media::class,
+        Category::class,
+        Tag::class,
+        ContentCategory::class,
+        ContentTag::class,
+        ContentAttachment::class,
     ];
 
     /**
@@ -138,11 +162,19 @@ class DpressServices {
         Micro::add(Slugger::class);
         Micro::add(ContentService::class);
         Micro::add(ContentHistoryService::class);
+        Micro::add(MediaTypes::class);
+        Micro::add(MediaStorage::class);
+        Micro::add(ImageProcessor::class);
+        Micro::add(MediaView::class);
+        Micro::add(MediaService::class);
+        Micro::add(TaxonomyService::class);
         Micro::add(SchemaCommands::class);
         Micro::add(SystemCommands::class);
         Micro::add(UserCommands::class);
         Micro::add(MailCommands::class);
         Micro::add(ContentCommands::class);
+        Micro::add(MediaCommands::class);
+        Micro::add(TaxonomyCommands::class);
     }
 
     /**

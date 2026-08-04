@@ -49,9 +49,10 @@ class Content extends Entity {
     public int $author_id = 0;
 
     /**
-     * No foreign key yet - `Media` arrives in the next phase and adds the constraint then
+     * The foreign key is added by a later migration with an ALTER, because `Media` did not exist
+     * when this table was created
      */
-    #[Column(type: Column::TYPE_INT)]
+    #[Column(type: Column::TYPE_INT, foreignKey: [Media::class, 'id'])]
     public ?int $featured_media_id = null;
 
     #[Column(type: Column::TYPE_STRING, size: 200, notNull: true)]

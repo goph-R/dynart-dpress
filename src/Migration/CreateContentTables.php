@@ -20,7 +20,7 @@ class CreateContentTables implements MigrationInterface {
     ) {}
 
     public function version(): string {
-        return '0003_create_content_tables';
+        return '0004_create_content_tables';
     }
 
     public function up(): void {

@@ -74,6 +74,14 @@ class ContentService {
         return (int)$this->queryExecutor->findAllCount($this->queries->create('content_list', $context));
     }
 
+    public function findByTag(int $tagId): array {
+        return $this->queryExecutor->findAll($this->queries->create('content_by_tag', ['tag_id' => $tagId]));
+    }
+
+    public function findByCategory(int $categoryId): array {
+        return $this->queryExecutor->findAll($this->queries->create('content_by_category', ['category_id' => $categoryId]));
+    }
+
     /**
      * The children of a page, for the tree
      */

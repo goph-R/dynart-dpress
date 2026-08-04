@@ -47,6 +47,24 @@ class Permissions {
     /** Reading the revision history of a piece of content */
     const CONTENT_HISTORY = 'content.history';
 
+    const CATEGORY_VIEW = 'category.view';
+    const CATEGORY_CREATE = 'category.create';
+    const CATEGORY_UPDATE = 'category.update';
+    const CATEGORY_DELETE = 'category.delete';
+
+    const TAG_VIEW = 'tag.view';
+    const TAG_CREATE = 'tag.create';
+    const TAG_UPDATE = 'tag.update';
+    const TAG_DELETE = 'tag.delete';
+
+    const MEDIA_VIEW = 'media.view';
+    const MEDIA_CREATE = 'media.create';
+    const MEDIA_UPDATE = 'media.update';
+    const MEDIA_DELETE = 'media.delete';
+
+    /** Actually removing files, which breaks the history that references them */
+    const MEDIA_PURGE = 'media.purge';
+
     /** The permissions the CMS defines, in [permission => group] format */
     const CORE = [
         self::USER_VIEW      => 'user',
@@ -71,6 +89,19 @@ class Permissions {
         self::PAGE_DELETE    => 'page',
         self::PAGE_PUBLISH   => 'page',
         self::CONTENT_HISTORY => 'content',
+        self::CATEGORY_VIEW   => 'category',
+        self::CATEGORY_CREATE => 'category',
+        self::CATEGORY_UPDATE => 'category',
+        self::CATEGORY_DELETE => 'category',
+        self::TAG_VIEW        => 'tag',
+        self::TAG_CREATE      => 'tag',
+        self::TAG_UPDATE      => 'tag',
+        self::TAG_DELETE      => 'tag',
+        self::MEDIA_VIEW      => 'media',
+        self::MEDIA_CREATE    => 'media',
+        self::MEDIA_UPDATE    => 'media',
+        self::MEDIA_DELETE    => 'media',
+        self::MEDIA_PURGE     => 'media',
     ];
 
     /**

@@ -1,6 +1,6 @@
 <?php $this->useLayout('dpress:layout') ?>
 <?php $this->startBlock('content') ?>
-    <h1><?= esc_html($site_name) ?></h1>
+    <h1><?= esc_html($heading ?? $site_name) ?></h1>
     <?php if (empty($posts)): ?>
         <p>Nothing published yet.</p>
     <?php else: ?>

@@ -1,0 +1,95 @@
+<?php
+
+namespace Dynart\Dpress\Media;
+
+use Dynart\Micro\ConfigInterface;
+use Dynart\Micro\ViewInterface;
+use Dynart\Dpress\Dpress;
+use Dynart\Dpress\Entity\Media;
+
+/**
+ * Turning a media item into something a template can print
+ *
+ * The URL of a derivative is built rather than looked up, and the file behind it may not exist
+ * yet - that is the whole point of generating lazily. The browser asks for it, Apache does not
+ * find it, and the request falls through to the controller that makes it.
+ */
+class MediaView {
+
+    /**
+     * The icon of a category
+     *
+     * Stored as `icon-<category>.svg.phtml`, so it goes through the view like any other
+     * template and a theme can replace one - the same convention the plain text mail bodies use.
+     */
+    const ICON_TEMPLATE = 'dpress:media/icon-';
+    const ICON_SUFFIX = '.svg';
+
+    public function __construct(
+        protected ConfigInterface $config,
+        protected ViewInterface $view,
+        protected MediaStorage $storage,
+        protected ImageProcessor $images,
+    ) {}
+
+    /**
+     * The public URL of an item, at a preset size when it has one
+     */
+    public function url(Media $media, string $preset = ''): string {
+        $relative = $preset !== '' && $media->isResizable() && $this->images->hasPreset($preset)
+            ? $this->storage->derivativePath($media->path, $preset)
+            : $media->path;
+        return $this->baseUrl().$this->storage->baseUrl().'/'.$relative;
+    }
+
+    /**
+     * The public URL of a stored path, for a listing row that has no entity loaded
+     */
+    public function urlOfPath(string $relativePath): string {
+        return $this->baseUrl().$this->storage->baseUrl().'/'.ltrim($relativePath, '/');
+    }
+
+    /**
+     * An `<img>` for an image, or the category icon for anything else
+     *
+     * The alt text is the item's own, falling back to an empty one - an empty `alt` is correct
+     * for a decorative image, and far better than repeating the filename to a screen reader.
+     */
+    public function tag(Media $media, string $preset = 'thumb', array $attributes = []): string {
+        if (!$media->isImage()) {
+            return $this->icon($media->category);
+        }
+        $attributes = array_merge([
+            'src' => $this->url($media, $preset),
+            'alt' => (string)($media->alt ?? ''),
+            'loading' => 'lazy',
+        ], $attributes);
+        if ($media->isResizable() && $media->width !== null && $preset === '') {
+            $attributes['width'] = (string)$media->width;
+            $attributes['height'] = (string)$media->height;
+        }
+        $parts = [];
+        foreach ($attributes as $name => $value) {
+            $parts[] = $name.'="'.htmlspecialchars((string)$value, ENT_QUOTES).'"';
+        }
+        return '<img '.join(' ', $parts).'>';
+    }
+
+    /**
+     * The inline SVG icon of a category
+     *
+     * Inline rather than an `<img>`, so it inherits the surrounding colour. These are our own
+     * files, not uploaded ones, so there is nothing to sanitise.
+     */
+    public function icon(string $category): string {
+        $path = self::ICON_TEMPLATE.$category.self::ICON_SUFFIX;
+        if (!$this->view->exists($path)) {
+            $path = self::ICON_TEMPLATE.Media::CATEGORY_OTHER.self::ICON_SUFFIX;
+        }
+        return $this->view->fetch($path);
+    }
+
+    protected function baseUrl(): string {
+        return rtrim((string)$this->config->get('app.base_url', ''), '/');
+    }
+}

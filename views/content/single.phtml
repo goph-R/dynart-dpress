@@ -5,10 +5,34 @@
         <p class="meta">
             <?= esc_html(substr((string)$content->published_at, 0, 10)) ?>
             <?php if (!$content->isPublished()): ?><strong>&middot; draft</strong><?php endif ?>
+            <?php foreach ($categories as $category): ?>
+                &middot; <a href="<?= esc_attr(route_url('/category/'.$category['slug'])) ?>"><?= esc_html($category['name']) ?></a>
+            <?php endforeach ?>
         </p>
+        <?php if (!empty($featured)): ?>
+            <p class="featured"><?= $mediaView->tag($featured, 'medium') ?></p>
+        <?php endif ?>
         <?= $content->lead_html ?>
         <?php if ($content->hasBody()): ?>
             <?= $content->body_html ?>
+        <?php endif ?>
+        <?php if (!empty($tags)): ?>
+            <p class="tags">
+                <?php foreach ($tags as $tag): ?>
+                    <a class="tag" href="<?= esc_attr(route_url('/tag/'.$tag['slug'])) ?>">#<?= esc_html($tag['name']) ?></a>
+                <?php endforeach ?>
+            </p>
+        <?php endif ?>
+        <?php if (!empty($attachments)): ?>
+            <h2 class="attachments-title">Attachments</h2>
+            <ul class="attachments">
+                <?php foreach ($attachments as $row): ?>
+                    <li>
+                        <span class="attachment-icon"><?= $mediaView->icon($row['category']) ?></span>
+                        <a href="<?= esc_attr($mediaView->urlOfPath($row['path'])) ?>"><?= esc_html($row['title'] ?: $row['file_name']) ?></a>
+                    </li>
+                <?php endforeach ?>
+            </ul>
         <?php endif ?>
     </article>
     <p class="links"><a href="<?= esc_attr(route_url('/')) ?>">&larr; All posts</a></p>

@@ -5,6 +5,34 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.8.0] &ndash; 2026-08-04
+
+Phase 3: taxonomy and the media library.
+
+### Added
+- **Taxonomy** — `Category` (hierarchical, with a thumbnail) and `Tag` (flat), plus the audited `ContentCategory` and `ContentTag` join tables. `TaxonomyService` with `setTags()` / `setCategories()` emitting one event per actual change, and `findOrCreateTag()` so an editor can type words rather than identifiers.
+- **Media library** — `Media` as a central, audited library that content *references*; `ContentAttachment` is a link, never a copy, so one image can be a featured image on one post and an attachment on another without being stored twice.
+- **`MediaTypes`** — an allowlist keyed by the mime type **sniffed from the file's own bytes**. A `.jpg` extension on an executable is refused, because a blocklist is a promise to have thought of every dangerous extension.
+- **`MediaStorage`** — write-once paths: `2026/08/my-photo-a1b2c3.jpg`, the slug of the original name plus a **random** suffix. It also writes the `.htaccess` that stops the uploads folder executing anything and sends a strict CSP for `.svg`.
+- **`ImageProcessor`** — GD behind its own class, with `thumb` / `medium` / `large` presets from config. Transparency is preserved, and an image smaller than the preset is copied rather than scaled up.
+- **Lazy derivatives** — a template points at `…-thumb.jpg`; if the file is there Apache serves it and PHP never runs. If it is not, the existing `!-f` rewrite sends the request to `MediaController`, which generates it, writes it and serves it. Exactly one visitor per size pays.
+- **`MediaView`** — `url()`, `tag()` and `icon()`. Non-images render as an inline SVG icon per category, stored as `icon-<category>.svg.phtml` so a theme can replace one like any other template.
+- **Front end** — tags, categories, the featured image and attachments on a post; `/tag/<slug>` and `/category/<slug>` archives.
+- **CLI** — `media:import`, `media:list`, `media:delete`, `media:purge`, `media:regenerate`, `taxonomy:list`.
+- `Content.featured_media_id` gains its foreign key, and permissions for `category.*`, `tag.*` and `media.*`.
+
+### Fixed
+- `tag_cloud` selected `id` and `slug` unqualified while joining `content`, which has both — MariaDB rejected it as ambiguous. The fields are qualified now.
+
+### Notes
+- **SVG uploads are allowed and not yet sanitised**, deliberately (plan §11.5). The CLI prints a warning, and the uploads `.htaccess` sends `Content-Security-Policy: default-src 'none'` for `.svg` — an SVG used through `<img src>` is a non-scripted context regardless, so the remaining hole is somebody navigating straight to the file, which the header closes.
+- **Deleting media marks `deleted_at`; the file stays.** `media:purge` is the only thing that removes bytes, and it refuses to run without `-confirm`, saying how many items reference it and that old revisions will break.
+- Derivatives are a cache, so `media:regenerate` only deletes them — the next request rebuilds what it needs.
+- The migrations were reordered so `Media` is created before `Content`: a `CREATE TABLE` can only reference a table that already exists.
+- Requires dynart/micro-entities 0.6.0.
+
+---
+
 ## [0.7.0] &ndash; 2026-08-04
 
 ### Changed

@@ -10,7 +10,10 @@ use Dynart\Micro\RouterInterface;
 use Dynart\Micro\ViewInterface;
 use Dynart\Dpress\Entity\Content;
 use Dynart\Dpress\Security\Permissions;
+use Dynart\Dpress\Media\MediaView;
 use Dynart\Dpress\Service\ContentService;
+use Dynart\Dpress\Service\MediaService;
+use Dynart\Dpress\Service\TaxonomyService;
 
 /**
  * Reading content on the front end
@@ -28,8 +31,37 @@ class ContentController extends AbstractController {
         ConfigInterface $config,
         JwtAuthInterface $jwtAuth,
         protected ContentService $content,
+        protected TaxonomyService $taxonomy,
+        protected MediaService $media,
+        protected MediaView $mediaView,
     ) {
         parent::__construct($view, $router, $request, $config, $jwtAuth);
+    }
+
+    #[Route('GET', '/tag/?')]
+    public function tag(string $slug): string {
+        $tag = $this->taxonomy->findTagBySlug($slug);
+        if ($tag === null) {
+            $this->app()->sendError(404);
+        }
+        return $this->render('dpress:content/list', [
+            'title' => 'Tagged '.$tag->name,
+            'heading' => 'Tagged “'.$tag->name.'”',
+            'posts' => $this->content->findByTag($tag->id),
+        ]);
+    }
+
+    #[Route('GET', '/category/?')]
+    public function category(string $slug): string {
+        $category = $this->taxonomy->findCategoryBySlug($slug);
+        if ($category === null) {
+            $this->app()->sendError(404);
+        }
+        return $this->render('dpress:content/list', [
+            'title' => $category->name,
+            'heading' => $category->name,
+            'posts' => $this->content->findByCategory($category->id),
+        ]);
     }
 
     #[Route('GET', '/post/?')]
@@ -39,8 +71,14 @@ class ContentController extends AbstractController {
             $this->app()->sendError(404);
         }
         return $this->render('dpress:content/single', [
-            'title'   => $content->title,
-            'content' => $content,
+            'title'       => $content->title,
+            'content'     => $content,
+            'tags'        => $this->taxonomy->tagsOf($content->id),
+            'categories'  => $this->taxonomy->categoriesOf($content->id),
+            'attachments' => $this->media->attachmentsOf($content->id),
+            'featured'    => $content->featured_media_id !== null
+                ? $this->media->findById($content->featured_media_id) : null,
+            'mediaView'   => $this->mediaView,
         ]);
     }
 

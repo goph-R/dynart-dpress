@@ -14,6 +14,8 @@ use Dynart\Micro\Entities\EntityManager;
 use Dynart\Micro\Entities\Migrations;
 use Dynart\Dpress\Cli\ContentCommands;
 use Dynart\Dpress\Cli\MailCommands;
+use Dynart\Dpress\Cli\MediaCommands;
+use Dynart\Dpress\Cli\TaxonomyCommands;
 use Dynart\Dpress\Cli\SchemaCommands;
 use Dynart\Dpress\Cli\SystemCommands;
 use Dynart\Dpress\Cli\UserCommands;
@@ -118,6 +120,44 @@ class DpressCliApp extends CliApp {
         'content:rerender' => [
             'callable' => [ContentCommands::class, 'rerender'],
             'description' => 'Re-render every markdown body, after a rendering change',
+            'needsConfig' => true,
+        ],
+        'media:import' => [
+            'callable' => [MediaCommands::class, 'import'],
+            'description' => 'Import a file into the media library',
+            'params' => ['file', 'user', 'alt', 'title', 'caption'],
+            'needsConfig' => true,
+        ],
+        'media:list' => [
+            'callable' => [MediaCommands::class, 'list'],
+            'description' => 'List the media library',
+            'params' => ['category', 'search'],
+            'flags' => ['deleted'],
+            'needsConfig' => true,
+        ],
+        'media:delete' => [
+            'callable' => [MediaCommands::class, 'delete'],
+            'description' => 'Mark media deleted, or bring it back with -restore',
+            'params' => ['id'],
+            'flags' => ['restore'],
+            'needsConfig' => true,
+        ],
+        'media:purge' => [
+            'callable' => [MediaCommands::class, 'purge'],
+            'description' => 'Delete the file itself, breaking every revision that shows it',
+            'params' => ['id'],
+            'flags' => ['confirm'],
+            'needsConfig' => true,
+        ],
+        'media:regenerate' => [
+            'callable' => [MediaCommands::class, 'regenerate'],
+            'description' => 'Clear the generated thumbnails so they are rebuilt on demand',
+            'params' => ['id'],
+            'needsConfig' => true,
+        ],
+        'taxonomy:list' => [
+            'callable' => [TaxonomyCommands::class, 'list'],
+            'description' => 'List the categories and the tags',
             'needsConfig' => true,
         ],
         'mail:test' => [
