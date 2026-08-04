@@ -3,6 +3,7 @@
 namespace Dynart\Dpress\Query;
 
 use Dynart\Micro\Entities\Query;
+use Dynart\Dpress\Entity\Content;
 use Dynart\Dpress\Entity\Role;
 use Dynart\Dpress\Entity\RolePermission;
 use Dynart\Dpress\Entity\User;
@@ -24,6 +25,93 @@ class CoreQueries {
         $factory->add('user_permissions', [self::class, 'userPermissions']);
         $factory->add('role_list', [self::class, 'roleList']);
         $factory->add('role_permissions', [self::class, 'rolePermissions']);
+        $factory->add('content_list', [self::class, 'contentList']);
+        $factory->add('content_by_slug', [self::class, 'contentBySlug']);
+        $factory->add('content_children', [self::class, 'contentChildren']);
+        $factory->add('content_archive', [self::class, 'contentArchive']);
+    }
+
+    /**
+     * @param array $context type, status, search, author_id, parent_id, published_only
+     */
+    public function contentList(array $context): Query {
+        $query = new Query(Content::class);
+        $this->applyContentFilters($query, $context);
+        $query->addOrderBy('published_at', 'desc');
+        return $query;
+    }
+
+    /**
+     * `published_only` defaults to **true**: the filter has to be on unless the caller asks for
+     * drafts, or a forgotten flag leaks unpublished work to visitors.
+     */
+    public function contentBySlug(array $context): Query {
+        $query = new Query(Content::class);
+        $query->addCondition('`slug` = :slug', [':slug' => $context['slug'] ?? '']);
+        if ($context['published_only'] ?? true) {
+            $this->onlyPublished($query);
+        }
+        return $query;
+    }
+
+    public function contentChildren(array $context): Query {
+        $query = new Query(Content::class);
+        $query->addCondition('`parent_id` = :parentId', [':parentId' => $context['parent_id'] ?? 0]);
+        if ($context['published_only'] ?? false) {
+            $this->onlyPublished($query);
+        }
+        $query->addOrderBy('title');
+        return $query;
+    }
+
+    /**
+     * Published posts grouped by month, for an archive listing
+     */
+    public function contentArchive(array $context): Query {
+        $query = new Query(Content::class);
+        $query->setFields([
+            'period' => ["date_format(`published_at`, '%Y-%m')"],
+            'total'  => ['count(1)'],
+        ]);
+        $query->addCondition('`type` = :type', [':type' => $context['type'] ?? Content::TYPE_POST]);
+        $this->onlyPublished($query);
+        $query->addGroupBy("date_format(`published_at`, '%Y-%m')");
+        return $query;
+    }
+
+    protected function applyContentFilters(Query $query, array $context): void {
+        if (!empty($context['type'])) {
+            $query->addCondition('`type` = :type', [':type' => $context['type']]);
+        }
+        if (!empty($context['author_id'])) {
+            $query->addCondition('`author_id` = :authorId', [':authorId' => $context['author_id']]);
+        }
+        if (array_key_exists('parent_id', $context)) {
+            if ($context['parent_id'] === null) {
+                $query->addCondition('`parent_id` is null');
+            } else {
+                $query->addCondition('`parent_id` = :parentId', [':parentId' => $context['parent_id']]);
+            }
+        }
+        if (!empty($context['search'])) {
+            $query->addCondition(
+                '(`title` like :search or `markdown` like :search)',
+                [':search' => '%'.$context['search'].'%']
+            );
+        }
+        if (!empty($context['status'])) {
+            $query->addCondition('`status` = :status', [':status' => $context['status']]);
+        } else if ($context['published_only'] ?? false) {
+            $this->onlyPublished($query);
+        }
+    }
+
+    /**
+     * Published, and not dated in the future
+     */
+    protected function onlyPublished(Query $query): void {
+        $query->addCondition('`status` = :publishedStatus', [':publishedStatus' => Content::STATUS_PUBLISHED]);
+        $query->addCondition('`published_at` <= :publishedNow', [':publishedNow' => gmdate('Y-m-d H:i:s')]);
     }
 
     public function userByEmail(array $context): Query {

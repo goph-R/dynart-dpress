@@ -28,6 +28,25 @@ class Permissions {
     const SETTING_VIEW = 'setting.view';
     const SETTING_UPDATE = 'setting.update';
 
+    /**
+     * Per type, because "may write posts" and "may restructure the site's pages" are different
+     * jobs even though both are `Content` rows
+     */
+    const POST_VIEW = 'post.view';
+    const POST_CREATE = 'post.create';
+    const POST_UPDATE = 'post.update';
+    const POST_DELETE = 'post.delete';
+    const POST_PUBLISH = 'post.publish';
+
+    const PAGE_VIEW = 'page.view';
+    const PAGE_CREATE = 'page.create';
+    const PAGE_UPDATE = 'page.update';
+    const PAGE_DELETE = 'page.delete';
+    const PAGE_PUBLISH = 'page.publish';
+
+    /** Reading the revision history of a piece of content */
+    const CONTENT_HISTORY = 'content.history';
+
     /** The permissions the CMS defines, in [permission => group] format */
     const CORE = [
         self::USER_VIEW      => 'user',
@@ -41,7 +60,27 @@ class Permissions {
         self::ROLE_ASSIGN    => 'role',
         self::SETTING_VIEW   => 'setting',
         self::SETTING_UPDATE => 'setting',
+        self::POST_VIEW      => 'post',
+        self::POST_CREATE    => 'post',
+        self::POST_UPDATE    => 'post',
+        self::POST_DELETE    => 'post',
+        self::POST_PUBLISH   => 'post',
+        self::PAGE_VIEW      => 'page',
+        self::PAGE_CREATE    => 'page',
+        self::PAGE_UPDATE    => 'page',
+        self::PAGE_DELETE    => 'page',
+        self::PAGE_PUBLISH   => 'page',
+        self::CONTENT_HISTORY => 'content',
     ];
+
+    /**
+     * The permission for an action on a content type, e.g. `post.create` / `page.create`
+     *
+     * The service resolves it from the row's `type`, so one code path covers both.
+     */
+    public static function forContent(string $type, string $action): string {
+        return $type.'.'.$action;
+    }
 
     /** @var array<string, string> Extra permissions in [permission => group] format */
     protected array $registered = [];

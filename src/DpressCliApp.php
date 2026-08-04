@@ -12,6 +12,7 @@ use Dynart\Micro\ViewInterface;
 use Dynart\Micro\Entities\AuditService;
 use Dynart\Micro\Entities\EntityManager;
 use Dynart\Micro\Entities\Migrations;
+use Dynart\Dpress\Cli\ContentCommands;
 use Dynart\Dpress\Cli\MailCommands;
 use Dynart\Dpress\Cli\SchemaCommands;
 use Dynart\Dpress\Cli\SystemCommands;
@@ -80,6 +81,43 @@ class DpressCliApp extends CliApp {
         'role:list' => [
             'callable' => [UserCommands::class, 'listRoles'],
             'description' => 'List the roles and their permissions',
+            'needsConfig' => true,
+        ],
+        'content:create' => [
+            'callable' => [ContentCommands::class, 'create'],
+            'description' => 'Create a post or a page',
+            'params' => ['title', 'author', 'type', 'slug', 'file', 'markdown'],
+            'flags' => ['publish'],
+            'needsConfig' => true,
+        ],
+        'content:list' => [
+            'callable' => [ContentCommands::class, 'list'],
+            'description' => 'List the content',
+            'params' => ['type', 'status', 'search'],
+            'needsConfig' => true,
+        ],
+        'content:publish' => [
+            'callable' => [ContentCommands::class, 'publish'],
+            'description' => 'Publish content, or take it back to draft with -unpublish',
+            'params' => ['id'],
+            'flags' => ['unpublish'],
+            'needsConfig' => true,
+        ],
+        'content:delete' => [
+            'callable' => [ContentCommands::class, 'delete'],
+            'description' => 'Delete content, keeping its history',
+            'params' => ['id'],
+            'needsConfig' => true,
+        ],
+        'content:history' => [
+            'callable' => [ContentCommands::class, 'history'],
+            'description' => 'Show the revision history of a piece of content',
+            'params' => ['id'],
+            'needsConfig' => true,
+        ],
+        'content:rerender' => [
+            'callable' => [ContentCommands::class, 'rerender'],
+            'description' => 'Re-render every markdown body, after a rendering change',
             'needsConfig' => true,
         ],
         'mail:test' => [

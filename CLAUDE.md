@@ -87,6 +87,20 @@ Access tokens carry the user's roles and permissions in the payload, so an autho
 
 Login failures are deliberately indistinguishable: a wrong password, a blocked account and a pending account all produce the same message, and `createPasswordResetToken()` returns `null` for an unknown address rather than throwing. Neither should become a way of finding out who has an account.
 
+### Content
+
+One `Content` table with a `type` column (`post` | `page`) — the reasoning is in the plan's §4.1. Per-type permissions still work: `Permissions::forContent($type, 'create')` gives `post.create` or `page.create`, resolved from the row.
+
+**The lead/body split rule**: the first line consisting *solely* of `---` **that is not line 0**. At offset 0 it is opening YAML front matter, and a document starting with a separator would get an empty lead. `----`, `- - -` and `--` are not separators. A document with no separator is all lead and no body — a short note is exactly that.
+
+**`lead_html` / `body_html` are a cache of `markdown`.** Only `ContentService::renderInto()` writes them; `dpress content:rerender` rebuilds everything after a rendering change. Nothing else should assign those columns.
+
+Every change emits **both** `content:updated` and the type alias `post:updated`, so a plugin that only cares about posts does not have to inspect the type on every content event of the site.
+
+**Deleting a page re-parents its children** rather than cascading — a cascade would take a whole subtree out because somebody removed one page in the middle, and it would happen inside the database where no event fires and nothing is audited. Same reasoning as the audited relation tables.
+
+`ContentHistoryService` is the only place that queries the `_aud` mirror; `AuditService` writes it and never reads it.
+
 ### The HTTP layer
 
 `DpressWebApp` wires a middleware order that makes cookie-based login work:

@@ -32,12 +32,23 @@
         button.primary { background: #18181b; color: #fff; border: 0; border-radius: 6px; padding: 10px 18px;
                          font: inherit; font-weight: 600; cursor: pointer; }
         .links { margin-top: 18px; font-size: 14px; }
+        main.wide { max-width: 720px; }
+        .post-summary { padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid #e4e4e7; }
+        .post-summary:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 0; }
+        .post-summary h2 { font-size: 18px; margin: 0 0 4px; }
+        .post-summary h2 a { color: inherit; text-decoration: none; }
+        .meta { color: #71717a; font-size: 13px; margin: 0 0 10px; }
+        article pre { background: #f4f4f5; padding: 12px; border-radius: 6px; overflow-x: auto; }
+        article code { background: #f4f4f5; padding: 1px 5px; border-radius: 4px; font-size: 90%; }
+        article pre code { background: none; padding: 0; }
         .links a { color: #3f3f46; }
         @media (prefers-color-scheme: dark) {
             body { background: #18181b; color: #e4e4e7; }
             .card { background: #27272a; }
             input[type=text], input[type=password] { background: #18181b; border-color: #3f3f46; }
             .links a { color: #a1a1aa; }
+            .post-summary { border-bottom-color: #3f3f46; }
+            article pre, article code { background: #18181b; }
         }
     </style>
 </head>
@@ -57,7 +68,7 @@
         <?php endif ?>
     <?php endif ?>
 </header>
-<main>
+<main class="wide">
     <div class="card">
         <?= $this->block('content') ?>
     </div>

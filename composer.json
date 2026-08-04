@@ -2,7 +2,7 @@
     "name": "dynart/dpress",
     "description": "Markdown based CMS built on Micro.",
     "type": "library",
-    "version": "0.5.0",
+    "version": "0.6.0",
     "license": "MIT",
     "autoload": {
         "psr-4": {
@@ -19,12 +19,14 @@
         "bin/dpress"
     ],
     "minimum-stability": "dev",
+    "prefer-stable": true,
     "require": {
         "php": ">=8.0",
         "dynart/micro": "@stable",
         "dynart/micro-entities": "@stable",
         "ext-json": "*",
-        "ext-pdo": "*"
+        "ext-pdo": "*",
+        "league/commonmark": "^2.4"
     },
     "repositories": {
         "dynart-micro": {

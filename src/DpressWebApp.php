@@ -14,6 +14,7 @@ use Dynart\Micro\Entities\AuditService;
 use Dynart\Micro\Entities\EntityManager;
 use Dynart\Micro\Entities\Migrations;
 use Dynart\Dpress\Controller\AuthController;
+use Dynart\Dpress\Controller\ContentController;
 use Dynart\Dpress\Controller\HomeController;
 use Dynart\Dpress\Controller\ProfileController;
 use Dynart\Dpress\Form\CoreForms;
@@ -36,6 +37,7 @@ class DpressWebApp extends WebApp {
         HomeController::class,
         AuthController::class,
         ProfileController::class,
+        ContentController::class,
     ];
 
     /**

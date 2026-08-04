@@ -1,0 +1,15 @@
+<?php $this->useLayout('dpress:layout') ?>
+<?php $this->startBlock('content') ?>
+    <h1><?= esc_html($site_name) ?></h1>
+    <?php if (empty($posts)): ?>
+        <p>Nothing published yet.</p>
+    <?php else: ?>
+        <?php foreach ($posts as $post): ?>
+            <article class="post-summary">
+                <h2><a href="<?= esc_attr(route_url('/post/'.$post['slug'])) ?>"><?= esc_html($post['title']) ?></a></h2>
+                <p class="meta"><?= esc_html(substr((string)$post['published_at'], 0, 10)) ?></p>
+                <?= $post['lead_html'] ?>
+            </article>
+        <?php endforeach ?>
+    <?php endif ?>
+<?php $this->endBlock() ?>

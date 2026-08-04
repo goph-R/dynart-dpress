@@ -12,14 +12,16 @@ use Dynart\Dpress\Mail\MailerInterface;
  * Mail is the part of a site that fails quietly in production, so being able to render and send
  * one from the console - and see which mailer is actually in use - is worth a command.
  */
-class MailCommands {
+class MailCommands extends AbstractCommands {
 
     const TEST_TEMPLATE = 'dpress:mail/password-reset';
 
     public function __construct(
-        protected CliOutputInterface $output,
+        CliOutputInterface $output,
         protected MailerInterface $mailer,
-    ) {}
+    ) {
+        parent::__construct($output);
+    }
 
     /**
      * `dpress mail:test -email x [-render]`
@@ -27,8 +29,8 @@ class MailCommands {
      * With `-render` it only renders and prints the mail, without handing it to the transport.
      */
     public function test(array $params = []): int {
-        $email = trim($params['email'] ?? '');
-        if ($email === '' && empty($params['render'])) {
+        $email = $this->param($params, 'email');
+        if ($email === '' && !$this->flag($params, 'render')) {
             return $this->fail('An -email is required, or use -render to only render it.');
         }
         $this->output->writeLine('Mailer: '.get_class($this->mailer));
@@ -46,7 +48,7 @@ class MailCommands {
         $this->output->writeLine('To:      '.$mail->to());
         $this->output->writeLine('Text body: '.($mail->hasTextBody() ? 'yes' : 'no (HTML only)'));
 
-        if (!empty($params['render'])) {
+        if ($this->flag($params, 'render')) {
             if ($mail->hasTextBody()) {
                 $this->output->writeLine('');
                 $this->output->writeLine('--- text ---');
@@ -68,10 +70,4 @@ class MailCommands {
         return 0;
     }
 
-    protected function fail(string $text): int {
-        $this->output->setColor(CliOutput::RED);
-        $this->output->writeLine($text);
-        $this->output->setColor(null);
-        return 1;
-    }
 }

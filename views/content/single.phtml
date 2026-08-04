@@ -1,0 +1,15 @@
+<?php $this->useLayout('dpress:layout') ?>
+<?php $this->startBlock('content') ?>
+    <article>
+        <h1><?= esc_html($content->title) ?></h1>
+        <p class="meta">
+            <?= esc_html(substr((string)$content->published_at, 0, 10)) ?>
+            <?php if (!$content->isPublished()): ?><strong>&middot; draft</strong><?php endif ?>
+        </p>
+        <?= $content->lead_html ?>
+        <?php if ($content->hasBody()): ?>
+            <?= $content->body_html ?>
+        <?php endif ?>
+    </article>
+    <p class="links"><a href="<?= esc_attr(route_url('/')) ?>">&larr; All posts</a></p>
+<?php $this->endBlock() ?>

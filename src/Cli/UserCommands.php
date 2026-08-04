@@ -17,34 +17,36 @@ use Dynart\Dpress\Service\UserService;
  * These exist mainly so a site can be bootstrapped before there is any way to log in, and so a
  * locked out administrator has a way back that does not involve editing the database by hand.
  */
-class UserCommands {
+class UserCommands extends AbstractCommands {
 
     public function __construct(
-        protected CliOutputInterface $output,
+        CliOutputInterface $output,
         protected UserService $users,
         protected RoleService $roles,
-    ) {}
+    ) {
+        parent::__construct($output);
+    }
 
     /**
      * `dpress user:create -email x -password y -name z -role admin`
      */
     public function create(array $params = []): int {
-        $email = trim($params['email'] ?? '');
+        $email = $this->param($params, 'email');
         if ($email === '') {
             return $this->fail('An -email is required.');
         }
-        $password = $params['password'] ?? '';
+        $password = $this->param($params, 'password');
         $generated = false;
         if ($password === '') {
             $password = $this->generatePassword();
             $generated = true;
         }
-        $roleName = $params['role'] ?? Role::NAME_ADMIN;
+        $roleName = $this->param($params, 'role', Role::NAME_ADMIN);
         try {
             $user = $this->users->create(
                 $email,
                 $password,
-                $params['name'] ?? '',
+                $this->param($params, 'name'),
                 [$roleName],
                 User::STATUS_ACTIVE
             );
@@ -63,7 +65,7 @@ class UserCommands {
      * `dpress user:password -email x [-password y]`
      */
     public function password(array $params = []): int {
-        $email = trim($params['email'] ?? '');
+        $email = $this->param($params, 'email');
         if ($email === '') {
             return $this->fail('An -email is required.');
         }
@@ -71,7 +73,7 @@ class UserCommands {
         if ($user === null) {
             return $this->fail("There is no user with the email address '$email'.");
         }
-        $password = $params['password'] ?? '';
+        $password = $this->param($params, 'password');
         $generated = false;
         if ($password === '') {
             $password = $this->generatePassword();
@@ -94,11 +96,11 @@ class UserCommands {
      */
     public function listUsers(array $params = []): int {
         $context = [];
-        if (!empty($params['status'])) {
-            $context['status'] = $params['status'];
-        }
-        if (!empty($params['search'])) {
-            $context['search'] = $params['search'];
+        foreach (['status', 'search'] as $key) {
+            $value = $this->param($params, $key);
+            if ($value !== '') {
+                $context[$key] = $value;
+            }
         }
         $rows = $this->users->findAll($context);
         if (empty($rows)) {
@@ -125,8 +127,8 @@ class UserCommands {
      * short of editing the database by hand.
      */
     public function status(array $params = []): int {
-        $email = trim($params['email'] ?? '');
-        $status = trim($params['status'] ?? '');
+        $email = $this->param($params, 'email');
+        $status = $this->param($params, 'status');
         if ($email === '' || $status === '') {
             return $this->fail('Both -email and -status are required. One of: '.join(', ', User::STATUSES));
         }
@@ -146,8 +148,8 @@ class UserCommands {
      * `dpress user:role -email x -role editor [-revoke]`
      */
     public function role(array $params = []): int {
-        $email = trim($params['email'] ?? '');
-        $roleName = trim($params['role'] ?? '');
+        $email = $this->param($params, 'email');
+        $roleName = $this->param($params, 'role');
         if ($email === '' || $roleName === '') {
             return $this->fail('Both -email and -role are required.');
         }
@@ -156,7 +158,7 @@ class UserCommands {
             return $this->fail("There is no user with the email address '$email'.");
         }
         try {
-            if (!empty($params['revoke'])) {
+            if ($this->flag($params, 'revoke')) {
                 $this->guardLastAdmin($user, $roleName);
                 $this->users->revokeRole($user, $roleName);
                 $this->success("Revoked '$roleName' from <{$user->email}>.");
@@ -206,17 +208,4 @@ class UserCommands {
         return substr(str_replace(['+', '/', '='], '', base64_encode(random_bytes(24))), 0, 16);
     }
 
-    protected function success(string $text): int {
-        $this->output->setColor(CliOutput::GREEN);
-        $this->output->writeLine($text);
-        $this->output->setColor(null);
-        return 0;
-    }
-
-    protected function fail(string $text): int {
-        $this->output->setColor(CliOutput::RED);
-        $this->output->writeLine($text);
-        $this->output->setColor(null);
-        return 1;
-    }
 }
