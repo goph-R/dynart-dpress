@@ -132,14 +132,42 @@ abstract class AbstractAdminController extends AbstractController {
         return ['items' => array_values($items), 'total' => $total];
     }
 
+    /** @var string[] Rendered once each: the same icon repeats across a screen */
+    private array $icons = [];
+
+    /**
+     * The inline SVG of an icon, by name
+     *
+     * `views/admin/icon-<name>.svg.phtml`, the same convention as the media category icons, and
+     * inline rather than an `<img>` so the icon takes the colour of the link or button it sits
+     * in - muted in a row, inverted in the current navigation item, red on a delete hover.
+     *
+     * An icon this admin does not have falls back to a generic mark rather than a gap, so a
+     * section or a row action a plugin adds is never invisible for want of a drawing.
+     *
+     * **The result is markup**, and that is what `icon` means everywhere it appears: in the
+     * navigation, and in a row action, where the list assigns it as `innerHTML`. It is ours, not
+     * an uploaded file, so there is nothing here to sanitise - but nothing may build it out of a
+     * request either.
+     */
+    protected function icon(string $name): string {
+        if (!isset($this->icons[$name])) {
+            $path = 'dpress:admin/icon-'.$name.'.svg';
+            if (!$this->view->exists($path)) {
+                $path = 'dpress:admin/icon-section.svg';
+            }
+            $this->icons[$name] = trim($this->view->fetch($path));
+        }
+        return $this->icons[$name];
+    }
+
     /**
      * The admin sections this user may open
      *
-     * `icon` names a `views/admin/icon-<name>.svg.phtml`, and is its own key rather than the
-     * section's: a section a plugin adds can point at an icon that already exists instead of
-     * shipping one, and the layout falls back to a generic mark for anything it cannot find.
+     * `icon` is its own key rather than the section's, so a section a plugin adds can point at an
+     * icon that already exists instead of shipping one.
      *
-     * @return array [['url' => ..., 'label' => ..., 'key' => ..., 'icon' => ...]]
+     * @return array [['url' => ..., 'label' => ..., 'key' => ..., 'icon' => <svg markup>]]
      */
     protected function navigation(): array {
         $sections = [
@@ -161,7 +189,7 @@ abstract class AbstractAdminController extends AbstractController {
             $result[] = [
                 'key'   => $section['key'],
                 'label' => $section['label'],
-                'icon'  => $section['icon'],
+                'icon'  => $this->icon($section['icon']),
                 'url'   => $this->router->url($section['route']),
             ];
         }

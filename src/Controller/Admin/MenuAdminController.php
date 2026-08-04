@@ -96,11 +96,14 @@ class MenuAdminController extends AbstractAdminController {
             return [];
         }
         return [
-            ['type' => 'items', 'title' => 'Items', 'icon' => 'Items',
+            // "Edit" rather than "Items", because a menu's items are what there is to edit about
+            // it - and every other list's first action is Edit. Renaming it is the smaller thing,
+            // and gets the text cursor rather than a second pencil.
+            ['type' => 'edit', 'title' => 'Edit', 'icon' => $this->icon('edit'),
              'link' => $this->router->url('/admin/menus/items/')],
-            ['type' => 'edit', 'title' => 'Rename', 'icon' => 'Rename',
+            ['type' => 'rename', 'title' => 'Rename', 'icon' => $this->icon('rename'),
              'link' => $this->router->url('/admin/menus/edit/')],
-            ['type' => 'delete', 'title' => 'Delete', 'icon' => 'Delete',
+            ['type' => 'delete', 'title' => 'Delete', 'icon' => $this->icon('delete'),
              'post' => $this->router->url('/admin/menus/delete/'),
              'confirm' => 'Delete this menu and all of its items?'],
         ];

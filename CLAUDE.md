@@ -168,7 +168,11 @@ Everything behind `/admin`. **A screen is two actions**: one that renders the pa
 
 **The markdown field is a textarea with a toolbar, deliberately not an editor.** A markdown field whose value is anything other than what the author typed eventually rewrites somebody's document on save, and the content model is "the markdown is the truth".
 
-**The sections are a sidebar on the left**, one icon each, and the icon is an inline SVG so it takes the colour of the link it sits in. A section names its icon in `AbstractAdminController::navigation()` and it resolves to `views/admin/icon-<name>.svg.phtml` — the same convention as the media category icons — with `icon-section.svg` as the fallback, so a plugin's section can reuse an icon that already exists instead of shipping one. `--radius` (3px) and `--width` (1280px) in `admin.css` are the two numbers the whole admin is built from; a component with its own corner radius has drifted.
+**The sections are a sidebar on the left**, one icon each, and the icon is an inline SVG so it takes the colour of the link it sits in. `--radius` (3px) and `--width` (1280px) in `admin.css` are the two numbers the whole admin is built from; a component with its own corner radius has drifted.
+
+**An icon is `AbstractAdminController::icon('name')`**, which renders `views/admin/icon-<name>.svg.phtml` — the same convention as the media category icons — and falls back to `icon-section.svg`, so a section or a row action a plugin adds is never invisible for want of a drawing. **Its result is markup**, and that is what an `icon` key means both in the navigation and in a row action, where the list assigns it as `innerHTML`; a row action with no icon falls back to its escaped title. Nothing may build one out of a request.
+
+**A row action is an icon with its name in `title` and `aria-label`.** The label is not decoration: an icon has no accessible name of its own and a `title` is a tooltip, which a screen reader may or may not announce.
 
 **The assets are served from the package** by `AssetController`, so installing the package installs the admin — no publish step to forget after an update, which would otherwise leave last version's list code talking to this version's endpoints. The URL carries `Dpress::VERSION`, so the answer is cached forever.
 

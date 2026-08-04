@@ -603,6 +603,11 @@
                 node.className = 'action ' + (rowAction.type || '');
                 node.title = rowAction.title || '';
                 node.innerHTML = rowAction.icon || escapeHtml(rowAction.title || '');
+                if (rowAction.icon && rowAction.title) {
+                    // an icon has no accessible name of its own, and a `title` is not one a
+                    // screen reader can be relied on to announce
+                    node.setAttribute('aria-label', rowAction.title);
+                }
                 td.appendChild(node);
             });
             return td;

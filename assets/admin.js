@@ -336,7 +336,9 @@
                 created_at: {label: 'Uploaded', view: global.DynamicListColumnView.dateTime}
             },
             rowActions: [{
-                type: 'choose', title: 'Choose', icon: 'Choose',
+                // the one row action that stays a word: choosing is what the dialog is open for,
+                // and `icon` means markup everywhere else
+                type: 'choose', title: 'Choose',
                 action: function (id, item) {
                     close();
                     chosen(item);

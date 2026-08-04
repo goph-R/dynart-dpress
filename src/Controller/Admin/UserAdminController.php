@@ -91,11 +91,11 @@ class UserAdminController extends AbstractAdminController {
     protected function rowActions(): array {
         $actions = [];
         if ($this->can(Permissions::USER_UPDATE)) {
-            $actions[] = ['type' => 'edit', 'title' => 'Edit', 'icon' => 'Edit',
+            $actions[] = ['type' => 'edit', 'title' => 'Edit', 'icon' => $this->icon('edit'),
                           'link' => $this->router->url('/admin/users/edit/')];
         }
         if ($this->can(Permissions::USER_DELETE)) {
-            $actions[] = ['type' => 'delete', 'title' => 'Delete', 'icon' => 'Delete',
+            $actions[] = ['type' => 'delete', 'title' => 'Delete', 'icon' => $this->icon('delete'),
                           'post' => $this->router->url('/admin/users/delete/'),
                           'confirm' => 'Delete this account? Their posts stay, with the author gone.'];
         }

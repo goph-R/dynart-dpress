@@ -39,12 +39,14 @@
                         </td>
                         <td><?= esc_html((string)$item['position']) ?></td>
                         <td class="actions-column">
+                            <?php // the same two icons the dynamic lists use, from the same files,
+                                  // so this table does not become the one screen with words on it ?>
                             <?php if (!empty($can_edit)): ?>
-                                <a class="action edit" href="<?= esc_attr($item['edit_url']) ?>">Edit</a>
-                                <button type="button" class="action delete"
-                                        onclick="Dpress.post(<?= esc_attr(json_encode($item['delete_url'])) ?>, 'Delete this item? Its children move up one level.')">
-                                    Delete
-                                </button>
+                                <a class="action edit" href="<?= esc_attr($item['edit_url']) ?>"
+                                   title="Edit" aria-label="Edit"><?= $this->fetch('dpress:admin/icon-edit.svg') ?></a>
+                                <button type="button" class="action delete" title="Delete" aria-label="Delete"
+                                        onclick="Dpress.post(<?= esc_attr(json_encode($item['delete_url'])) ?>, 'Delete this item? Its children move up one level.')"><?=
+                                    $this->fetch('dpress:admin/icon-delete.svg') ?></button>
                             <?php endif ?>
                         </td>
                     </tr>

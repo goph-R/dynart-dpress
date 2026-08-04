@@ -263,11 +263,11 @@ class TaxonomyAdminController extends AbstractAdminController {
     protected function rowActions(string $segment, string $update, string $delete, string $confirm): array {
         $actions = [];
         if ($this->can($update)) {
-            $actions[] = ['type' => 'edit', 'title' => 'Edit', 'icon' => 'Edit',
+            $actions[] = ['type' => 'edit', 'title' => 'Edit', 'icon' => $this->icon('edit'),
                           'link' => $this->router->url('/admin/'.$segment.'/edit/')];
         }
         if ($this->can($delete)) {
-            $actions[] = ['type' => 'delete', 'title' => 'Delete', 'icon' => 'Delete',
+            $actions[] = ['type' => 'delete', 'title' => 'Delete', 'icon' => $this->icon('delete'),
                           'post' => $this->router->url('/admin/'.$segment.'/delete/'),
                           'confirm' => $confirm];
         }

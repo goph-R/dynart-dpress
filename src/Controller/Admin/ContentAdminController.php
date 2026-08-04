@@ -135,31 +135,31 @@ class ContentAdminController extends AbstractAdminController {
         $rowActions = [];
         if ($this->can(Permissions::forContent($type, 'update'))) {
             $rowActions[] = [
-                'type' => 'edit', 'title' => 'Edit', 'icon' => 'Edit',
+                'type' => 'edit', 'title' => 'Edit', 'icon' => $this->icon('edit'),
                 'link' => $this->router->url('/admin/content/'.$type.'/edit/'),
             ];
         }
         if ($this->can(Permissions::forContent($type, 'publish'))) {
             $rowActions[] = [
-                'type' => 'publish', 'title' => 'Publish', 'icon' => 'Publish',
+                'type' => 'publish', 'title' => 'Publish', 'icon' => $this->icon('publish'),
                 'post' => $this->router->url('/admin/content/'.$type.'/publish/'),
                 'visibleWhen' => ['status' => Content::STATUS_DRAFT],
             ];
             $rowActions[] = [
-                'type' => 'unpublish', 'title' => 'Move back to draft', 'icon' => 'Unpublish',
+                'type' => 'unpublish', 'title' => 'Move back to draft', 'icon' => $this->icon('unpublish'),
                 'post' => $this->router->url('/admin/content/'.$type.'/unpublish/'),
                 'visibleWhen' => ['status' => Content::STATUS_PUBLISHED],
             ];
         }
         if ($this->can(Permissions::CONTENT_HISTORY)) {
             $rowActions[] = [
-                'type' => 'history', 'title' => 'History', 'icon' => 'History',
+                'type' => 'history', 'title' => 'History', 'icon' => $this->icon('history'),
                 'link' => $this->router->url('/admin/content/'.$type.'/history/'),
             ];
         }
         if ($this->can(Permissions::forContent($type, 'delete'))) {
             $rowActions[] = [
-                'type' => 'delete', 'title' => 'Delete', 'icon' => 'Delete',
+                'type' => 'delete', 'title' => 'Delete', 'icon' => $this->icon('delete'),
                 'post' => $this->router->url('/admin/content/'.$type.'/delete/'),
                 'confirm' => 'Delete this permanently?',
             ];

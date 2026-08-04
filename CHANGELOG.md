@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.11.3] &ndash; 2026-08-04
+
+More admin polish: the row actions are icons.
+
+### Changed
+- **Edit, Publish, Move back to draft, History, Delete, Rename and Restore are icons now**, with the name in `title` *and* `aria-label`. Four words per row is a paragraph nobody reads, and the actions column grew with every action a plugin added. Publish is an eye and unpublish is the same eye crossed out, so the pair reads as one state and its opposite; rename gets the text cursor rather than a second pencil, because a menu row carries both and two pencils would say they are the same kind of thing.
+- **"Items" on a menu is called "Edit"** and gets the same pencil as everywhere else. A menu's items are what there is to edit about it, and the first action of every other list is Edit.
+- `AbstractAdminController::icon()` renders `views/admin/icon-<name>.svg.phtml` and is what both the navigation and the row actions go through, so **`icon` means markup everywhere it appears** — including the picker's `Choose`, which no longer sets it and simply falls back to its title. Missing icons fall back to a generic mark, so a row action a plugin adds is never invisible for want of a drawing.
+- The menu items screen is a plain table rather than a dynamic list, and now uses the same two icon files, so it does not end up the one screen with words on it.
+
+### Fixed
+- **A row action rendered as an icon had no accessible name.** `title` is not one that can be relied on: it is a tooltip, and whether a screen reader announces it is a setting. The list sets `aria-label` from the title whenever an action has an icon, and the JS test asserts it — along with the escaping on the fallback, since `icon` is `innerHTML` and a title is not.
+
+---
+
 ## [0.11.2] &ndash; 2026-08-04
 
 Admin polish.

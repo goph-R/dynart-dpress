@@ -2,7 +2,7 @@
     "name": "dynart/dpress",
     "description": "Markdown based CMS built on Micro.",
     "type": "library",
-    "version": "0.11.2",
+    "version": "0.11.3",
     "license": "MIT",
     "autoload": {
         "psr-4": {

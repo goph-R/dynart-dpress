@@ -42,14 +42,12 @@ use Dynart\Dpress\Controller\Admin\AssetController;
 <div class="admin-body">
     <nav class="admin-nav" aria-label="Admin sections">
         <?php foreach (($admin_nav ?? []) as $section): ?>
-            <?php // the icon is inline rather than an `<img>`, so it takes the colour of the link
-                  // it sits in - including the one the current section is marked with
-                  $icon = 'dpress:admin/icon-'.$section['icon'].'.svg';
-                  if (!$this->exists($icon)) { $icon = 'dpress:admin/icon-section.svg'; } ?>
-            <?php // the title is what names the section when the rail is too narrow for the label ?>
+            <?php // `icon` is inline SVG the controller rendered - markup, like a row action's,
+                  // and ours rather than anything that came in with a request.
+                  // The title names the section when the rail is too narrow for the label. ?>
             <a href="<?= esc_attr($section['url']) ?>" title="<?= esc_attr($section['label']) ?>"<?=
                 $section['key'] === ($admin_section ?? '') ? ' class="current" aria-current="page"' : '' ?>>
-                <?= $this->fetch($icon) ?>
+                <?= $section['icon'] ?>
                 <span class="label"><?= esc_html($section['label']) ?></span>
             </a>
         <?php endforeach ?>

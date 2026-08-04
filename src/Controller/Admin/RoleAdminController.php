@@ -93,12 +93,12 @@ class RoleAdminController extends AbstractAdminController {
     protected function rowActions(): array {
         $actions = [];
         if ($this->can(Permissions::ROLE_UPDATE)) {
-            $actions[] = ['type' => 'edit', 'title' => 'Edit', 'icon' => 'Edit',
+            $actions[] = ['type' => 'edit', 'title' => 'Edit', 'icon' => $this->icon('edit'),
                           'link' => $this->router->url('/admin/roles/edit/'),
                           'visibleWhen' => ['editable' => true]];
         }
         if ($this->can(Permissions::ROLE_DELETE)) {
-            $actions[] = ['type' => 'delete', 'title' => 'Delete', 'icon' => 'Delete',
+            $actions[] = ['type' => 'delete', 'title' => 'Delete', 'icon' => $this->icon('delete'),
                           'post' => $this->router->url('/admin/roles/delete/'),
                           'confirm' => 'Delete this role? Everybody holding it loses what it granted.',
                           'visibleWhen' => ['removable' => true]];

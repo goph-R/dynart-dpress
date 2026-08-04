@@ -188,6 +188,31 @@ const tests = {
         assert.strictEqual(actions.children[1].tagName, 'BUTTON');
     },
 
+    /**
+     * An icon has no accessible name of its own, so an action that is only an icon has to carry
+     * one. `title` alone is not it - a screen reader cannot be relied on to announce it.
+     */
+    'an icon row action is still named'() {
+        const it = build({
+            columnViews: COLUMNS,
+            rowActions: [{type: 'delete', title: 'Delete', icon: '<svg></svg>', action() {}}]
+        }, TWO_ROWS);
+        const action = it.tbody().children[0].children[3].children[0];
+        assert.strictEqual(action.innerHTML, '<svg></svg>', 'the icon is markup, not escaped text');
+        assert.strictEqual(action.title, 'Delete');
+        assert.strictEqual(action.getAttribute('aria-label'), 'Delete');
+    },
+
+    'an action with no icon still reads as its title, escaped'() {
+        const it = build({
+            columnViews: COLUMNS,
+            rowActions: [{type: 'edit', title: '<b>Edit</b>', link: '/e/'}]
+        }, TWO_ROWS);
+        const action = it.tbody().children[0].children[3].children[0];
+        assert.strictEqual(action.innerHTML, '&lt;b&gt;Edit&lt;/b&gt;');
+        assert.strictEqual(action.getAttribute('aria-label'), undefined, 'the text is the name already');
+    },
+
     'a row action can be hidden per row'() {
         const it = build({
             columnViews: COLUMNS,

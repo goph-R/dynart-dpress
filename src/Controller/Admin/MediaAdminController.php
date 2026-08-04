@@ -92,15 +92,15 @@ class MediaAdminController extends AbstractAdminController {
     protected function listConfig(): array {
         $rowActions = [];
         if ($this->can(Permissions::MEDIA_UPDATE)) {
-            $rowActions[] = ['type' => 'edit', 'title' => 'Edit', 'icon' => 'Edit',
+            $rowActions[] = ['type' => 'edit', 'title' => 'Edit', 'icon' => $this->icon('edit'),
                              'link' => $this->router->url('/admin/media/edit/')];
         }
         if ($this->can(Permissions::MEDIA_DELETE)) {
-            $rowActions[] = ['type' => 'delete', 'title' => 'Delete', 'icon' => 'Delete',
+            $rowActions[] = ['type' => 'delete', 'title' => 'Delete', 'icon' => $this->icon('delete'),
                              'post' => $this->router->url('/admin/media/delete/'),
                              'confirm' => 'Delete this item? The file stays on disk until it is purged.',
                              'visibleWhen' => ['deleted' => false]];
-            $rowActions[] = ['type' => 'restore', 'title' => 'Restore', 'icon' => 'Restore',
+            $rowActions[] = ['type' => 'restore', 'title' => 'Restore', 'icon' => $this->icon('restore'),
                              'post' => $this->router->url('/admin/media/restore/'),
                              'visibleWhen' => ['deleted' => true]];
         }
