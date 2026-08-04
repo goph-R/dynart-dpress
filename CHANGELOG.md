@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.11.2] &ndash; 2026-08-04
+
+Admin polish.
+
+### Changed
+- **The sections moved to a sidebar on the left, with an icon each.** A horizontal bar has to stay short or it scrolls, which is what puts everything a plugin adds out of sight; a vertical list grows downwards for free. The icons are inline SVG rather than `<img>`, so each one takes the colour of the link it sits in — including the inverted one marking the current section — and a font of glyphs that has to load before the nav is readable is not worth it for nine shapes.
+- A section names its icon in `navigation()` (`views/admin/icon-<name>.svg.phtml`), separately from the key that marks it current. A section a plugin adds can point at an icon that already exists, and anything the admin cannot find falls back to a generic mark rather than a gap.
+- Below 1000px the labels go and the sidebar is an icon rail; below 720px it lies down above the content. **No hamburger**: every section stays one click away, which is the whole point of a menu with nine items in it.
+- **Corners are 3px everywhere**, from `--radius`. One small value rather than one per component, so a panel, a button, an input and a badge read as the same material. The status badges were pills and are not any more.
+- **The admin is 1280px wide at most**, from `--width`. The dark bar still reaches both window edges, because a band that stops short of them looks like a card that failed to load; everything inside it and below it stops at 1280.
+
+### Fixed
+- `composer.json` requires `ext-dom`, `ext-libxml` and `ext-gd` explicitly. All three were already needed — the sanitiser cannot parse without the first two and derivatives cannot be generated without the third — and a missing one should be a message from Composer rather than a fatal on the first upload.
+
+---
+
 ## [0.11.1] &ndash; 2026-08-04
 
 ### Fixed

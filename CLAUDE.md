@@ -168,6 +168,8 @@ Everything behind `/admin`. **A screen is two actions**: one that renders the pa
 
 **The markdown field is a textarea with a toolbar, deliberately not an editor.** A markdown field whose value is anything other than what the author typed eventually rewrites somebody's document on save, and the content model is "the markdown is the truth".
 
+**The sections are a sidebar on the left**, one icon each, and the icon is an inline SVG so it takes the colour of the link it sits in. A section names its icon in `AbstractAdminController::navigation()` and it resolves to `views/admin/icon-<name>.svg.phtml` — the same convention as the media category icons — with `icon-section.svg` as the fallback, so a plugin's section can reuse an icon that already exists instead of shipping one. `--radius` (3px) and `--width` (1280px) in `admin.css` are the two numbers the whole admin is built from; a component with its own corner radius has drifted.
+
 **The assets are served from the package** by `AssetController`, so installing the package installs the admin — no publish step to forget after an update, which would otherwise leave last version's list code talking to this version's endpoints. The URL carries `Dpress::VERSION`, so the answer is cached forever.
 
 **A template must never pass `get_defined_vars()` to a nested `fetch()`.** A template body is `include`d inside `View::fetch()` and shares its scope, so that hands down the *path of the file being included*; the nested fetch extracts it over its own and includes the caller instead — forever. micro 0.17.0 unsets the reserved names, but naming the variables is still the honest way to write it.

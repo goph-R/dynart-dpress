@@ -3,6 +3,10 @@
  *
  * Separate from the front end, which a theme owns. A theme may override an admin template, but
  * this is the baseline that makes the screens usable before anybody has styled anything.
+ *
+ * Corners are `--radius` everywhere - a single small value rather than one per component, so a
+ * panel, a button and an input all read as the same material. The only exception is the avatar-
+ * sized thumbnail in a list, which is square because the image is.
  */
 
 :root {
@@ -15,6 +19,9 @@
     --accent: #18181b;
     --danger: #dc2626;
     --ok: #166534;
+    --radius: 3px;
+    --width: 1280px;
+    --nav-width: 196px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -39,9 +46,10 @@ body.admin {
 
 /* --- chrome --- */
 
-.admin-header {
-    background: #18181b;
-    color: #fafafa;
+.admin-header { background: #18181b; color: #fafafa; }
+.admin-header-inner {
+    max-width: var(--width);
+    margin: 0 auto;
     padding: 12px 20px;
     display: flex;
     align-items: center;
@@ -53,25 +61,49 @@ body.admin {
 .admin-header form { margin: 0; }
 .admin-header button {
     background: none; border: 1px solid #52525b; color: #fafafa;
-    border-radius: 6px; padding: 5px 10px; cursor: pointer; font: inherit;
+    border-radius: var(--radius); padding: 5px 10px; cursor: pointer; font: inherit;
 }
 
-.admin-nav { display: flex; gap: 2px; padding: 0 20px; background: #27272a; overflow-x: auto; }
+/* The bar is full width so the dark band reaches the window edge; everything inside it, and
+   everything below it, stops at --width. */
+.admin-body {
+    max-width: var(--width);
+    margin: 0 auto;
+    padding: 22px 20px 60px;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.admin-nav {
+    flex: 0 0 var(--nav-width);
+    width: var(--nav-width);
+    position: sticky;
+    top: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--panel);
+    border-radius: var(--radius);
+    padding: 6px;
+}
 .admin-nav a {
-    color: #d4d4d8; text-decoration: none; padding: 10px 14px;
-    font-size: 14px; white-space: nowrap; border-bottom: 2px solid transparent;
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: var(--radius);
+    color: var(--muted); text-decoration: none; font-size: 14px; white-space: nowrap;
 }
-.admin-nav a:hover { color: #fff; }
-.admin-nav a.current { color: #fff; border-bottom-color: #fafafa; }
+.admin-nav a:hover { background: rgba(127, 127, 127, .1); color: var(--ink); }
+.admin-nav a.current { background: var(--accent); color: var(--bg); }
+.admin-nav svg { width: 18px; height: 18px; flex: 0 0 18px; }
 
-.admin-main { max-width: 1100px; margin: 24px auto 60px; padding: 0 20px; }
-.admin-main.narrow { max-width: 640px; }
+.admin-main { flex: 1; min-width: 0; }
+.admin-main.narrow { max-width: 680px; }
 
 .page-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
 .page-head h1 { font-size: 20px; margin: 0; }
 .page-head .spacer { flex: 1; }
 
-.panel { background: var(--panel); border-radius: 10px; padding: 22px; }
+.panel { background: var(--panel); border-radius: var(--radius); padding: 22px; }
 .panel + .panel { margin-top: 18px; }
 .panel > h2 { font-size: 16px; margin: 0 0 14px; }
 
@@ -81,12 +113,12 @@ body.admin {
 /* --- messages --- */
 
 .notice, .form-errors {
-    border-radius: 6px; padding: 10px 14px; margin: 0 0 18px; font-size: 14px;
+    border-radius: var(--radius); padding: 10px 14px; margin: 0 0 18px; font-size: 14px;
 }
 .notice { background: #f0fdf4; border: 1px solid #bbf7d0; color: var(--ok); }
 .form-errors { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; list-style: none; }
 .warning { background: #fffbeb; border: 1px solid #fde68a; color: #92400e;
-           border-radius: 6px; padding: 10px 14px; margin: 0 0 18px; font-size: 14px; }
+           border-radius: var(--radius); padding: 10px 14px; margin: 0 0 18px; font-size: 14px; }
 
 /* --- forms --- */
 
@@ -99,7 +131,7 @@ body.admin {
 input[type=text], input[type=password], input[type=search], input[type=number],
 input[type=email], select, textarea {
     width: 100%; padding: 8px 11px; border: 1px solid var(--line);
-    border-radius: 6px; font: inherit; background: var(--panel); color: inherit;
+    border-radius: var(--radius); font: inherit; background: var(--panel); color: inherit;
 }
 textarea { line-height: 1.5; resize: vertical; }
 textarea.markdown-editor { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13.5px; }
@@ -107,12 +139,12 @@ textarea.markdown-editor { font-family: ui-monospace, SFMono-Regular, Consolas, 
 .form-actions { margin-top: 22px; display: flex; gap: 10px; align-items: center; }
 
 button.primary, .button.primary {
-    background: var(--accent); color: var(--bg); border: 0; border-radius: 6px;
+    background: var(--accent); color: var(--bg); border: 0; border-radius: var(--radius);
     padding: 9px 18px; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none;
 }
 .button, button.button {
     display: inline-block; background: var(--panel); color: var(--ink);
-    border: 1px solid var(--line); border-radius: 6px; padding: 8px 14px;
+    border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 14px;
     font: inherit; cursor: pointer; text-decoration: none;
 }
 .button.small { padding: 4px 10px; font-size: 13px; }
@@ -126,16 +158,16 @@ button.link { background: none; border: 0; color: var(--muted); cursor: pointer;
     display: flex; align-items: center; gap: 8px; font-weight: 400; font-size: 14px;
 }
 .permission-groups { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
-.permission-groups fieldset { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin: 0; }
+.permission-groups fieldset { border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; margin: 0; }
 .permission-groups legend { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 .permission-groups code { font-size: 12.5px; }
 
 .media-field { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.media-field-preview img { max-height: 64px; border-radius: 6px; display: block; }
+.media-field-preview img { max-height: 64px; border-radius: var(--radius); display: block; }
 
 .markdown-toolbar { display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; }
 .markdown-toolbar button {
-    background: var(--panel); border: 1px solid var(--line); border-radius: 5px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
     padding: 3px 9px; font: inherit; font-size: 13px; cursor: pointer; color: var(--ink); min-width: 32px;
 }
 
@@ -144,7 +176,7 @@ button.link { background: none; border: 0; color: var(--muted); cursor: pointer;
 
 /* --- the dynamic list --- */
 
-.dynamic-list { background: var(--panel); border-radius: 10px; overflow: hidden; }
+.dynamic-list { background: var(--panel); border-radius: var(--radius); overflow: hidden; }
 .dynamic-list.loading { opacity: .6; }
 .dynamic-list table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .dynamic-list th, .dynamic-list td {
@@ -175,10 +207,10 @@ button.link { background: none; border: 0; color: var(--muted); cursor: pointer;
 }
 .dynamic-list .actions-column .action:hover { color: var(--ink); }
 .dynamic-list .actions-column .action.delete:hover { color: var(--danger); }
-.dynamic-list td img { max-height: 36px; border-radius: 4px; display: block; }
+.dynamic-list td img { max-height: 36px; border-radius: var(--radius); display: block; }
 .dynamic-list td svg { width: 22px; height: 22px; color: var(--muted); display: block; }
 
-.badge { display: inline-block; border-radius: 999px; padding: 2px 9px; font-size: 12px; background: var(--bg); }
+.badge { display: inline-block; border-radius: var(--radius); padding: 2px 9px; font-size: 12px; background: var(--bg); }
 .badge-published, .badge-active { background: #dcfce7; color: #166534; }
 .badge-draft, .badge-pending { background: #fef3c7; color: #92400e; }
 .badge-blocked, .badge-deleted { background: #fee2e2; color: #991b1b; }
@@ -197,7 +229,7 @@ button.link { background: none; border: 0; color: var(--muted); cursor: pointer;
 .list-footer .selected-items { margin-left: 10px; color: var(--ink); }
 .paging { display: flex; gap: 4px; flex-wrap: wrap; }
 .paging button.page {
-    background: var(--panel); border: 1px solid var(--line); border-radius: 5px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
     padding: 3px 9px; font: inherit; font-size: 13px; cursor: pointer; color: var(--ink);
 }
 .paging button.page.current { background: var(--accent); color: var(--bg); border-color: var(--accent); }
@@ -212,7 +244,7 @@ tr.row-detail td { background: var(--bg); font-size: 13px; }
 /* --- the media picker dialog --- */
 
 dialog.media-picker {
-    width: min(820px, 94vw); border: 0; border-radius: 12px; padding: 0;
+    width: min(820px, 94vw); border: 0; border-radius: var(--radius); padding: 0;
     background: var(--panel); color: var(--ink);
 }
 dialog.media-picker::backdrop { background: rgba(0, 0, 0, .45); }
@@ -228,7 +260,24 @@ dialog.media-picker .action.choose { color: var(--ink); text-decoration: underli
 
 /* --- narrow screens --- */
 
+/* The labels go first: an icon rail keeps the sections one click away, which a hamburger does
+   not, and the `title` on every link is what says which is which. */
+@media (max-width: 1000px) {
+    :root { --nav-width: 46px; }
+    .admin-nav a { justify-content: center; padding: 9px 0; }
+    .admin-nav .label {
+        position: absolute; width: 1px; height: 1px; overflow: hidden;
+        clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+    }
+}
+
 @media (max-width: 720px) {
+    .admin-body { display: block; padding: 14px 14px 40px; }
+    .admin-nav {
+        width: auto; position: static; margin-bottom: 14px;
+        flex-direction: row; overflow-x: auto; gap: 2px;
+    }
+    .admin-nav a { padding: 9px 12px; }
     .dynamic-list thead { display: none; }
     .dynamic-list tbody tr { display: block; border-bottom: 1px solid var(--line); padding: 6px 0; }
     .dynamic-list td { display: flex; justify-content: space-between; gap: 14px; border: 0; padding: 4px 14px; }
@@ -262,5 +311,5 @@ label.inline { display: inline-flex; align-items: center; gap: 6px; font-size: 1
 label.inline input { width: auto; }
 
 .media-detail { margin-bottom: 16px; }
-.media-detail img { max-width: 100%; height: auto; border-radius: 8px; }
+.media-detail img { max-width: 100%; height: auto; border-radius: var(--radius); }
 .media-detail svg { width: 48px; height: 48px; color: var(--muted); }
