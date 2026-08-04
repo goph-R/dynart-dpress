@@ -5,6 +5,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.12.1] &ndash; 2026-08-04
+
+### Changed
+- **The admin wears dpress's own logo, always.** It ships in `assets/logo.svg` and `AssetController` serves it with the version in the URL, so it is cached forever like the rest of the admin's assets - and it is safe for exactly the reason an uploaded SVG is not: it is a file this package ships, not one somebody sent us. `site_logo` stays what it was, the site's own mark for the site's own pages, and the admin no longer reads it.
+- The site's name sits next to that logo. "Which site am I in" is a question anybody running two of them has, and the header used to answer it.
+- The tab icon in the admin is still `site_icon`, because that is the tab an editor keeps open next to the site itself.
+
+---
+
 ## [0.12.0] &ndash; 2026-08-04
 
 A site can have a logo and an icon.

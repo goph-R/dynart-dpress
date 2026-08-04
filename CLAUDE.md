@@ -142,6 +142,8 @@ The uploads `.htaccess` still sends a strict CSP for `.svg`. That is the second 
 
 **Pages live at their own paths** via the catch-all route, which the router matches only after every exact and segment route — so adding a controller later cannot end up behind it. Slugs are globally unique, so the last segment finds the page; the ancestors are checked anyway, and a non-canonical path **301s** to the real one. A 302 there would leave both URLs live as far as a search engine is concerned.
 
+**The admin wears dpress's own logo** (`assets/logo.svg`, served by `AssetController`) whoever the site belongs to. `site_logo` is the site's mark for the site's own pages and the admin does not read it; `site_icon` is the tab icon on both, because that is the tab an editor keeps open next to the site.
+
 **The logo and the icon are settings that name a file** (`site_logo`, `site_icon`), not media items. The library is content and a header logo is chrome: it renders before anything has been uploaded, on pages with no content on them, and deleting a picture must not be able to take the header down. They store a path - `AbstractController::siteAsset()` resolves it against `app.base_url`, so the value survives the site moving out of a subfolder - and anything carrying a scheme is left alone. With neither set, both headers render the site's name as before.
 
 **Settings vs config.** `SettingService` reads the database first and falls back to `dpress.ini`. Anything needed *before* the database is reachable — the connection, the JWT secret — stays in the config. Everything an editor may change while the site runs is a setting, and settings are audited.
