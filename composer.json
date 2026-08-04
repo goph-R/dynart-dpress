@@ -1,0 +1,45 @@
+{
+    "name": "dynart/dpress",
+    "description": "Markdown based CMS built on Micro.",
+    "type": "library",
+    "version": "0.1.0",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Dynart\\Dpress\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "gopher",
+            "email": "gopher.hu@gmail.com"
+        }
+    ],
+    "bin": [
+        "bin/dpress"
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=8.0",
+        "dynart/micro": "@stable",
+        "dynart/micro-entities": "@stable",
+        "ext-json": "*",
+        "ext-pdo": "*"
+    },
+    "repositories": {
+        "dynart-micro": {
+            "type": "path",
+            "url": "../dynart-micro",
+            "options": {
+                "symlink": true
+            }
+        },
+        "dynart-micro-entities": {
+            "type": "path",
+            "url": "../dynart-micro-entities",
+            "options": {
+                "symlink": true
+            }
+        }
+    }
+}
