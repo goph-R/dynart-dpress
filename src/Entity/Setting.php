@@ -28,6 +28,18 @@ class Setting extends Entity {
 
     const SITE_NAME = 'site_name';
     const SITE_DESCRIPTION = 'site_description';
+
+    /**
+     * A file the site is branded with, named by path rather than by media id
+     *
+     * `/static/logo.svg` is resolved against `app.base_url`. Not a media item: the library is
+     * content, and a header logo is chrome - it has to render before anything has been uploaded,
+     * on a page that may show no content at all, and deleting it from the library must not be
+     * able to take the header down with it.
+     */
+    const SITE_LOGO = 'site_logo';
+    const SITE_ICON = 'site_icon';
+
     const REGISTRATION_OPEN = 'registration_open';
     const POSTS_PER_PAGE = 'posts_per_page';
 

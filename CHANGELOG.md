@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.12.0] &ndash; 2026-08-04
+
+A site can have a logo and an icon.
+
+### Added
+- **`site_logo` and `site_icon` settings.** The logo replaces the site's name in both headers - the admin's and the front end's - and the name becomes its `alt`, because a site with both would say the same thing twice on every screen. The icon becomes `rel="icon"` and `apple-touch-icon`. Neither is set by default, and with neither set nothing changes: the name renders as it did.
+- Both are edited on the Settings screen and are audited like every other setting, so "who changed the logo" is answerable.
+
+### Notes
+**They store a path, not a URL.** `/static/logo.svg` is resolved against `app.base_url` at render time, so the value survives the site moving out of a subfolder onto a domain of its own - the move that would otherwise silently break every stored absolute URL. Anything that already carries a scheme is left alone, so a logo on a CDN or one inlined as a `data:` URI still works.
+
+**They are settings, not media items.** The library is content; a header logo is chrome. It has to render before anything has been uploaded, on pages that show no content at all, and deleting a picture from the library must not be able to take the header down with it.
+
+---
+
 ## [0.11.3] &ndash; 2026-08-04
 
 More admin polish: the row actions are icons.

@@ -65,11 +65,45 @@ abstract class AbstractController {
     }
 
     /**
+     * The logo shown instead of the site's name, as a URL, or '' when there is none
+     */
+    protected function siteLogo(): string {
+        return $this->siteAsset((string)Micro::get(SettingService::class)->get(Setting::SITE_LOGO, ''));
+    }
+
+    /**
+     * The icon in the browser's tab, as a URL, or '' when there is none
+     */
+    protected function siteIcon(): string {
+        return $this->siteAsset((string)Micro::get(SettingService::class)->get(Setting::SITE_ICON, ''));
+    }
+
+    /**
+     * A setting that names a file, as a URL
+     *
+     * `/static/logo.svg` is resolved against `app.base_url`, so the value survives the site moving
+     * out of a subfolder onto a domain of its own - which is exactly the move that would otherwise
+     * silently break every stored absolute URL.
+     *
+     * Anything that already carries a scheme is left alone: another host, `//`, a `data:` URI. It
+     * is a setting, so only somebody who may change settings can put anything there at all.
+     */
+    protected function siteAsset(string $value): string {
+        $value = trim($value);
+        if ($value === '' || preg_match('#^([a-z][a-z0-9+.-]*:|//)#i', $value) === 1) {
+            return $value;
+        }
+        return rtrim((string)$this->config->get('app.base_url', ''), '/').'/'.ltrim($value, '/');
+    }
+
+    /**
      * Renders a template with the variables every page needs
      */
     protected function render(string $template, array $variables = []): string {
         $this->view->set('current_user', $this->currentUser());
         $this->view->set('site_name', $this->siteName());
+        $this->view->set('site_logo', $this->siteLogo());
+        $this->view->set('site_icon', $this->siteIcon());
         $this->view->set('registration_open', $this->registrationOpen());
         $this->view->set('main_menu', $this->menu('main'));
         return $this->view->fetch($template, $variables);

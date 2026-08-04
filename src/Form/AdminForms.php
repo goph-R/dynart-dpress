@@ -216,6 +216,11 @@ class AdminForms {
         ]);
         $form->addFields([
             'site_description'  => ['type' => 'textarea', 'label' => 'Description', 'required' => false],
+            'site_logo'         => ['type' => 'text', 'label' => 'Logo', 'required' => false,
+                                    'description' => 'Shown instead of the site name. A path like /static/logo.svg, '
+                                        .'or a full URL. The site name stays as its alt text.'],
+            'site_icon'         => ['type' => 'text', 'label' => 'Icon', 'required' => false,
+                                    'description' => 'The icon in the browser tab. Same idea - /favicon.png.'],
             'registration_open' => ['type' => 'checkbox', 'label' => 'Registration', 'required' => false,
                                     'text' => 'Anybody may create an account'],
             'posts_per_page'    => ['type' => 'text', 'label' => 'Posts per page', 'required' => false],

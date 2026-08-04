@@ -31,6 +31,8 @@ class SettingsAdminController extends AbstractAdminController {
     const FIELDS = [
         Setting::SITE_NAME => 'string',
         Setting::SITE_DESCRIPTION => 'string',
+        Setting::SITE_LOGO => 'string',
+        Setting::SITE_ICON => 'string',
         Setting::REGISTRATION_OPEN => 'bool',
         Setting::POSTS_PER_PAGE => 'int',
     ];

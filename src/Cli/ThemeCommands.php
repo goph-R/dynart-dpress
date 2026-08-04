@@ -98,6 +98,7 @@ class ThemeCommands extends AbstractCommands {
     public function listSettings(array $params = []): int {
         $stored = $this->settings->all();
         $names = [Setting::THEME, Setting::SITE_NAME, Setting::SITE_DESCRIPTION,
+                  Setting::SITE_LOGO, Setting::SITE_ICON,
                   Setting::REGISTRATION_OPEN, Setting::POSTS_PER_PAGE];
         foreach (array_keys($stored) as $name) {
             if (!in_array($name, $names)) {

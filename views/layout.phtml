@@ -4,6 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= esc_html(($title ?? '').($title ?? '' ? ' – ' : '').($site_name ?? '')) ?></title>
+    <?php if (!empty($site_icon)): ?>
+        <link rel="icon" href="<?= esc_attr($site_icon) ?>">
+        <link rel="apple-touch-icon" href="<?= esc_attr($site_icon) ?>">
+    <?php endif ?>
     <style>
         :root { color-scheme: light dark; }
         * { box-sizing: border-box; }
@@ -11,6 +15,8 @@
                background: #f4f4f5; color: #18181b; }
         header { background: #18181b; color: #fafafa; padding: 14px 20px; display: flex; gap: 16px; align-items: center; }
         header a { color: #fafafa; text-decoration: none; }
+        header .brand { display: flex; align-items: center; }
+        header .logo { height: 26px; width: auto; display: block; }
         header .spacer { flex: 1; }
         header form { margin: 0; }
         header button { background: none; border: 1px solid #52525b; color: #fafafa; border-radius: 6px;
@@ -69,7 +75,13 @@
 </head>
 <body>
 <header>
-    <a href="<?= esc_attr(route_url('/')) ?>"><strong><?= esc_html($site_name ?? '') ?></strong></a>
+    <a class="brand" href="<?= esc_attr(route_url('/')) ?>">
+        <?php if (!empty($site_logo)): ?>
+            <img class="logo" src="<?= esc_attr($site_logo) ?>" alt="<?= esc_attr($site_name ?? '') ?>">
+        <?php else: ?>
+            <strong><?= esc_html($site_name ?? '') ?></strong>
+        <?php endif ?>
+    </a>
     <?= $main_menu ?? '' ?>
     <span class="spacer"></span>
     <?php if (!empty($current_user)): ?>

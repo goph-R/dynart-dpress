@@ -5,18 +5,15 @@ namespace Dynart\Dpress\Controller\Admin;
 use Dynart\Micro\Attribute\Authorize;
 use Dynart\Micro\ConfigInterface;
 use Dynart\Micro\JwtAuthInterface;
-use Dynart\Micro\Micro;
 use Dynart\Micro\RequestInterface;
 use Dynart\Micro\RouterInterface;
 use Dynart\Micro\ViewInterface;
 use Dynart\Dpress\Controller\AbstractController;
-use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Form\AdminForms;
 use Dynart\Dpress\Form\DpressForm;
 use Dynart\Dpress\Form\FormFactory;
 use Dynart\Dpress\Query\ListRequest;
 use Dynart\Dpress\Security\Permissions;
-use Dynart\Dpress\Service\SettingService;
 
 /**
  * What every admin screen needs
@@ -71,7 +68,9 @@ abstract class AbstractAdminController extends AbstractController {
      */
     protected function admin(string $template, array $variables = []): string {
         $this->view->set('current_user', $this->currentUser());
-        $this->view->set('site_name', (string)Micro::get(SettingService::class)->get(Setting::SITE_NAME, 'dpress'));
+        $this->view->set('site_name', $this->siteName());
+        $this->view->set('site_logo', $this->siteLogo());
+        $this->view->set('site_icon', $this->siteIcon());
         $this->view->set('admin_nav', $this->navigation());
         $this->view->set('admin_section', $this->section());
         $this->view->set('notice', $this->notice());
