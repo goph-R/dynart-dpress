@@ -2,6 +2,8 @@
 
 namespace Dynart\Dpress;
 
+use Dynart\Micro\JwtAuth;
+use Dynart\Micro\JwtAuthInterface;
 use Dynart\Micro\Micro;
 use Dynart\Micro\Request;
 use Dynart\Micro\RequestInterface;
@@ -20,10 +22,24 @@ use Dynart\Micro\Entities\QueryBuilder\MariaQueryBuilder;
 use Dynart\Micro\Entities\QueryExecutor;
 use Dynart\Dpress\Cli\SchemaCommands;
 use Dynart\Dpress\Cli\SystemCommands;
+use Dynart\Dpress\Cli\UserCommands;
+use Dynart\Dpress\Entity\RefreshToken;
+use Dynart\Dpress\Entity\Role;
+use Dynart\Dpress\Entity\RolePermission;
+use Dynart\Dpress\Entity\User;
+use Dynart\Dpress\Entity\UserRole;
+use Dynart\Dpress\Entity\UserToken;
 use Dynart\Dpress\Form\FormFactory;
+use Dynart\Dpress\Migration\CreateIdentityTables;
 use Dynart\Dpress\Migration\CreateRevisionTable;
+use Dynart\Dpress\Query\CoreQueries;
 use Dynart\Dpress\Query\QueryFactory;
+use Dynart\Dpress\Security\Permissions;
+use Dynart\Dpress\Security\PasswordHasher;
+use Dynart\Dpress\Service\AuthService;
+use Dynart\Dpress\Service\RoleService;
 use Dynart\Dpress\Service\SchemaService;
+use Dynart\Dpress\Service\UserService;
 
 /**
  * The service and migration registry shared by every kind of dpress application
@@ -40,6 +56,17 @@ class DpressServices {
      */
     const MIGRATIONS = [
         CreateRevisionTable::class,
+        CreateIdentityTables::class,
+    ];
+
+    /** The entities the CMS provides, registered explicitly rather than by a namespace scan */
+    const ENTITIES = [
+        User::class,
+        Role::class,
+        UserRole::class,
+        RolePermission::class,
+        RefreshToken::class,
+        UserToken::class,
     ];
 
     /**
@@ -72,10 +99,31 @@ class DpressServices {
      */
     public static function registerServices(): void {
         Micro::add(TranslationInterface::class, Translation::class);
+        Micro::add(JwtAuthInterface::class, JwtAuth::class);
         Micro::add(QueryFactory::class);
+        Micro::add(CoreQueries::class);
+        Micro::add(Permissions::class);
+        Micro::add(PasswordHasher::class);
         Micro::add(SchemaService::class);
+        Micro::add(RoleService::class);
+        Micro::add(UserService::class);
+        Micro::add(AuthService::class);
         Micro::add(SchemaCommands::class);
         Micro::add(SystemCommands::class);
+        Micro::add(UserCommands::class);
+    }
+
+    /**
+     * Registers the CMS entities with the entity manager
+     *
+     * The application's namespace scan covers its own entities; these come from the CMS package,
+     * so they are registered explicitly. Also needed by the CLI, which runs no attribute
+     * processor at all.
+     */
+    public static function registerEntities(EntityManager $em): void {
+        foreach (self::ENTITIES as $className) {
+            $em->registerEntity($className);
+        }
     }
 
     /**

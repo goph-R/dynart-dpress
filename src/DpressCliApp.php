@@ -7,9 +7,13 @@ use Dynart\Micro\CliOutput;
 use Dynart\Micro\CliOutputInterface;
 use Dynart\Micro\Micro;
 use Dynart\Micro\Entities\AuditService;
+use Dynart\Micro\Entities\EntityManager;
 use Dynart\Micro\Entities\Migrations;
 use Dynart\Dpress\Cli\SchemaCommands;
 use Dynart\Dpress\Cli\SystemCommands;
+use Dynart\Dpress\Cli\UserCommands;
+use Dynart\Dpress\Query\CoreQueries;
+use Dynart\Dpress\Query\QueryFactory;
 
 /**
  * The `dpress` command line application
@@ -36,6 +40,36 @@ class DpressCliApp extends CliApp {
         'migrate:status' => [
             'callable' => [SchemaCommands::class, 'status'],
             'description' => 'List the applied and the pending migrations',
+            'needsConfig' => true,
+        ],
+        'user:create' => [
+            'callable' => [UserCommands::class, 'create'],
+            'description' => 'Create a user',
+            'params' => ['email', 'password', 'name', 'role'],
+            'needsConfig' => true,
+        ],
+        'user:password' => [
+            'callable' => [UserCommands::class, 'password'],
+            'description' => 'Change a password, generating one when none is given',
+            'params' => ['email', 'password'],
+            'needsConfig' => true,
+        ],
+        'user:list' => [
+            'callable' => [UserCommands::class, 'listUsers'],
+            'description' => 'List the users',
+            'params' => ['status', 'search'],
+            'needsConfig' => true,
+        ],
+        'user:role' => [
+            'callable' => [UserCommands::class, 'role'],
+            'description' => 'Grant a role, or revoke it with -revoke',
+            'params' => ['email', 'role'],
+            'flags' => ['revoke'],
+            'needsConfig' => true,
+        ],
+        'role:list' => [
+            'callable' => [UserCommands::class, 'listRoles'],
+            'description' => 'List the roles and their permissions',
             'needsConfig' => true,
         ],
         'version' => [
@@ -88,9 +122,13 @@ class DpressCliApp extends CliApp {
      * Instantiates the services that have to subscribe to events before anything runs
      */
     protected function initServices(): void {
+        // there is no attribute processor in a CLI run, so the entities are registered by hand
+        DpressServices::registerEntities(Micro::get(EntityManager::class));
         DpressServices::addMigrations(Micro::get(Migrations::class));
+        CoreQueries::register(Micro::get(QueryFactory::class));
         // constructing it wires the audit subscriptions, so a CLI change is recorded too
-        Micro::get(AuditService::class);
+        $audit = Micro::get(AuditService::class);
+        $audit->subscribeAll();
     }
 
     /**
