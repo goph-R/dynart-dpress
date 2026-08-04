@@ -3,6 +3,12 @@
 namespace Dynart\Dpress;
 
 use Dynart\Micro\Micro;
+use Dynart\Micro\Request;
+use Dynart\Micro\RequestInterface;
+use Dynart\Micro\Session;
+use Dynart\Micro\SessionInterface;
+use Dynart\Micro\Translation;
+use Dynart\Micro\TranslationInterface;
 use Dynart\Micro\Entities\AuditService;
 use Dynart\Micro\Entities\Database;
 use Dynart\Micro\Entities\Database\MariaDatabase;
@@ -14,7 +20,9 @@ use Dynart\Micro\Entities\QueryBuilder\MariaQueryBuilder;
 use Dynart\Micro\Entities\QueryExecutor;
 use Dynart\Dpress\Cli\SchemaCommands;
 use Dynart\Dpress\Cli\SystemCommands;
+use Dynart\Dpress\Form\FormFactory;
 use Dynart\Dpress\Migration\CreateRevisionTable;
+use Dynart\Dpress\Query\QueryFactory;
 use Dynart\Dpress\Service\SchemaService;
 
 /**
@@ -63,9 +71,24 @@ class DpressServices {
      * The CMS services and the CLI command holders
      */
     public static function registerServices(): void {
+        Micro::add(TranslationInterface::class, Translation::class);
+        Micro::add(QueryFactory::class);
         Micro::add(SchemaService::class);
         Micro::add(SchemaCommands::class);
         Micro::add(SystemCommands::class);
+    }
+
+    /**
+     * The parts that only make sense while serving a request
+     *
+     * Kept out of `register()` so the CLI never touches `Session`, which would start a PHP
+     * session for a command that has no business having one. `FormFactory` needs both the
+     * request and the session, so it lives here too.
+     */
+    public static function registerWeb(): void {
+        Micro::add(RequestInterface::class, Request::class);
+        Micro::add(SessionInterface::class, Session::class);
+        Micro::add(FormFactory::class);
     }
 
     /**
