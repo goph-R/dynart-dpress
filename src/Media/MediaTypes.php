@@ -12,6 +12,9 @@ use Dynart\Dpress\Entity\Media;
  */
 class MediaTypes {
 
+    /** The one accepted type that is a document rather than a picture, and is sanitised */
+    const SVG = 'image/svg+xml';
+
     /**
      * The accepted types, mapped to the category they display as
      *

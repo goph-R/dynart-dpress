@@ -76,6 +76,8 @@ use Dynart\Dpress\Media\ImageProcessor;
 use Dynart\Dpress\Media\MediaStorage;
 use Dynart\Dpress\Media\MediaTypes;
 use Dynart\Dpress\Media\MediaView;
+use Dynart\Dpress\Media\SvgSanitizer;
+use Dynart\Dpress\Media\SvgSanitizerInterface;
 use Dynart\Dpress\Service\ContentService;
 use Dynart\Dpress\Service\MediaService;
 use Dynart\Dpress\Service\MenuService;
@@ -187,6 +189,7 @@ class DpressServices {
         Micro::add(MediaStorage::class);
         Micro::add(ImageProcessor::class);
         Micro::add(MediaView::class);
+        Micro::add(SvgSanitizerInterface::class, SvgSanitizer::class);
         Micro::add(MediaService::class);
         Micro::add(TaxonomyService::class);
         Micro::add(SettingService::class);

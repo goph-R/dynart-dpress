@@ -131,8 +131,9 @@ php_flag engine off
     Require all denied
 </FilesMatch>
 
-# Uploaded SVGs are not sanitised yet. This stops scripts inside one from running when the file
-# is opened directly. An SVG used through <img src> is a non-scripted context regardless.
+# SVGs are sanitised on the way in, so nothing executable should reach this folder. This is the
+# second lock: it stops anything that got past the sanitiser - or that predates it - from running
+# when the file is opened directly. An <img src> is a non-scripted context regardless.
 <FilesMatch "\.svg$">
     Header set Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox"
     Header set X-Content-Type-Options "nosniff"

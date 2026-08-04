@@ -128,7 +128,13 @@ Every change emits **both** `content:updated` and the type alias `post:updated`,
 
 **Derivatives are lazy and are a cache.** `…-thumb.jpg` is served by Apache when it exists; when it does not, the `!-f` rewrite lands on `MediaController`, which generates it. `media:regenerate` just deletes them. Never write those files from anywhere else.
 
-**SVG uploads are allowed but not sanitised yet** (plan §11.5). The uploads `.htaccess` sends a strict CSP for `.svg`, and an SVG used through `<img src>` cannot run scripts anyway — the gap is a direct navigation, which the header covers. Do not treat the confirmation dialog as the mitigation; it protects the uploader from a mistake, not the site from an attacker.
+**SVGs are sanitised on the way in.** An SVG is a document, not a picture: it can carry `<script>`, event handlers, `<foreignObject>` with arbitrary HTML, external references, and entities that expand until the parser dies. `MediaService::store()` runs the bytes through `SvgSanitizerInterface` **before** the file is moved, so what lands on disk is already clean and there is no window where the original is reachable.
+
+The shipped implementation wraps `rhukster/dom-sanitizer` (MIT — `enshrined/svg-sanitize` is the better-known one and is GPL, so it cannot ship inside an MIT library; a site can bind it itself). It keeps an allowlist and then dpress strips **every absolute reference** on top, because the library only catches an external URL inside a CSS `url()` — a plain `<image href="http://elsewhere/pixel.png">` survived it, and at the file's own URL that is a tracking pixel firing from this origin. A stored drawing should be self-contained.
+
+The uploads `.htaccess` still sends a strict CSP for `.svg`. That is the second lock, for anything that predates the sanitiser or gets past it — not the mitigation.
+
+**`media:sanitize` is the only thing that rewrites a stored file**, for a library that predates the sanitiser. Write-once exists so a historical revision keeps showing the image it showed; here the point is that what a file used to contain must stop being served. It reports by default and needs `-confirm`.
 
 **A joined query must qualify overlapping field names.** `tag_cloud` joins `content`, which also has `id` and `slug`; MariaDB rejects the unqualified select as ambiguous. `CoreQueries::table()` gives the unescaped name for that.
 

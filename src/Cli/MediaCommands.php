@@ -7,6 +7,7 @@ use Dynart\Micro\CliOutputInterface;
 use Dynart\Dpress\DpressException;
 use Dynart\Dpress\Entity\Media;
 use Dynart\Dpress\Media\ImageProcessor;
+use Dynart\Dpress\Media\MediaTypes;
 use Dynart\Dpress\Service\MediaService;
 use Dynart\Dpress\Service\UserService;
 
@@ -36,9 +37,6 @@ class MediaCommands extends AbstractCommands {
         if ($user === null) {
             return $this->fail('A -user email is required, and it has to exist.');
         }
-        if ($this->looksLikeSvg($file)) {
-            $this->warnAboutSvg();
-        }
         try {
             $media = $this->media->importFile($file, $user->id, [
                 'alt'     => $this->param($params, 'alt'),
@@ -48,7 +46,11 @@ class MediaCommands extends AbstractCommands {
         } catch (DpressException $e) {
             return $this->fail($e->getMessage());
         }
-        return $this->success("Imported #{$media->id} as {$media->path} ({$media->category}, {$this->media->humanSize($media->size)}).");
+        $note = $media->mime_type === MediaTypes::SVG ? ' The SVG was sanitised on the way in.' : '';
+        return $this->success(
+            "Imported #{$media->id} as {$media->path} ({$media->category}, {$this->media->humanSize($media->size)})."
+            .$note
+        );
     }
 
     /**
@@ -148,20 +150,78 @@ class MediaCommands extends AbstractCommands {
         return $this->success("Cleared $count derivative(s). They are rebuilt on the next request.");
     }
 
-    protected function looksLikeSvg(string $path): bool {
-        return strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'svg';
+    /**
+     * `dpress media:sanitize [-id 1] [-confirm]`
+     *
+     * For a library that predates the sanitiser. Everything uploaded since is already clean, so
+     * this is a one-off after an upgrade - and it is the **only** thing in the CMS that rewrites
+     * a stored file. Write-once exists so a historical revision keeps showing the image it
+     * showed; here the point is precisely that what a file used to contain must stop being
+     * served, so it reports by default and needs `-confirm` to actually write.
+     */
+    public function sanitize(array $params = []): int {
+        $id = (int)($params['id'] ?? 0);
+        $items = $id > 0 ? array_filter([$this->media->findById($id)]) : $this->svgItems();
+        if (empty($items)) {
+            return $this->success('There are no SVGs in the library.');
+        }
+        $confirm = $this->flag($params, 'confirm');
+        $changed = 0;
+        $failed = 0;
+
+        foreach ($items as $media) {
+            if ($media->mime_type !== MediaTypes::SVG) {
+                continue;
+            }
+            try {
+                $dirty = $confirm ? $this->media->sanitizeStored($media) : $this->media->wouldSanitize($media);
+            } catch (DpressException $e) {
+                $failed++;
+                $this->output->setColor(CliOutput::RED);
+                $this->output->writeLine("  #{$media->id}  {$media->path} - {$e->getMessage()}");
+                $this->output->setColor(null);
+                continue;
+            }
+            if (!$dirty) {
+                continue;
+            }
+            $changed++;
+            $this->output->writeLine(($confirm ? '  cleaned  ' : '  would change  ')."#{$media->id}  {$media->path}");
+        }
+
+        if ($failed > 0) {
+            $this->output->writeLine('');
+            $this->output->writeLine('The failed ones could not be parsed as SVG at all. Look at them by hand.');
+        }
+        if ($changed === 0) {
+            return $this->success('Every SVG in the library is already clean.');
+        }
+        if ($confirm) {
+            return $this->success("Rewrote $changed file(s) in place.");
+        }
+        $this->output->writeLine('');
+        $this->output->setColor(CliOutput::YELLOW);
+        $this->output->writeLine("$changed file(s) contain something the sanitiser would remove.");
+        $this->output->setColor(null);
+        $this->output->writeLine('Rewriting them changes what those URLs serve, for every revision that shows');
+        $this->output->writeLine('them - which is the point, but it is not reversible. Add -confirm to do it.');
+        return 1;
     }
 
     /**
-     * The same warning the upload dialog shows, until the sanitiser lands
+     * @return Media[] Every SVG in the library, deleted ones included - the bytes are still there
      */
-    protected function warnAboutSvg(): void {
-        $this->output->setColor(CliOutput::YELLOW);
-        $this->output->writeLine('This is an SVG, and SVGs are not sanitised yet.');
-        $this->output->setColor(null);
-        $this->output->writeLine('An SVG is a document: it can carry scripts. Only upload one you trust.');
-        $this->output->writeLine('Used through <img src> it cannot run scripts, and the uploads folder sends');
-        $this->output->writeLine('a strict Content-Security-Policy for .svg, so opening it directly is covered too.');
-        $this->output->writeLine('');
+    protected function svgItems(): array {
+        $result = [];
+        foreach ($this->media->findAll(['with_deleted' => true]) as $row) {
+            if ($row['mime_type'] !== MediaTypes::SVG) {
+                continue;
+            }
+            $media = $this->media->findById((int)$row['id']);
+            if ($media !== null) {
+                $result[] = $media;
+            }
+        }
+        return $result;
     }
 }

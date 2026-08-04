@@ -6,9 +6,11 @@
         <a class="button" href="<?= esc_attr($back_url) ?>">Back</a>
     </div>
     <div class="panel">
-        <p class="warning">
-            <strong>SVG files are not sanitised yet.</strong> An SVG can carry a script that runs
-            if somebody opens the file directly. Only upload one from a source you trust.
+        <p class="form-description">
+            An SVG is a document rather than a picture, so one is <strong>sanitised on the way
+            in</strong>: scripts, event handlers and references to other sites are removed, and
+            what gets stored is the cleaned file. A drawing survives that; a drawing that also
+            wanted to run something does not.
         </p>
         <form method="post" enctype="multipart/form-data">
             <?= $form->fetch() ?>
@@ -16,7 +18,7 @@
                 At most <?= esc_html($max_size) ?>. Allowed: <?= esc_html(implode(', ', $allowed)) ?>.
             </p>
             <div class="form-actions">
-                <button type="submit" class="primary" data-confirm="Upload this file?">Upload</button>
+                <button type="submit" class="primary">Upload</button>
                 <a class="button" href="<?= esc_attr($back_url) ?>">Cancel</a>
             </div>
         </form>

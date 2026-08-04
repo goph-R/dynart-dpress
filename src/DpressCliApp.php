@@ -150,6 +150,13 @@ class DpressCliApp extends CliApp {
             'flags' => ['confirm'],
             'needsConfig' => true,
         ],
+        'media:sanitize' => [
+            'callable' => [MediaCommands::class, 'sanitize'],
+            'description' => 'Re-sanitise SVGs stored before the sanitiser existed',
+            'params' => ['id'],
+            'flags' => ['confirm'],
+            'needsConfig' => true,
+        ],
         'media:regenerate' => [
             'callable' => [MediaCommands::class, 'regenerate'],
             'description' => 'Clear the generated thumbnails so they are rebuilt on demand',

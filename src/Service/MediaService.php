@@ -14,6 +14,7 @@ use Dynart\Dpress\Entity\Media;
 use Dynart\Dpress\Media\ImageProcessor;
 use Dynart\Dpress\Media\MediaStorage;
 use Dynart\Dpress\Media\MediaTypes;
+use Dynart\Dpress\Media\SvgSanitizerInterface;
 use Dynart\Dpress\Query\QueryFactory;
 
 /**
@@ -23,6 +24,9 @@ class MediaService {
 
     const EVENT_BEFORE_UPLOAD = 'media:before_upload';
     const EVENT_UPLOADED = 'media:uploaded';
+
+    /** An SVG that was already stored has been rewritten with its sanitised form */
+    const EVENT_SANITIZED = 'media:sanitized';
     const EVENT_UPDATED = 'media:updated';
     const EVENT_DELETED = 'media:deleted';
     const EVENT_RESTORED = 'media:restored';
@@ -46,6 +50,7 @@ class MediaService {
         protected MediaStorage $storage,
         protected MediaTypes $types,
         protected ImageProcessor $images,
+        protected SvgSanitizerInterface $svg,
     ) {}
 
     // --- Reading ---
@@ -130,6 +135,12 @@ class MediaService {
                     : "Files of type '$mimeType' are not accepted."
             );
         }
+        if ($mimeType === MediaTypes::SVG) {
+            // before the move, so the bytes that land on disk are the sanitised ones and there is
+            // never a moment where the original is readable through the web server
+            $this->sanitizeSvgFile($sourcePath);
+            $size = (int)@filesize($sourcePath);
+        }
         $this->events->emit(self::EVENT_BEFORE_UPLOAD, [$fileName, $mimeType, $size]);
 
         $relativePath = $this->storage->reservePath($fileName, $this->types->extensionOf($mimeType));
@@ -157,6 +168,74 @@ class MediaService {
         $this->em->save($media);
         $this->events->emit(self::EVENT_UPLOADED, [$media]);
         return $media;
+    }
+
+    /**
+     * Rewrites an SVG in place with its sanitised form
+     *
+     * Only ever called on a **temporary** file, before it is stored: the stored path is written
+     * once and never touched again, which is what keeps a historical revision showing the image
+     * it showed at the time.
+     *
+     * @throws DpressException if the file cannot be read as an SVG
+     */
+    protected function sanitizeSvgFile(string $path): void {
+        $original = @file_get_contents($path);
+        if ($original === false) {
+            throw new DpressException('That file could not be read.');
+        }
+        $clean = $this->svg->sanitize($original);
+        if (@file_put_contents($path, $clean) === false) {
+            throw new DpressException('The sanitised SVG could not be written.');
+        }
+    }
+
+    /**
+     * Sanitises an SVG that is already stored, in place
+     *
+     * **The one thing that rewrites a stored path**, and it is deliberate. Write-once exists so a
+     * historical revision keeps showing the image it showed; here the whole point is that what
+     * the file used to contain must stop being served. It is for a library that predates the
+     * sanitiser — the CLI drives it, and refuses without `-confirm`.
+     *
+     * @return bool Whether the bytes changed
+     */
+    public function sanitizeStored(Media $media): bool {
+        if ($media->mime_type !== MediaTypes::SVG) {
+            return false;
+        }
+        $path = $this->storage->fullPath($media->path);
+        if (!is_file($path)) {
+            return false;
+        }
+        $original = (string)@file_get_contents($path);
+        if ($this->svg->isClean($original)) {
+            // the same question the dry run asked, so the two cannot disagree - a byte
+            // comparison here would rewrite every file, because sanitising reserialises
+            return false;
+        }
+        file_put_contents($path, $this->svg->sanitize($original));
+        $media->size = (int)@filesize($path);
+        $media->updated_at = $this->now();
+        $this->em->save($media);
+        $this->events->emit(self::EVENT_SANITIZED, [$media]);
+        return true;
+    }
+
+    /**
+     * Would sanitising this stored SVG change it? Reads only.
+     *
+     * @throws DpressException if it cannot be parsed as SVG
+     */
+    public function wouldSanitize(Media $media): bool {
+        if ($media->mime_type !== MediaTypes::SVG) {
+            return false;
+        }
+        $path = $this->storage->fullPath($media->path);
+        if (!is_file($path)) {
+            return false;
+        }
+        return !$this->svg->isClean((string)@file_get_contents($path));
     }
 
     public function update(Media $media, array $meta): void {

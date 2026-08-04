@@ -5,6 +5,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.11.0] &ndash; 2026-08-04
+
+Phase 6 begins: SVG uploads are sanitised.
+
+### Security
+- **An uploaded SVG is sanitised before it is stored.** An SVG is a document, not a picture: it can carry `<script>`, event handlers, `<foreignObject>` with arbitrary HTML in it, references to other sites, and XML entities that expand until the parser dies. `MediaService::store()` now runs the bytes through `SvgSanitizerInterface` **before** the file is moved into place, so what lands on disk is already clean and there is no window in which the original is reachable through the web server.
+- **Every absolute reference is stripped, not just the ones in a CSS `url()`.** The library catches the latter; a plain `<image href="http://elsewhere/pixel.png">` went straight through it. Used via `<img src>` a browser will not fetch that — but the file is also reachable at its own address, and there it is a tracking pixel firing from this origin. A stored drawing should be self-contained, so the rule is the blunt one. `data:image/png` and friends stay, because an inert raster is worth embedding; `data:text/html` does not.
+- A file that cannot be parsed as SVG once the executable parts are gone is **refused**, rather than stored empty. That is what happens to an entity attack: the doctype is stripped, the entities no longer resolve, and what is left is not a document.
+
+### Added
+- `SvgSanitizerInterface`, with `SvgSanitizer` over `rhukster/dom-sanitizer` bound to it. MIT, which is why it is that one — `enshrined/svg-sanitize` is better known and GPL-2.0-or-later, so it cannot ship inside an MIT library, though a site can bind it itself. **Rebinding the interface to something that returns its input is how you turn sanitising off**, and it should look exactly that deliberate; there is no config flag for it.
+- `dpress media:sanitize [-id 1] [-confirm]` for a library that predates the sanitiser. **The only thing in the CMS that rewrites a stored file** — write-once exists so a historical revision keeps showing the image it showed, and here the point is precisely that what a file used to contain must stop being served. It reports by default and needs `-confirm` to write.
+- `SvgSanitizerInterface::isClean()`, and `MediaService::sanitizeStored()` / `wouldSanitize()`.
+
+### Changed
+- The upload screen and `media:import` no longer warn that SVGs are unsanitised, because they no longer are. The uploads `.htaccess` still sends a strict CSP for `.svg`: that is the second lock, for anything predating the sanitiser, not the mitigation.
+
+### Notes
+`isClean()` asks whether an element or an attribute **would be removed**, counted rather than compared. Sanitising reserialises the document, so an untouched file comes back with different whitespace and attribute order — a byte comparison reported every SVG in the library as dirty, and a report that flags everything is one nobody reads. The dry run and `-confirm` go through the same question, so they cannot disagree about what needs rewriting.
+
+---
+
 ## [0.10.1] &ndash; 2026-08-04
 
 ### Fixed
