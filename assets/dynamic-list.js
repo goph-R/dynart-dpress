@@ -259,9 +259,6 @@
         var paging = element('nav', 'paging');
         var headCheckbox = null;
 
-        build();
-        this.refresh();
-
         // --- public ---
 
         /**
@@ -316,6 +313,12 @@
         this.filterForm = function () {
             return filterForm;
         };
+
+        // Last, not first: everything above is a function *expression* assigned to `this`, so
+        // none of it exists until the constructor has run past it. A list that asked for its
+        // rows before that point called a method that was still undefined.
+        build();
+        this.refresh();
 
         // --- building ---
 

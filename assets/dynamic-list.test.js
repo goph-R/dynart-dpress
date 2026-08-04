@@ -1,0 +1,274 @@
+/**
+ * A test for the list, with no toolchain at all
+ *
+ *   node assets/dynamic-list.test.js
+ *
+ * The PHP suite covers what the server sends; nothing covered what the browser does with it, and
+ * the list went out once with a constructor that called a method it had not assigned yet. The DOM
+ * here is a stub - about forty lines, no dependency, no build step - which is enough to run the
+ * whole thing end to end and look at what came out.
+ */
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const assert = require('assert');
+
+// --- the smallest DOM this needs ---
+
+function makeNode(tag) {
+    return {
+        tagName: tag.toUpperCase(),
+        children: [],
+        style: {},
+        dataset: {},
+        attributes: {},
+        listeners: {},
+        classList: {
+            set: new Set(),
+            add(...names) { names.forEach(n => n && this.set.add(n)); },
+            remove(...names) { names.forEach(n => this.set.delete(n)); },
+            toggle(name, on) { on ? this.set.add(name) : this.set.delete(name); },
+            contains(name) { return this.set.has(name); }
+        },
+        set className(value) {
+            this.classNameValue = value;
+            String(value).split(' ').forEach(n => n && this.classList.add(n));
+        },
+        get className() { return this.classNameValue || ''; },
+        set innerHTML(value) { this.html = value; if (value === '') { this.children = []; } },
+        get innerHTML() { return this.html || ''; },
+        set textContent(value) { this.text = value; },
+        get textContent() { return this.text || ''; },
+        appendChild(child) { this.children.push(child); child.parentNode = this; return child; },
+        insertBefore(child) { this.children.unshift(child); return child; },
+        after() {},
+        remove() {},
+        setAttribute(name, value) { this.attributes[name] = value; },
+        getAttribute(name) { return this.attributes[name]; },
+        addEventListener(type, fn) { (this.listeners[type] = this.listeners[type] || []).push(fn); },
+        dispatch(type) { (this.listeners[type] || []).forEach(fn => fn({target: this})); },
+        querySelector() { return null; },
+        querySelectorAll() { return []; },
+        get firstChild() { return this.children[0]; }
+    };
+}
+
+global.document = {
+    createElement: makeNode,
+    documentElement: {lang: 'en'},
+    addEventListener() {},
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+    body: makeNode('body')
+};
+
+global.FormData = class {
+    constructor(form) { this.form = form; }
+    forEach(callback) {
+        (this.form.children || []).forEach(input => {
+            if (input.name) { callback(input.value, input.name); }
+        });
+    }
+};
+
+global.window = global;
+eval(fs.readFileSync(path.join(__dirname, 'dynamic-list.js'), 'utf8'));
+
+// --- helpers ---
+
+function find(node, predicate) {
+    return node.children.find(predicate);
+}
+
+function build(options, result) {
+    const container = makeNode('div');
+    let sent = null;
+    const list = new global.DynamicList(container, Object.assign({
+        findItems(filters, done) {
+            sent = filters;
+            done(result);
+        }
+    }, options));
+    const root = find(container, n => n.classList.contains('dynamic-list'));
+    return {
+        list,
+        container,
+        root,
+        filters: () => sent,
+        tbody: () => find(find(root, n => n.tagName === 'TABLE'), n => n.tagName === 'TBODY'),
+        paging: () => find(find(root, n => n.classList.contains('list-footer')),
+                           n => n.classList.contains('paging')),
+        status: () => find(root, n => n.classList.contains('list-status'))
+    };
+}
+
+const COLUMNS = {
+    title: {label: 'Title', view: global.DynamicListColumnView.link, options: {hrefProperty: 'edit_url'}},
+    status: {label: 'Status', view: global.DynamicListColumnView.badge},
+    created_at: {label: 'Created', view: global.DynamicListColumnView.dateTime}
+};
+
+const TWO_ROWS = {
+    items: [
+        {id: 1, title: '<script>alert(1)</script>', status: 'draft',
+         created_at: '2026-08-04 13:50:42', edit_url: '/admin/content/post/edit/1'},
+        {id: 2, title: 'Second', status: 'published',
+         created_at: '2026-08-04 14:00:00', edit_url: '/admin/content/post/edit/2'}
+    ],
+    total: 7
+};
+
+// --- the tests ---
+
+const tests = {
+
+    /**
+     * The methods are function expressions assigned to `this`, so none of them exist until the
+     * constructor has run past them. Asking for the rows before that point threw.
+     */
+    'it asks for its rows on construction'() {
+        const it = build({columnViews: COLUMNS, pageSize: 2, orderBy: 'title'}, TWO_ROWS);
+        assert.deepStrictEqual(it.filters(), {sort: 'title', order: 'asc', offset: '0', max: '2'});
+        assert.strictEqual(it.list.items().length, 2);
+        assert.strictEqual(it.list.count(), 7);
+    },
+
+    /**
+     * A title is whatever an editor typed. Rendering it raw would put one person's markup into
+     * every other person's browser.
+     */
+    'a column view escapes'() {
+        const it = build({columnViews: COLUMNS, pageSize: 2}, TWO_ROWS);
+        const cell = it.tbody().children[0].children[0];
+        assert.ok(!cell.innerHTML.includes('<script>'), 'a title was rendered unescaped');
+        assert.ok(cell.innerHTML.includes('&lt;script&gt;'));
+        assert.ok(cell.innerHTML.includes('href="/admin/content/post/edit/1"'));
+    },
+
+    'the html view is the opt out'() {
+        const view = global.DynamicListColumnView.html;
+        assert.strictEqual(view({cell: '<b>bold</b>'}, 'cell'), '<b>bold</b>');
+        assert.strictEqual(view({}, 'missing'), '');
+    },
+
+    'it pages by the total, not by the rows it was given'() {
+        const it = build({columnViews: COLUMNS, pageSize: 2}, TWO_ROWS);
+        const labels = it.paging().children.map(b => b.textContent);
+        assert.deepStrictEqual(labels, ['1', '2', '3', '4', 'Next'], 'seven rows at two a page is four pages');
+    },
+
+    'no rows means no table and a message'() {
+        const it = build({columnViews: COLUMNS}, {items: [], total: 0});
+        assert.strictEqual(it.list.items().length, 0);
+        assert.ok(it.status().classList.contains('no-results'));
+        assert.strictEqual(it.paging().children.length, 0);
+    },
+
+    'one page needs no pager'() {
+        const it = build({columnViews: COLUMNS, pageSize: 25}, {items: TWO_ROWS.items, total: 2});
+        assert.strictEqual(it.paging().children.length, 0);
+    },
+
+    /**
+     * A row action declared as `post` is not a link: a link that changes something can be
+     * followed by a prefetcher or by an `<img>` on somebody else's page.
+     */
+    'a post row action renders a button, a link action renders an anchor'() {
+        const it = build({
+            columnViews: COLUMNS,
+            rowActions: [
+                {type: 'edit', title: 'Edit', link: '/admin/content/post/edit/'},
+                {type: 'delete', title: 'Delete', action() {}}
+            ]
+        }, TWO_ROWS);
+        const actions = it.tbody().children[0].children[3];
+        assert.strictEqual(actions.children[0].tagName, 'A');
+        assert.strictEqual(actions.children[0].href, '/admin/content/post/edit/1');
+        assert.strictEqual(actions.children[1].tagName, 'BUTTON');
+    },
+
+    'a row action can be hidden per row'() {
+        const it = build({
+            columnViews: COLUMNS,
+            rowActions: [{
+                type: 'publish', title: 'Publish', action() {},
+                visible: item => item.status === 'draft'
+            }]
+        }, TWO_ROWS);
+        assert.strictEqual(it.tbody().children[0].children[3].children.length, 1, 'the draft can be published');
+        assert.strictEqual(it.tbody().children[1].children[3].children.length, 0, 'the published one cannot');
+    },
+
+    'a failed request says so rather than showing an empty list'() {
+        const container = makeNode('div');
+        const list = new global.DynamicList(container, {
+            columnViews: COLUMNS,
+            findItems(filters, done, failed) { failed(new Error('nope')); }
+        });
+        const root = find(container, n => n.classList.contains('dynamic-list'));
+        assert.ok(find(root, n => n.classList.contains('list-status')).classList.contains('failed'));
+        assert.strictEqual(list.items().length, 0);
+    },
+
+    /**
+     * The rows can come back in any order; only the newest request may render, or a slow answer
+     * to an abandoned filter overwrites what the person is looking at now.
+     */
+    'a stale answer is dropped'() {
+        const container = makeNode('div');
+        const pending = [];
+        const list = new global.DynamicList(container, {
+            columnViews: COLUMNS,
+            findItems(filters, done) { pending.push(done); }
+        });
+        list.refresh();
+        const [first, second] = pending;
+        second({items: TWO_ROWS.items, total: 2});
+        first({items: [], total: 0}); // the older request, answering late
+        assert.strictEqual(list.items().length, 2, 'the older answer overwrote the newer one');
+    },
+
+    'the date view reads what the server writes'() {
+        const view = global.DynamicListColumnView.dateTime;
+        assert.strictEqual(view({at: '2026-08-04 13:50:42'}, 'at'), '2026-08-04 13:50');
+        assert.ok(view({at: null}, 'at').includes('empty'));
+    },
+
+    'the bytes view counts in the units a person reads'() {
+        const view = global.DynamicListColumnView.bytes;
+        assert.strictEqual(view({size: 512}, 'size'), '512 B');
+        assert.strictEqual(view({size: 2048}, 'size'), '2.0 kB');
+        assert.ok(view({size: 0}, 'size').includes('empty'));
+    },
+
+    'selection survives a refresh'() {
+        const it = build({
+            columnViews: COLUMNS,
+            groupActions: [{label: 'Delete', action() {}}]
+        }, TWO_ROWS);
+        const checkbox = it.tbody().children[0].children[0].children[0];
+        checkbox.checked = true;
+        checkbox.dispatch('change');
+        assert.deepStrictEqual(it.list.selection(), ['1']);
+        it.list.refresh();
+        assert.deepStrictEqual(it.list.selection(), ['1'], 'the selection was lost on refresh');
+        it.list.clearSelection();
+        assert.deepStrictEqual(it.list.selection(), []);
+    }
+};
+
+let failures = 0;
+for (const name of Object.keys(tests)) {
+    try {
+        tests[name]();
+        console.log('  ok  ' + name);
+    } catch (error) {
+        failures++;
+        console.log('FAIL  ' + name + '\n      ' + error.message);
+    }
+}
+
+const total = Object.keys(tests).length;
+console.log(failures ? `\n${failures} of ${total} failed` : `\nOK (${total} tests)`);
+process.exit(failures ? 1 : 0);

@@ -30,7 +30,14 @@ php ../dynart-dpress/bin/dpress.php migrate:status -config path/to/dpress.ini
 ```bash
 # from ../dynart-dpress-test/
 php vendor/bin/phpunit --stderr
+
+# the admin list, from this repo - a stub DOM, no dependency, no build step
+node assets/dynamic-list.test.js
 ```
+
+The PHP suite covers what the server sends; `dynamic-list.test.js` covers what the browser does
+with it. Run both when touching the admin — a list whose constructor could not run was released
+once because only the first existed.
 
 ## Architecture
 

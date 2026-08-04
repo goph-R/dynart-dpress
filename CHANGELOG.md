@@ -5,6 +5,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.10.1] &ndash; 2026-08-04
+
+### Fixed
+- **Every admin list threw `this.refresh is not a function`.** `DynamicList` called `refresh()` at the top of its constructor, but the methods are function *expressions* assigned to `this` further down — none of them exist until the constructor has run past them. The list now builds and fetches as the last thing it does.
+
+### Added
+- `assets/dynamic-list.test.js` — thirteen tests over a stub DOM, run with `node assets/dynamic-list.test.js`. No dependency, no build step. The PHP suite covers what the server sends and nothing covered what the browser does with it, which is how a constructor that could not run got released.
+
+**The version is what busts the asset cache.** `AssetController` serves with `immutable, max-age=31536000`, so a browser that loaded the broken file keeps it until the URL changes — which is the whole reason this is a version bump rather than an edit in place.
+
+---
+
 ## [0.10.0] &ndash; 2026-08-04
 
 Phase 5: the admin.
