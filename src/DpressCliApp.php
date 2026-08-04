@@ -64,6 +64,12 @@ class DpressCliApp extends CliApp {
             'params' => ['status', 'search'],
             'needsConfig' => true,
         ],
+        'user:status' => [
+            'callable' => [UserCommands::class, 'status'],
+            'description' => 'Set a user status: active, pending or blocked',
+            'params' => ['email', 'status'],
+            'needsConfig' => true,
+        ],
         'user:role' => [
             'callable' => [UserCommands::class, 'role'],
             'description' => 'Grant a role, or revoke it with -revoke',

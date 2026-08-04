@@ -119,6 +119,30 @@ class UserCommands {
     }
 
     /**
+     * `dpress user:status -email x -status active`
+     *
+     * Registration creates a pending user, so without this there is no way to activate one
+     * short of editing the database by hand.
+     */
+    public function status(array $params = []): int {
+        $email = trim($params['email'] ?? '');
+        $status = trim($params['status'] ?? '');
+        if ($email === '' || $status === '') {
+            return $this->fail('Both -email and -status are required. One of: '.join(', ', User::STATUSES));
+        }
+        $user = $this->users->findByEmail($this->users->normalizeEmail($email));
+        if ($user === null) {
+            return $this->fail("There is no user with the email address '$email'.");
+        }
+        try {
+            $this->users->setStatus($user, $status);
+        } catch (DpressException $e) {
+            return $this->fail($e->getMessage());
+        }
+        return $this->success("<{$user->email}> is now '$status'.");
+    }
+
+    /**
      * `dpress user:role -email x -role editor [-revoke]`
      */
     public function role(array $params = []): int {
