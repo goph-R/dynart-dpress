@@ -87,6 +87,12 @@ Access tokens carry the user's roles and permissions in the payload, so an autho
 
 Login failures are deliberately indistinguishable: a wrong password, a blocked account and a pending account all produce the same message, and `createPasswordResetToken()` returns `null` for an unknown address rather than throwing. Neither should become a way of finding out who has an account.
 
+### Entities
+
+**Every entity declares its table name** — `#[Table(name: 'user_role')]`. Nothing derives it from the class name, so there is no CamelCase-to-snake_case guess to disagree with later. Add the attribute when you add an entity.
+
+**Before 1.0 there are no rename migrations.** Change an entity, then rebuild the development database with `database/reset.sh` in the app, which drops it, installs, seeds and regenerates `database/example-data.sql`. The seed script goes through the services, so the example data has a real audit trail.
+
 ### Content
 
 One `Content` table with a `type` column (`post` | `page`) — the reasoning is in the plan's §4.1. Per-type permissions still work: `Permissions::forContent($type, 'create')` gives `post.create` or `page.create`, resolved from the row.

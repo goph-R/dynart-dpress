@@ -2,6 +2,7 @@
 
 namespace Dynart\Dpress\Query;
 
+use Dynart\Micro\Entities\EntityManager;
 use Dynart\Micro\Entities\Query;
 use Dynart\Dpress\Entity\Content;
 use Dynart\Dpress\Entity\Role;
@@ -17,6 +18,8 @@ use Dynart\Dpress\Entity\UserRole;
  * only narrow what a builder produced, never widen it.
  */
 class CoreQueries {
+
+    public function __construct(private EntityManager $em) {}
 
     public static function register(QueryFactory $factory): void {
         $factory->add('user_by_email', [self::class, 'userByEmail']);
@@ -182,12 +185,12 @@ class CoreQueries {
     }
 
     /**
-     * The `#ClassName` token the database layer replaces with the prefixed table name
+     * The escaped table name of an entity, for a join condition
      *
-     * Used in join conditions, which are raw SQL, so the prefix does not have to be hardcoded.
+     * Asked of the entity manager rather than written as a `#ClassName` token, so a
+     * `#[Table(name: ...)]` override is honoured without relying on the substitution.
      */
     protected function safeTable(string $className): string {
-        $parts = explode('\\', $className);
-        return '#'.end($parts);
+        return $this->em->safeTableName($className);
     }
 }

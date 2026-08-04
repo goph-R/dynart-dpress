@@ -4,6 +4,7 @@ namespace Dynart\Dpress\Entity;
 
 use Dynart\Micro\Entities\Attribute\Auditable;
 use Dynart\Micro\Entities\Attribute\Column;
+use Dynart\Micro\Entities\Attribute\Table;
 use Dynart\Micro\Entities\Entity;
 
 /**
@@ -15,6 +16,7 @@ use Dynart\Micro\Entities\Entity;
  * Like `UserRole`, no `ON DELETE CASCADE`: see the note there.
  */
 #[Auditable]
+#[Table(name: 'role_permission')]
 class RolePermission extends Entity {
 
     protected static string $eventName = 'role_permission';

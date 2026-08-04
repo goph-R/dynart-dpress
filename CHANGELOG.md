@@ -5,6 +5,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.7.0] &ndash; 2026-08-04
+
+### Changed
+- **Every entity declares its own table name** with `#[Table(name: 'user_role')]`, so the tables are `dp_user_role` and `dp_role_permission` rather than `dp_userrole` and `dp_rolepermission`. Written by hand rather than derived from CamelCase: a guess eventually disagrees with what somebody wanted, and it does so silently.
+- `CoreQueries` builds join conditions from `EntityManager::safeTableName()` instead of a `#ClassName` token
+
+### Notes
+- **No rename migration.** Before 1.0 the development database is rebuilt rather than migrated — see `database/README.md` in the app. Renaming the migration history table cannot be done by a migration anyway, since the runner reads that table to find out what has run.
+- Requires dynart/micro-entities 0.5.0, where the `#ClassName` substitution learned about the name attribute.
+
+---
+
 ## [0.6.0] &ndash; 2026-08-04
 
 Phase 2: the content model, the markdown pipeline and the revision history.

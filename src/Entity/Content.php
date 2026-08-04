@@ -15,7 +15,7 @@ use Dynart\Micro\Entities\Entity;
  * difference is routing and listing semantics, which belongs in the service layer.
  */
 #[Auditable]
-#[Table(index: [['type', 'status', 'published_at']])]
+#[Table(name: 'content', index: [['type', 'status', 'published_at']])]
 class Content extends Entity {
 
     protected static string $eventName = 'content';

@@ -3,6 +3,7 @@
 namespace Dynart\Dpress\Entity;
 
 use Dynart\Micro\Entities\Attribute\Column;
+use Dynart\Micro\Entities\Attribute\Table;
 use Dynart\Micro\Entities\Entity;
 
 /**
@@ -14,6 +15,7 @@ use Dynart\Micro\Entities\Entity;
  * Only the hash is stored. A leaked database then cannot be used to log in as anybody, the same
  * reason passwords are hashed.
  */
+#[Table(name: 'refresh_token')]
 class RefreshToken extends Entity {
 
     protected static string $eventName = 'refresh_token';

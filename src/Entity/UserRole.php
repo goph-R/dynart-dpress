@@ -4,6 +4,7 @@ namespace Dynart\Dpress\Entity;
 
 use Dynart\Micro\Entities\Attribute\Auditable;
 use Dynart\Micro\Entities\Attribute\Column;
+use Dynart\Micro\Entities\Attribute\Table;
 use Dynart\Micro\Entities\Entity;
 
 /**
@@ -18,6 +19,7 @@ use Dynart\Micro\Entities\Entity;
  * manager before removing the parent, so every removal is recorded.
  */
 #[Auditable]
+#[Table(name: 'user_role')]
 class UserRole extends Entity {
 
     protected static string $eventName = 'user_role';

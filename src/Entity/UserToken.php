@@ -3,6 +3,7 @@
 namespace Dynart\Dpress\Entity;
 
 use Dynart\Micro\Entities\Attribute\Column;
+use Dynart\Micro\Entities\Attribute\Table;
 use Dynart\Micro\Entities\Entity;
 
 /**
@@ -14,6 +15,7 @@ use Dynart\Micro\Entities\Entity;
  *
  * Not audited, for the same reason as `RefreshToken`.
  */
+#[Table(name: 'user_token')]
 class UserToken extends Entity {
 
     protected static string $eventName = 'user_token';

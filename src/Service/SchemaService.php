@@ -67,6 +67,7 @@ class SchemaService {
         return $this->migrations->run();
     }
 
+
     /**
      * Applies whatever is pending
      *

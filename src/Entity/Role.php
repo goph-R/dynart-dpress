@@ -4,6 +4,7 @@ namespace Dynart\Dpress\Entity;
 
 use Dynart\Micro\Entities\Attribute\Auditable;
 use Dynart\Micro\Entities\Attribute\Column;
+use Dynart\Micro\Entities\Attribute\Table;
 use Dynart\Micro\Entities\Entity;
 
 /**
@@ -13,6 +14,7 @@ use Dynart\Micro\Entities\Entity;
  * do what, and that question gets asked after the fact.
  */
 #[Auditable]
+#[Table(name: 'role')]
 class Role extends Entity {
 
     protected static string $eventName = 'role';
