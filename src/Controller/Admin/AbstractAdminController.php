@@ -69,7 +69,8 @@ abstract class AbstractAdminController extends AbstractController {
     protected function admin(string $template, array $variables = []): string {
         $this->view->set('current_user', $this->currentUser());
         $this->view->set('site_name', $this->siteName());
-        $this->view->set('site_logo', $this->siteLogo());
+        // no `site_logo`: the admin wears dpress's logo, not the site's. The icon is the site's,
+        // because that is the tab an editor keeps open alongside the site itself.
         $this->view->set('site_icon', $this->siteIcon());
         $this->view->set('admin_nav', $this->navigation());
         $this->view->set('admin_section', $this->section());

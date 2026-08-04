@@ -16,6 +16,9 @@ use Dynart\Dpress\Controller\AbstractController;
  * against this version's endpoints. Serving them from here means installing the package installs
  * the admin. It costs a PHP request per file, on admin screens only, and the URL carries the
  * package version so the answer can be cached forever.
+ *
+ * `logo.svg` is here for the same reason and is safe for the same reason the uploads are not:
+ * it is a file this package ships, not one anybody sent us.
  */
 class AssetController extends AbstractController {
 
@@ -24,6 +27,7 @@ class AssetController extends AbstractController {
         'dynamic-list.js' => 'application/javascript; charset=utf-8',
         'admin.js'        => 'application/javascript; charset=utf-8',
         'admin.css'       => 'text/css; charset=utf-8',
+        'logo.svg'        => 'image/svg+xml',
     ];
 
     /**

@@ -31,15 +31,13 @@ use Dynart\Dpress\Controller\Admin\AssetController;
 
 <header class="admin-header">
     <div class="admin-header-inner">
-        <?php // the logo replaces the name rather than joining it: the name is in the `alt`, and a
-              // site that has both would say the same thing twice on every screen ?>
+        <?php // dpress's own logo, always - the admin is dpress, whoever the site belongs to, and
+              // `site_logo` is the site's own mark for its own pages. The name stays next to it,
+              // because "which site am I in" is a question anybody running two of them has. ?>
         <a class="brand" href="<?= esc_attr(route_url('/admin')) ?>">
-            <?php if (!empty($site_logo)): ?>
-                <img src="<?= esc_attr($site_logo) ?>" alt="<?= esc_attr($site_name ?? 'dpress') ?>">
-            <?php else: ?>
-                <?= esc_html($site_name ?? 'dpress') ?>
-            <?php endif ?>
+            <img src="<?= esc_attr(AssetController::url('logo.svg')) ?>" alt="dpress">
         </a>
+        <span class="site"><?= esc_html($site_name ?? '') ?></span>
         <a href="<?= esc_attr(route_url('/')) ?>">View site</a>
         <span class="spacer"></span>
         <?php if (!empty($current_user)): ?>

@@ -59,6 +59,7 @@ body.admin {
 .admin-header .brand { font-weight: 600; display: flex; align-items: center; }
 /* height rather than width: a logo is whatever shape it is, and the bar is what has to stay put */
 .admin-header .brand img { height: 24px; width: auto; display: block; }
+.admin-header .site { color: #a1a1aa; font-size: 14px; margin-left: -6px; }
 .admin-header .spacer { flex: 1; }
 .admin-header form { margin: 0; }
 .admin-header button {
