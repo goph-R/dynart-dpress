@@ -14,6 +14,13 @@ use Dynart\Micro\Form;
  */
 class DpressForm extends Form {
 
+    /**
+     * The CMS renders its own inputs, so it can offer field types the framework has never heard
+     * of - a markdown editor, a media picker, a grouped permission list. Anything it does not
+     * recognise falls through to the framework's partial, so nothing has to be duplicated.
+     */
+    const VIEW_INPUT = 'dpress:form-input';
+
     protected ?EventServiceInterface $events = null;
     protected array $context = [];
 

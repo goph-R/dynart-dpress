@@ -1,0 +1,56 @@
+<?php
+/**
+ * The items of one menu
+ *
+ * Server rendered rather than a dynamic list: this is a tree somebody is rearranging, not a table
+ * somebody is searching, and the indent is the point of the screen.
+ */
+?>
+<?php $this->useLayout('dpress:admin/layout') ?>
+<?php $this->startBlock('content') ?>
+    <div class="page-head">
+        <h1><?= esc_html($menu->name) ?></h1>
+        <span class="spacer"></span>
+        <?php if (!empty($can_edit)): ?>
+            <a class="button primary" href="<?= esc_attr($new_url) ?>">Add item</a>
+        <?php endif ?>
+        <a class="button" href="<?= esc_attr($back_url) ?>">Back</a>
+    </div>
+
+    <div class="panel">
+        <?php if (empty($items)): ?>
+            <p class="form-description">This menu has no items yet.</p>
+        <?php else: ?>
+            <table class="plain menu-items">
+                <thead>
+                    <tr><th>Label</th><th>Points at</th><th>Position</th><th></th></tr>
+                </thead>
+                <tbody>
+                <?php foreach ($items as $item): ?>
+                    <tr<?= $item['url'] === null ? ' class="broken"' : '' ?>>
+                        <td style="padding-left: <?= esc_attr((string)(14 + $item['depth'] * 22)) ?>px">
+                            <?= esc_html($item['label']) ?>
+                        </td>
+                        <td>
+                            <?= esc_html($item['target']) ?>
+                            <?php if ($item['url'] === null): ?>
+                                <small class="form-error">not rendered - its target is gone</small>
+                            <?php endif ?>
+                        </td>
+                        <td><?= esc_html((string)$item['position']) ?></td>
+                        <td class="actions-column">
+                            <?php if (!empty($can_edit)): ?>
+                                <a class="action edit" href="<?= esc_attr($item['edit_url']) ?>">Edit</a>
+                                <button type="button" class="action delete"
+                                        onclick="Dpress.post(<?= esc_attr(json_encode($item['delete_url'])) ?>, 'Delete this item? Its children move up one level.')">
+                                    Delete
+                                </button>
+                            <?php endif ?>
+                        </td>
+                    </tr>
+                <?php endforeach ?>
+                </tbody>
+            </table>
+        <?php endif ?>
+    </div>
+<?php $this->endBlock() ?>

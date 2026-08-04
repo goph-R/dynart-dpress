@@ -1,0 +1,25 @@
+<?php
+/**
+ * The body of an editor screen: a heading, a form, and a way back
+ *
+ * Every simple editor uses this rather than repeating the same markup, and the form renders
+ * through `$form->fetch()` - never hand written inputs - so a plugin's added field appears with
+ * no template change.
+ *
+ * Expects: $title, $form, $back_url.
+ */
+?>
+<div class="page-head">
+    <h1><?= esc_html($title) ?></h1>
+    <span class="spacer"></span>
+    <a class="button" href="<?= esc_attr($back_url) ?>">Back</a>
+</div>
+<div class="panel">
+    <form method="post">
+        <?= $form->fetch() ?>
+        <div class="form-actions">
+            <button type="submit" class="primary">Save</button>
+            <a class="button" href="<?= esc_attr($back_url) ?>">Cancel</a>
+        </div>
+    </form>
+</div>

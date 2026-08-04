@@ -76,6 +76,33 @@ class MediaView {
     }
 
     /**
+     * The same as `url()` and `tag()`, from a listing row rather than a loaded entity
+     *
+     * A list query returns rows, and hydrating an entity per row only to ask it for its URL would
+     * be work for nothing - the two fields it needs are right there.
+     */
+    public function rowUrl(array $row, string $preset = ''): string {
+        $path = (string)($row['path'] ?? '');
+        if ($preset !== '' && $this->isRowResizable($row) && $this->images->hasPreset($preset)) {
+            $path = $this->storage->derivativePath($path, $preset);
+        }
+        return $this->urlOfPath($path);
+    }
+
+    public function rowTag(array $row, string $preset = 'thumb'): string {
+        if (($row['category'] ?? '') !== Media::CATEGORY_IMAGE) {
+            return $this->icon((string)($row['category'] ?? Media::CATEGORY_OTHER));
+        }
+        return '<img src="'.htmlspecialchars($this->rowUrl($row, $preset), ENT_QUOTES).'"'
+            .' alt="'.htmlspecialchars((string)($row['alt'] ?? ''), ENT_QUOTES).'" loading="lazy">';
+    }
+
+    protected function isRowResizable(array $row): bool {
+        return ($row['category'] ?? '') === Media::CATEGORY_IMAGE
+            && ($row['mime_type'] ?? '') !== 'image/svg+xml';
+    }
+
+    /**
      * The inline SVG icon of a category
      *
      * Inline rather than an `<img>`, so it inherits the surrounding colour. These are our own

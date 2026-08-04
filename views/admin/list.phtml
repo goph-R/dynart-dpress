@@ -1,0 +1,29 @@
+<?php
+/**
+ * A dynamic list, from a configuration rather than from markup
+ *
+ * The server decides the columns, the row actions and the endpoint - which is where the
+ * permission checks live - and the browser does the rendering, the sorting and the paging. A
+ * screen using this writes a filter form and one array; there is no per-screen JavaScript.
+ *
+ * Expects: $list_id, $list_config (array). Optional: $filters (HTML for the filter form).
+ */
+$listId = $list_id ?? 'list';
+$config = $list_config ?? [];
+if (!empty($filters)) {
+    $config['filterForm'] = '#'.$listId.'-filters';
+}
+?>
+<?php if (!empty($filters)): ?>
+    <form class="filters" id="<?= esc_attr($listId) ?>-filters" autocomplete="off">
+        <?= $filters ?>
+    </form>
+<?php endif ?>
+
+<div id="<?= esc_attr($listId) ?>"></div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        Dpress.list(<?= json_encode('#'.$listId) ?>, <?= json_encode($config, JSON_UNESCAPED_SLASHES) ?>);
+    });
+</script>

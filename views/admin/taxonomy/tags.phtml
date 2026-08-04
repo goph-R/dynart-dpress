@@ -1,0 +1,17 @@
+<?php $this->useLayout('dpress:admin/layout') ?>
+<?php $this->startBlock('content') ?>
+    <div class="page-head">
+        <h1>Tags</h1>
+        <span class="spacer"></span>
+        <a class="button" href="<?= esc_attr($categories_url) ?>">Categories</a>
+        <?php if (!empty($can_create)): ?>
+            <a class="button primary" href="<?= esc_attr($new_url) ?>">New</a>
+        <?php endif ?>
+    </div>
+
+    <?= $this->fetch('dpress:admin/list', [
+        'list_id' => $list_id,
+        'list_config' => $list_config,
+        'filters' => '<input type="search" name="search" placeholder="Search...">',
+    ]) ?>
+<?php $this->endBlock() ?>

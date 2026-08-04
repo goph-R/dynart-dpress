@@ -1,0 +1,23 @@
+<?php $this->useLayout('dpress:admin/layout') ?>
+<?php $this->startBlock('content') ?>
+    <div class="page-head">
+        <h1>Edit media</h1>
+        <span class="spacer"></span>
+        <a class="button" href="<?= esc_attr($back_url) ?>">Back</a>
+    </div>
+    <div class="panel">
+        <div class="media-detail"><?= $preview ?></div>
+        <p class="form-description">
+            <a href="<?= esc_attr($url) ?>" target="_blank" rel="noopener"><?= esc_html($media->file_name) ?></a>
+            - <?= esc_html($media->mime_type) ?>
+            <?php if ($usage > 0): ?> - used <?= esc_html((string)$usage) ?> time(s)<?php endif ?>
+        </p>
+        <form method="post">
+            <?= $form->fetch() ?>
+            <div class="form-actions">
+                <button type="submit" class="primary">Save</button>
+                <a class="button" href="<?= esc_attr($back_url) ?>">Cancel</a>
+            </div>
+        </form>
+    </div>
+<?php $this->endBlock() ?>

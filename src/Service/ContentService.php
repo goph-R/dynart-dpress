@@ -38,6 +38,8 @@ class ContentService {
         protected EventServiceInterface $events,
         protected MarkdownRenderer $markdown,
         protected Slugger $slugger,
+        protected TaxonomyService $taxonomy,
+        protected MediaService $media,
     ) {}
 
     // --- Reading ---
@@ -244,6 +246,12 @@ class ContentService {
      * A cascade would delete a whole page subtree because somebody removed one page in the
      * middle, and it would happen inside the database where no event fires and nothing is
      * audited. The children are re-parented to this one's parent instead.
+     *
+     * The category, tag and attachment links go first, through their own services. They *have*
+     * to go through something: the relation tables carry a foreign key and no `ON DELETE
+     * CASCADE`, so the row cannot be removed while a link to it exists - and a cascade is exactly
+     * what was not wanted, because it happens inside the database where no event fires and
+     * "which categories did this post have when it was deleted" is lost.
      */
     public function delete(Content $content): void {
         $this->emitBoth($content, self::EVENT_BEFORE_DELETE, 'before_delete');
@@ -255,6 +263,8 @@ class ContentService {
                 $this->em->save($child);
             }
         }
+        $this->taxonomy->clearAssignments($content->id);
+        $this->media->detachAllOfContent($content->id);
         $this->em->deleteById(Content::class, $content->id);
         $this->emitBoth($content, self::EVENT_DELETED, 'deleted');
     }

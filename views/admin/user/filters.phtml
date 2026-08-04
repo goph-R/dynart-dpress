@@ -1,0 +1,7 @@
+<input type="search" name="search" placeholder="Search name or email...">
+<select name="status">
+    <option value="">Any status</option>
+    <?php foreach ($statuses as $one): ?>
+        <option value="<?= esc_attr($one) ?>"><?= esc_html(ucfirst($one)) ?></option>
+    <?php endforeach ?>
+</select>

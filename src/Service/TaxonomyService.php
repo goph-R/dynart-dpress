@@ -57,6 +57,13 @@ class TaxonomyService {
         return $this->queryExecutor->findAll($this->queries->create('category_list', $context));
     }
 
+    /**
+     * How many there are before the page is applied, which is what a pager needs
+     */
+    public function countCategories(array $context = []): int {
+        return (int)$this->queryExecutor->findAllCount($this->queries->create('category_list', $context));
+    }
+
     public function createCategory(string $name, array $data = []): Category {
         $category = new Category();
         $category->name = trim($name);
@@ -122,6 +129,10 @@ class TaxonomyService {
 
     public function tags(array $context = []): array {
         return $this->queryExecutor->findAll($this->queries->create('tag_list', $context));
+    }
+
+    public function countTags(array $context = []): int {
+        return (int)$this->queryExecutor->findAllCount($this->queries->create('tag_list', $context));
     }
 
     /**

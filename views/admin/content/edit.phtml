@@ -1,0 +1,23 @@
+<?php $this->useLayout('dpress:admin/layout') ?>
+<?php $this->startBlock('content') ?>
+    <div class="page-head">
+        <h1><?= esc_html($title) ?></h1>
+        <span class="spacer"></span>
+        <?php if (!empty($view_url)): ?>
+            <a class="button" href="<?= esc_attr($view_url) ?>" target="_blank" rel="noopener">View</a>
+        <?php endif ?>
+        <?php if (!empty($history_url)): ?>
+            <a class="button" href="<?= esc_attr($history_url) ?>">History</a>
+        <?php endif ?>
+        <a class="button" href="<?= esc_attr($back_url) ?>">Back</a>
+    </div>
+    <div class="panel">
+        <form method="post">
+            <?= $form->fetch() ?>
+            <div class="form-actions">
+                <button type="submit" class="primary">Save</button>
+                <a class="button" href="<?= esc_attr($back_url) ?>">Cancel</a>
+            </div>
+        </form>
+    </div>
+<?php $this->endBlock() ?>

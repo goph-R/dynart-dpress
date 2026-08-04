@@ -51,6 +51,7 @@ use Dynart\Dpress\Cli\MediaCommands;
 use Dynart\Dpress\Cli\TaxonomyCommands;
 use Dynart\Dpress\Cli\ThemeCommands;
 use Dynart\Dpress\Cli\MailCommands;
+use Dynart\Dpress\Form\AdminForms;
 use Dynart\Dpress\Form\CoreForms;
 use Dynart\Dpress\Form\FormFactory;
 use Dynart\Dpress\Middleware\TokenRefresher;
@@ -65,6 +66,7 @@ use Dynart\Dpress\Migration\CreateTaxonomyTables;
 use Dynart\Dpress\Migration\CreateIdentityTables;
 use Dynart\Dpress\Migration\CreateRevisionTable;
 use Dynart\Dpress\Query\CoreQueries;
+use Dynart\Dpress\Query\ListRequest;
 use Dynart\Dpress\Query\QueryFactory;
 use Dynart\Dpress\Security\Permissions;
 use Dynart\Dpress\Security\PasswordHasher;
@@ -170,6 +172,7 @@ class DpressServices {
         Micro::add(JwtAuthInterface::class, JwtAuth::class);
         Micro::add(QueryFactory::class);
         Micro::add(CoreQueries::class);
+        Micro::add(ListRequest::class);
         Micro::add(Permissions::class);
         Micro::add(PasswordHasher::class);
         Micro::add(SchemaService::class);
@@ -249,6 +252,7 @@ class DpressServices {
         Micro::add(SessionInterface::class, Session::class);
         Micro::add(FormFactory::class);
         Micro::add(CoreForms::class);
+        Micro::add(AdminForms::class);
         Micro::add(AuthCookies::class);
         Micro::add(TokenRefresher::class);
     }

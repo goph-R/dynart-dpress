@@ -1,0 +1,16 @@
+<?php $this->useLayout('dpress:admin/layout') ?>
+<?php $this->startBlock('content') ?>
+    <div class="page-head">
+        <h1>Menus</h1>
+        <span class="spacer"></span>
+        <?php if (!empty($can_edit)): ?>
+            <a class="button primary" href="<?= esc_attr($new_url) ?>">New</a>
+        <?php endif ?>
+    </div>
+
+    <?php if (empty($places)): ?>
+        <p class="warning">The active theme declares no menu places, so a menu has nowhere to render.</p>
+    <?php endif ?>
+
+    <?= $this->fetch('dpress:admin/list', ['list_id' => $list_id, 'list_config' => $list_config]) ?>
+<?php $this->endBlock() ?>

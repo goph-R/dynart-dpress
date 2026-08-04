@@ -98,7 +98,7 @@ class MediaService {
         if ($file->error() !== UPLOAD_ERR_OK) {
             throw new DpressException($this->uploadErrorMessage($file->error()));
         }
-        return $this->store($file->tempName(), $file->name(), $userId, $meta, true);
+        return $this->store($file->tempPath(), $file->name(), $userId, $meta, true);
     }
 
     /**

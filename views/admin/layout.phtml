@@ -1,0 +1,64 @@
+<?php
+/**
+ * The admin chrome
+ *
+ * Its own layout rather than the site's: an editor's screen and a visitor's page want different
+ * things, and a theme that restyles the front end should not be able to break the way in.
+ *
+ * `data-media-endpoint` is on the body so a media picker on any screen knows where the library
+ * is without every template repeating it.
+ */
+use Dynart\Dpress\Controller\Admin\AssetController;
+?>
+<!DOCTYPE html>
+<html lang="<?= esc_attr($locale ?? 'en') ?>">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title><?= esc_html(($title ?? 'Admin').' – '.($site_name ?? 'dpress')) ?></title>
+    <link rel="stylesheet" href="<?= esc_attr(AssetController::url('admin.css')) ?>">
+    <?php // deferred, so they run in order and finish before DOMContentLoaded - which is what an
+          // inline `Dpress.list(...)` further down the page waits for ?>
+    <script src="<?= esc_attr(AssetController::url('dynamic-list.js')) ?>" defer></script>
+    <script src="<?= esc_attr(AssetController::url('admin.js')) ?>" defer></script>
+</head>
+<body class="admin" data-media-endpoint="<?= esc_attr(route_url('/admin/media/list')) ?>">
+
+<header class="admin-header">
+    <a class="brand" href="<?= esc_attr(route_url('/admin')) ?>"><?= esc_html($site_name ?? 'dpress') ?></a>
+    <a href="<?= esc_attr(route_url('/')) ?>">View site</a>
+    <span class="spacer"></span>
+    <?php if (!empty($current_user)): ?>
+        <a href="<?= esc_attr(route_url('/profile')) ?>"><?= esc_html($current_user->name() ?: 'Profile') ?></a>
+        <form method="post" action="<?= esc_attr(route_url('/logout')) ?>">
+            <button type="submit">Log out</button>
+        </form>
+    <?php endif ?>
+</header>
+
+<nav class="admin-nav">
+    <?php foreach (($admin_nav ?? []) as $section): ?>
+        <a href="<?= esc_attr($section['url']) ?>"<?= $section['key'] === ($admin_section ?? '') ? ' class="current"' : '' ?>>
+            <?= esc_html($section['label']) ?>
+        </a>
+    <?php endforeach ?>
+</nav>
+
+<main class="admin-main<?= !empty($narrow) ? ' narrow' : '' ?>">
+    <?php if (!empty($notice)): ?>
+        <p class="notice"><?= esc_html($notice) ?></p>
+    <?php endif ?>
+    <?= $this->block('content') ?>
+</main>
+
+<?php // one hidden form per page, so a row action can POST with a CSRF token behind it ?>
+<?php if (!empty($action_form)): ?>
+    <form method="post" data-action-form hidden>
+        <?= $action_form->fetch() ?>
+    </form>
+<?php endif ?>
+
+<?= $this->block('script') ?>
+</body>
+</html>

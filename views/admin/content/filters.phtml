@@ -1,0 +1,14 @@
+<?php
+/**
+ * The filter fields, which are also the list's state
+ *
+ * `dynamic-list.js` serializes this whole form on every request, so a field added here reaches
+ * the endpoint with nothing else to change - which is why the sort and the page live in it too.
+ */
+?>
+<input type="search" name="search" placeholder="Search title or text...">
+<select name="status">
+    <option value="">Any status</option>
+    <option value="draft"<?= ($status ?? '') === 'draft' ? ' selected' : '' ?>>Draft</option>
+    <option value="published"<?= ($status ?? '') === 'published' ? ' selected' : '' ?>>Published</option>
+</select>

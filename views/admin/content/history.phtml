@@ -1,0 +1,30 @@
+<?php $this->useLayout('dpress:admin/layout') ?>
+<?php $this->startBlock('content') ?>
+    <div class="page-head">
+        <h1>History</h1>
+        <span class="spacer"></span>
+        <a class="button" href="<?= esc_attr($back_url) ?>">Back</a>
+    </div>
+    <p class="breadcrumb"><?= esc_html($content->title) ?></p>
+    <div class="panel">
+        <?php if (empty($revisions)): ?>
+            <p class="form-description">No revisions recorded yet.</p>
+        <?php else: ?>
+            <table class="plain">
+                <thead>
+                    <tr><th>When</th><th>What</th><th>Title</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                <?php foreach ($revisions as $revision): ?>
+                    <tr>
+                        <td><?= esc_html(substr((string)($revision['changed_at'] ?? ''), 0, 16)) ?></td>
+                        <td><?= esc_html((string)($revision['operation'] ?? '')) ?></td>
+                        <td><?= esc_html((string)($revision['title'] ?? '')) ?></td>
+                        <td><?= esc_html((string)($revision['status'] ?? '')) ?></td>
+                    </tr>
+                <?php endforeach ?>
+                </tbody>
+            </table>
+        <?php endif ?>
+    </div>
+<?php $this->endBlock() ?>

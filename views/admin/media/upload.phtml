@@ -1,0 +1,24 @@
+<?php $this->useLayout('dpress:admin/layout') ?>
+<?php $this->startBlock('content') ?>
+    <div class="page-head">
+        <h1>Upload</h1>
+        <span class="spacer"></span>
+        <a class="button" href="<?= esc_attr($back_url) ?>">Back</a>
+    </div>
+    <div class="panel">
+        <p class="warning">
+            <strong>SVG files are not sanitised yet.</strong> An SVG can carry a script that runs
+            if somebody opens the file directly. Only upload one from a source you trust.
+        </p>
+        <form method="post" enctype="multipart/form-data">
+            <?= $form->fetch() ?>
+            <p class="form-description">
+                At most <?= esc_html($max_size) ?>. Allowed: <?= esc_html(implode(', ', $allowed)) ?>.
+            </p>
+            <div class="form-actions">
+                <button type="submit" class="primary" data-confirm="Upload this file?">Upload</button>
+                <a class="button" href="<?= esc_attr($back_url) ?>">Cancel</a>
+            </div>
+        </form>
+    </div>
+<?php $this->endBlock() ?>

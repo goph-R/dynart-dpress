@@ -1,0 +1,38 @@
+<?php $this->useLayout('dpress:admin/layout') ?>
+<?php $this->startBlock('content') ?>
+    <div class="page-head"><h1>Settings</h1></div>
+
+    <div class="panel">
+        <form method="post">
+            <?= $form->fetch() ?>
+            <?php if (!empty($can_save)): ?>
+                <div class="form-actions">
+                    <button type="submit" class="primary">Save</button>
+                </div>
+            <?php else: ?>
+                <p class="form-description">You may read these settings but not change them.</p>
+            <?php endif ?>
+        </form>
+    </div>
+
+    <?php if (!empty($themes)): ?>
+        <div class="panel">
+            <h2>Installed themes</h2>
+            <table class="plain">
+                <?php foreach ($themes as $name => $theme): ?>
+                    <tr>
+                        <td>
+                            <strong><?= esc_html($theme['title']) ?></strong>
+                            <?php if ($name === $active_theme): ?><span class="badge badge-active">active</span><?php endif ?>
+                            <?php if ($theme['description'] !== ''): ?>
+                                <br><small class="form-description"><?= esc_html($theme['description']) ?></small>
+                            <?php endif ?>
+                        </td>
+                        <td><?= esc_html($theme['version']) ?></td>
+                        <td><?= esc_html(implode(', ', array_values($theme['places']))) ?></td>
+                    </tr>
+                <?php endforeach ?>
+            </table>
+        </div>
+    <?php endif ?>
+<?php $this->endBlock() ?>

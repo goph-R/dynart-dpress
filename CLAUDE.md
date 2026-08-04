@@ -6,7 +6,7 @@
 
 The overall design lives in `../dynart-dpress-plan.md`. Read it before making structural decisions; it records *why* things are the way they are (single content table, single language per site, permanent audit history, the event naming convention).
 
-Status: phases 0–4 of the plan are done — the CLI, both factories, the mailer, the identity stack with its HTTP flows, the content model with its markdown pipeline and revision history, taxonomy plus the media library, and presentation — page routing, menus, settings and themes. The admin UI does not exist yet.
+Status: phases 0–5 of the plan are done — the CLI, both factories, the mailer, the identity stack with its HTTP flows, the content model with its markdown pipeline and revision history, taxonomy plus the media library, presentation (page routing, menus, settings, themes) and the admin UI.
 
 ## Related repositories
 
@@ -137,6 +137,29 @@ Every change emits **both** `content:updated` and the type alias `post:updated`,
 
 **Menus are not audited, settings are** (plan §4.4). A menu editor rewrites the tree wholesale, so its history would be churn.
 
+### The admin
+
+Everything behind `/admin`. **A screen is two actions**: one that renders the page — the filter form, the buttons, the editor, all of which the server decides — and, where there is a list, one that answers with JSON. The rows are what the browser asks for again on every sort, filter and page change.
+
+`#[Authorize]` sits on **`AbstractAdminController`** and nothing else needs it. That only works because `AttributeProcessor` looks for a class-level attribute along the inheritance chain (micro 0.17.0): PHP attributes are not inherited, and before that fix the base's `#[Authorize]` applied to nothing and every admin screen was reachable anonymously. Each action still checks the permission it actually needs — "may open the admin" and "may delete a user" are different questions.
+
+**The lists render themselves.** `assets/dynamic-list.js` is a rewrite of `dynart-micro-js/dynamic-list.js` with no jQuery and no build step. A list screen is a filter form, a container and one JSON object — no per-screen JavaScript — because `Dpress.list()` takes column views by *name* and row actions as `link` or `post`. Nothing there can be a function; it has been through JSON.
+
+**A column view escapes by default.** `DynamicListColumnView.text` escapes, `html` does not, and the opt out is spelled out at the call site. A post title is whatever somebody typed.
+
+**The filter form is the list's state.** Sort, direction, offset and page size live in it as hidden inputs next to whatever the server rendered, so one serialize produces the whole request and a plugin adding a filter field needs to tell the list nothing.
+
+**Never hand a request straight to `addOrderBy()`.** The name goes into the SQL. `ListRequest` drops anything not in the whitelist the screen passes in, and `CoreQueries::applyListOptions()` checks the shape again because a second caller may build the context by hand. The page size is clamped rather than rejected — a browser asking for everything gets a page.
+
+**Deletes and publishes are POSTs.** A link that changes something can be followed by a prefetcher, a crawler or an `<img>` on another page. Every admin page renders one hidden form carrying a CSRF token; `Dpress.post()` points it at the action and submits it. `requireAction()` is what validates it, and a failure is a 403 rather than a redirect with a message.
+
+**The markdown field is a textarea with a toolbar, deliberately not an editor.** A markdown field whose value is anything other than what the author typed eventually rewrites somebody's document on save, and the content model is "the markdown is the truth".
+
+**The assets are served from the package** by `AssetController`, so installing the package installs the admin — no publish step to forget after an update, which would otherwise leave last version's list code talking to this version's endpoints. The URL carries `Dpress::VERSION`, so the answer is cached forever.
+
+**A template must never pass `get_defined_vars()` to a nested `fetch()`.** A template body is `include`d inside `View::fetch()` and shares its scope, so that hands down the *path of the file being included*; the nested fetch extracts it over its own and includes the caller instead — forever. micro 0.17.0 unsets the reserved names, but naming the variables is still the honest way to write it.
+
+
 ### The HTTP layer
 
 `DpressWebApp` wires a middleware order that makes cookie-based login work:
@@ -185,3 +208,4 @@ The send signature is `send($name, $email, $subject, $template, $variables)`. `c
 - **Permissions** are plain strings (`post.create`), no table.
 - **Forms** must be rendered via `$form->fetch()`, never hand-written `<input>` tags, or plugin-added fields will not appear.
 - **All state changes go through a service method**, and every service method emits before/after events. A controller writing an entity directly is invisible to plugins forever.
+- **Admin lists** get their sortable columns from a `SORTABLE` constant on the controller, and their rows from a `row()` method that names the fields — an entity handed over wholesale sends `markdown` and `body_html` to the browser on every list request.

@@ -243,7 +243,13 @@ class MenuService {
         }
     }
 
-    protected function itemRows(int $menuId): array {
+    /**
+     * The rows of one menu, in tree order
+     *
+     * Public because the menu editor lists them; `tree()` is for rendering and drops an item
+     * whose target is gone, which is exactly what an editor needs to still see.
+     */
+    public function itemRows(int $menuId): array {
         return $this->queryExecutor->findAll($this->queries->create('menu_items', ['menu_id' => $menuId]));
     }
 

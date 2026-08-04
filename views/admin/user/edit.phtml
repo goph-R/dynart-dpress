@@ -1,0 +1,8 @@
+<?php $this->useLayout('dpress:admin/layout') ?>
+<?php $this->startBlock('content') ?>
+    <?= $this->fetch('dpress:admin/form', [
+        'title'    => $title,
+        'form'     => $form,
+        'back_url' => $back_url,
+    ]) ?>
+<?php $this->endBlock() ?>

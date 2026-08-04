@@ -57,7 +57,7 @@ class CoreQueries {
 
     public function menuList(array $context): Query {
         $query = new Query(Menu::class);
-        $query->addOrderBy('name');
+        $this->applyListOptions($query, $context, ['name' => 'asc']);
         return $query;
     }
 
@@ -80,8 +80,7 @@ class CoreQueries {
                 $query->addCondition('`parent_id` = :parentId', [':parentId' => $context['parent_id']]);
             }
         }
-        $query->addOrderBy('position');
-        $query->addOrderBy('name');
+        $this->applyListOptions($query, $context, ['position' => 'asc', 'name' => 'asc']);
         return $query;
     }
 
@@ -90,7 +89,7 @@ class CoreQueries {
         if (!empty($context['search'])) {
             $query->addCondition('`name` like :search', [':search' => '%'.$context['search'].'%']);
         }
-        $query->addOrderBy('name');
+        $this->applyListOptions($query, $context, ['name' => 'asc']);
         return $query;
     }
 
@@ -170,7 +169,7 @@ class CoreQueries {
                 [':search' => '%'.$context['search'].'%']
             );
         }
-        $query->addOrderBy('created_at', 'desc');
+        $this->applyListOptions($query, $context, ['created_at' => 'desc']);
         return $query;
     }
 
@@ -188,7 +187,7 @@ class CoreQueries {
     public function contentList(array $context): Query {
         $query = new Query(Content::class);
         $this->applyContentFilters($query, $context);
-        $query->addOrderBy('published_at', 'desc');
+        $this->applyListOptions($query, $context, ['published_at' => 'desc', 'created_at' => 'desc']);
         return $query;
     }
 
@@ -211,7 +210,7 @@ class CoreQueries {
         if ($context['published_only'] ?? false) {
             $this->onlyPublished($query);
         }
-        $query->addOrderBy('title');
+        $this->applyListOptions($query, $context, ['title' => 'asc']);
         return $query;
     }
 
@@ -285,7 +284,7 @@ class CoreQueries {
                 [':search' => '%'.$context['search'].'%']
             );
         }
-        $query->addOrderBy('name');
+        $this->applyListOptions($query, $context, ['name' => 'asc']);
         return $query;
     }
 
@@ -321,7 +320,7 @@ class CoreQueries {
 
     public function roleList(array $context): Query {
         $query = new Query(Role::class);
-        $query->addOrderBy('name');
+        $this->applyListOptions($query, $context, ['name' => 'asc']);
         return $query;
     }
 
@@ -330,6 +329,30 @@ class CoreQueries {
         $query->setFields(['permission' => 'permission']);
         $query->addCondition('`role_id` = :roleId', [':roleId' => $context['role_id'] ?? 0]);
         return $query;
+    }
+
+    /**
+     * Applies the ordering and the page a dynamic list asked for
+     *
+     * The name is checked against a pattern as well as against the whitelist `ListRequest`
+     * already applied, because this is the point where it becomes SQL and a second caller may
+     * build the context by hand. Without a requested order the builder's own default stands, so
+     * a listing that nobody sorted still comes back in a sensible order.
+     *
+     * @param array $default In [field => direction] order
+     */
+    protected function applyListOptions(Query $query, array $context, array $default = []): void {
+        $orderBy = (string)($context['order_by'] ?? '');
+        if ($orderBy !== '' && preg_match('/^[a-z0-9_]+$/', $orderBy)) {
+            $query->addOrderBy($orderBy, ($context['order_dir'] ?? 'asc') === 'desc' ? 'desc' : 'asc');
+        } else {
+            foreach ($default as $field => $direction) {
+                $query->addOrderBy($field, $direction);
+            }
+        }
+        if (isset($context['max'])) {
+            $query->setLimit((int)($context['offset'] ?? 0), (int)$context['max']);
+        }
     }
 
     /**

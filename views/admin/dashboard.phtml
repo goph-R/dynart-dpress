@@ -1,0 +1,30 @@
+<?php $this->useLayout('dpress:admin/layout') ?>
+<?php $this->startBlock('content') ?>
+    <div class="page-head"><h1>Dashboard</h1></div>
+
+    <?php if (!empty($counts)): ?>
+        <div class="count-cards">
+            <?php foreach ($counts as $count): ?>
+                <a class="panel count-card" href="<?= esc_attr($count['url']) ?>">
+                    <strong><?= esc_html((string)$count['total']) ?></strong>
+                    <span><?= esc_html($count['label']) ?></span>
+                </a>
+            <?php endforeach ?>
+        </div>
+    <?php endif ?>
+
+    <?php if (!empty($recent)): ?>
+        <div class="panel">
+            <h2>Recent changes</h2>
+            <table class="plain">
+                <?php foreach ($recent as $revision): ?>
+                    <tr>
+                        <td><?= esc_html(substr((string)($revision['changed_at'] ?? ''), 0, 16)) ?></td>
+                        <td><?= esc_html((string)($revision['title'] ?? '')) ?></td>
+                        <td><?= esc_html((string)($revision['operation'] ?? '')) ?></td>
+                    </tr>
+                <?php endforeach ?>
+            </table>
+        </div>
+    <?php endif ?>
+<?php $this->endBlock() ?>

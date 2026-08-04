@@ -5,6 +5,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.10.0] &ndash; 2026-08-04
+
+Phase 5: the admin.
+
+### Added
+- **The admin UI.** Nine screens behind `/admin` — a dashboard, posts, pages, the media library, categories and tags, menus and their items, users, roles with a generated permission editor, and settings. Each is two actions: one that renders the page, and, where there is a list, one that answers with JSON.
+- **`dynamic-list.js`** — the lists render themselves in the browser and ask the server again on every sort, filter and page change. Modelled on `dynart-micro-js/dynamic-list.js`, rewritten with no jQuery, no build step and no globals from a surrounding application. A **column view escapes by default**: a post title is whatever somebody typed, and returning it raw would put one editor's markup into every other editor's browser. `DynamicListColumnView.html` is the opt out, spelled out at the call site.
+- **A list screen is a filter form, a container and one JSON object** — no per-screen JavaScript. `Dpress.list()` takes column views by *name* and row actions as `link` or `post`, because none of it survives being JSON. A screen that genuinely needs a callback still constructs `DynamicList` itself.
+- `ListRequest` — turns `sort` / `order` / `offset` / `max` into a query context. **The sort column has to be in a whitelist the calling screen passes in**, because `Query::addOrderBy()` puts the name into the SQL. The page size is clamped rather than rejected, so a hand-written `max=100000` gets a page instead of the whole table.
+- `AdminForms` — ten form builders plus `admin_action`, all through `FormFactory`, so a plugin can add a field to any admin screen and it renders with no template change.
+- **`DpressForm` renders its own field types** — `markdown`, `media`, `checkboxes`, `permissions` — and falls through to the framework's partial for everything else.
+- `AssetController` serves the admin's JS and CSS out of the package, so installing the package installs the admin. The URL carries the version, so the answer can be cached forever.
+- `MediaView::rowUrl()` / `rowTag()`, `MenuService::itemRows()`, `TaxonomyService::countCategories()` / `countTags()`.
+
+### Changed
+- **Deletes and publishes are POSTs, not links.** A link that changes something can be followed by a prefetcher, a crawler or an `<img>` on another site. Every page renders one hidden form carrying a CSRF token, and a row action points it at the action and submits it.
+- The core list queries honour `order_by` / `order_dir` / `offset` / `max` from their context. The name is checked against `^[a-z0-9_]+$` here as well as by `ListRequest` — this is the point where it stops being data and becomes SQL.
+
+### Fixed
+- **`ContentService::delete()` could not delete anything that had a tag or a category.** The relation tables carry a foreign key and deliberately no `ON DELETE CASCADE`, so the row was refused by the database. The links now go first, through `TaxonomyService` and `MediaService`, which is also what keeps "which categories did this post have when it was deleted" in the audit rather than losing it inside the database.
+- **`MediaService::upload()` called `UploadedFile::tempName()`, which does not exist.** No HTTP upload had ever run — only `importFile()`, from the CLI and the seed.
+
+---
+
 ## [0.9.0] &ndash; 2026-08-04
 
 Phase 4: presentation — page routing, menus, settings and themes.

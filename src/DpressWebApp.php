@@ -13,12 +13,22 @@ use Dynart\Micro\Middleware\LocaleResolver;
 use Dynart\Micro\Entities\AuditService;
 use Dynart\Micro\Entities\EntityManager;
 use Dynart\Micro\Entities\Migrations;
+use Dynart\Dpress\Controller\Admin\AssetController;
+use Dynart\Dpress\Controller\Admin\ContentAdminController;
+use Dynart\Dpress\Controller\Admin\DashboardController;
+use Dynart\Dpress\Controller\Admin\MediaAdminController;
+use Dynart\Dpress\Controller\Admin\MenuAdminController;
+use Dynart\Dpress\Controller\Admin\RoleAdminController;
+use Dynart\Dpress\Controller\Admin\SettingsAdminController;
+use Dynart\Dpress\Controller\Admin\TaxonomyAdminController;
+use Dynart\Dpress\Controller\Admin\UserAdminController;
 use Dynart\Dpress\Controller\AuthController;
 use Dynart\Dpress\Controller\ContentController;
 use Dynart\Dpress\Controller\HomeController;
 use Dynart\Dpress\Controller\MediaController;
 use Dynart\Dpress\Controller\PageController;
 use Dynart\Dpress\Controller\ProfileController;
+use Dynart\Dpress\Form\AdminForms;
 use Dynart\Dpress\Form\CoreForms;
 use Dynart\Dpress\Form\FormFactory;
 use Dynart\Dpress\Middleware\TokenRefresher;
@@ -35,13 +45,28 @@ class DpressWebApp extends WebApp {
     /** Where the theme lives, relative to the site root */
     const CONFIG_THEME = 'dpress.theme';
 
-    /** The controllers the CMS provides */
+    /**
+     * The controllers the CMS provides
+     *
+     * `PageController` is last because it holds the catch-all route - though the router matches
+     * every exact and segment route before any catch-all anyway, so the order here is
+     * documentation rather than something the routing depends on.
+     */
     const CONTROLLERS = [
         HomeController::class,
         AuthController::class,
         ProfileController::class,
         ContentController::class,
         MediaController::class,
+        AssetController::class,
+        DashboardController::class,
+        ContentAdminController::class,
+        MediaAdminController::class,
+        TaxonomyAdminController::class,
+        MenuAdminController::class,
+        UserAdminController::class,
+        RoleAdminController::class,
+        SettingsAdminController::class,
         PageController::class,
     ];
 
@@ -85,7 +110,9 @@ class DpressWebApp extends WebApp {
         DpressServices::registerEntities(Micro::get(EntityManager::class));
         DpressServices::addMigrations(Micro::get(Migrations::class));
         CoreQueries::register(Micro::get(QueryFactory::class));
-        CoreForms::register(Micro::get(FormFactory::class));
+        $formFactory = Micro::get(FormFactory::class);
+        CoreForms::register($formFactory);
+        AdminForms::register($formFactory);
 
         // the resolver turns a decoded token back into a DpressUser
         Micro::get(AuthService::class);
