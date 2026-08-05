@@ -21,15 +21,17 @@ default. So `php -i` tells you nothing about what your site is doing. Ask the th
 the site:
 
 ```bash
-# Debian/Ubuntu with PHP-FPM - what FPM itself loads
-php-fpm8.2 -i | grep -E "opcache.enable|memory_consumption|max_accelerated_files|validate_timestamps"
+# Debian/Ubuntu with PHP-FPM - what FPM itself loads. Use your own version:
+# `ls /etc/php/` or `systemctl list-units 'php*-fpm*'` if you are not sure which it is.
+V=8.4
+php-fpm$V -i | grep -E "opcache.enable|memory_consumption|max_accelerated_files|validate_timestamps"
 
 # which ini files FPM reads at all
-php-fpm8.2 -i | grep "Loaded Configuration\|Scan this dir"
-ls -l /etc/php/8.2/fpm/conf.d/ | grep -i opcache
+php-fpm$V -i | grep "Loaded Configuration\|Scan this dir"
+ls -l /etc/php/$V/fpm/conf.d/ | grep -i opcache
 ```
 
-If `php-fpm8.2` is not on the path, the definitive answer comes from the web server itself. Drop
+If the `php-fpm` binary is not on the path, the definitive answer comes from the web server itself. Drop
 a probe in the document root, read it **once**, and delete it — it reports server internals and
 has no business staying there:
 
@@ -66,7 +68,7 @@ opcache.revalidate_freq=2
 ```
 
 `validate_timestamps=0` is faster still, but then **PHP never notices a deploy** — a `git pull`
-changes nothing until `systemctl reload php8.2-fpm`. Worth it only with a deploy script that
+changes nothing until `systemctl reload php$V-fpm`. Worth it only with a deploy script that
 does the reload. `revalidate_freq=2` costs a stat per file every two seconds and forgives you.
 
 On XAMPP, OPcache ships but is commented out: enable `zend_extension=opcache` and
