@@ -5,6 +5,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.17.1] &ndash; 2026-08-05
+
+### Fixed
+- **The second action of any pair was refused as a forgery.** `Form::process()` mints a fresh CSRF token every time it runs and stores it in the session, so validating one action spends the token printed on the page. That is invisible while every action reloads the page — the new page carries the new token — and fatal for two actions without one in between, which is exactly what uploading a file and then attaching it is. The upload succeeded, the attach was refused, and the message blamed the attach: *"That file could not be attached."* An action that answers with data now hands the new token back, and the browser puts it in the hidden form.
+
+### Notes
+It was not only the upload. **Any two panel actions in a row hit it** — hide then detach, attach then attach — because each POST spent the token the last one left. Only the first click after a page load worked.
+
+Rotation is kept rather than removed: a token that leaked out of one response is spent. `AbstractAdminController::answer()` is now the one way an action returns data, so a new one cannot forget the token and leave its second click failing. The browser adopts it from **every** answer including a rejected upload, which validated the token to get as far as being rejected.
+
+---
+
 ## [0.17.0] &ndash; 2026-08-05
 
 Uploading from inside the picker, so a file can be added without leaving the editor.

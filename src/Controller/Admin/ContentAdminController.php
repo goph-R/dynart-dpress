@@ -531,14 +531,14 @@ class ContentAdminController extends AbstractAdminController {
         $content = $this->attachable($type, $id);
         $media = $this->found($this->media->findById((int)$this->request->get('media_id', 0)));
         $this->media->attach($content->id, $media->id, 0, (bool)$this->request->get('hidden', false));
-        return ['ok' => true];
+        return $this->answer();
     }
 
     #[Route('POST', '/admin/content/?/detach/?')]
     public function detach(string $type, string $id): array {
         $content = $this->attachable($type, $id);
         $this->media->detach($content->id, (int)$this->request->get('media_id', 0));
-        return ['ok' => true];
+        return $this->answer();
     }
 
     /**
@@ -553,7 +553,7 @@ class ContentAdminController extends AbstractAdminController {
         $this->media->setAttachmentHidden(
             $content->id, (int)$this->request->get('media_id', 0), (bool)$this->request->get('hidden', false)
         );
-        return ['ok' => true];
+        return $this->answer();
     }
 
     /**

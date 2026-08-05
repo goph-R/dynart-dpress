@@ -183,14 +183,14 @@ class MediaAdminController extends AbstractAdminController {
         $this->requireAction();
         $file = $this->request->uploadedFile('file');
         if (!$file instanceof UploadedFile) {
-            return ['error' => 'No file arrived. It may be larger than the server accepts.'];
+            return $this->answer(['error' => 'No file arrived. It may be larger than the server accepts.']);
         }
         try {
             $media = $this->media->upload($file, (int)$this->currentUser()->id());
         } catch (DpressException $e) {
-            return ['error' => $e->getMessage()];
+            return $this->answer(['error' => $e->getMessage()]);
         }
-        return ['item' => $this->row($this->mediaRow($media))];
+        return $this->answer(['item' => $this->row($this->mediaRow($media))]);
     }
 
     /**

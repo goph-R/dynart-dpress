@@ -194,6 +194,8 @@ Everything behind `/admin`. **A screen is two actions**: one that renders the pa
 
 **Never hand a request straight to `addOrderBy()`.** The name goes into the SQL. `ListRequest` drops anything not in the whitelist the screen passes in, and `CoreQueries::applyListOptions()` checks the shape again because a second caller may build the context by hand. The page size is clamped rather than rejected — a browser asking for everything gets a page.
 
+**An action that answers with data must return `AbstractAdminController::answer()`.** `Form::process()` mints a fresh CSRF token on every run and stores it in the session, so validating one action spends the one printed on the page. Page-reloading actions never notice; two AJAX actions in a row do, and the second is refused as a forgery. `answer()` hands the new token back and `Dpress.keepToken()` puts it in the hidden form — from every answer, including a rejected one, which spent the token getting as far as being rejected.
+
 **Deletes and publishes are POSTs.** A link that changes something can be followed by a prefetcher, a crawler or an `<img>` on another page. Every admin screen renders one hidden form carrying a CSRF token, inside `<main>` so a partial load brings a fresh one; `Dpress.post()` points it at the action and submits it. `requireAction()` is what validates it, and a failure is a 403 rather than a redirect with a message.
 
 **The markdown field is a textarea with a toolbar, deliberately not an editor.** A markdown field whose value is anything other than what the author typed eventually rewrites somebody's document on save, and the content model is "the markdown is the truth".

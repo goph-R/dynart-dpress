@@ -108,7 +108,34 @@
                     throw new Error('HTTP ' + response.status);
                 }
                 return response.json().catch(function () { return {}; });
+            })
+            .then(function (answer) {
+                Dpress.keepToken(answer);
+                return answer;
             });
+    };
+
+    /**
+     * Takes the token an action handed back and puts it in the hidden form
+     *
+     * Validating an action mints a new token and stores it in the session, so the one printed on
+     * the page is spent the moment it is used. That is invisible while every action reloads the
+     * page - the new page carries the new token - and fatal for two actions in a row without
+     * one, which is what uploading a file and then attaching it is. The second was refused as a
+     * forgery, and the message blamed the attach.
+     *
+     * **Every answer, including a failed one.** An upload the server rejected still validated
+     * the token to get that far, so the next attempt needs the new one or the error becomes
+     * permanent for as long as the page is open.
+     */
+    Dpress.keepToken = function (answer) {
+        if (!answer || !answer.csrf) {
+            return;
+        }
+        var input = document.querySelector('form[data-action-form] input[name$="[_csrf]"]');
+        if (input) {
+            input.value = answer.csrf;
+        }
     };
 
 
@@ -636,6 +663,7 @@
                 } catch (ignore) {
                     // an HTML error page rather than an answer - the message below is all we know
                 }
+                Dpress.keepToken(answer);   // even a rejected file spent the token getting here
                 if (request.status !== 200 || !answer.item) {
                     return show(answer.error || 'That file could not be uploaded.');
                 }

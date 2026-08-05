@@ -155,9 +155,42 @@ abstract class AbstractAdminController extends AbstractController {
      * did not come from a page of this admin, and there is nothing useful to tell whoever sent it.
      */
     protected function requireAction(): void {
-        if (!$this->forms->create(AdminForms::ACTION)->process()) {
+        $form = $this->forms->create(AdminForms::ACTION);
+        if (!$form->process()) {
             $this->app()->sendError(403);
         }
+        $this->processedAction = $form;
+    }
+
+    /** @var DpressForm|null The action form this request validated, holding the token it minted */
+    private ?DpressForm $processedAction = null;
+
+    /**
+     * The token the *next* action has to send
+     *
+     * `Form::process()` generates a fresh token every time it runs and stores it in the session,
+     * so validating one action invalidates the one printed on the page. That is invisible while
+     * every action reloads the page - the new page carries the new token - and fatal the moment
+     * two of them happen without one, which is exactly what the editor's panel does: upload,
+     * then attach. The second was refused as a forgery.
+     *
+     * So an action that answers with data hands the new token back, and the browser puts it in
+     * the hidden form. Rotation stays, which is worth keeping: a token that leaked out of one
+     * response is spent.
+     */
+    protected function actionToken(): string {
+        $form = $this->processedAction ?? $this->actionForm();
+        return (string)$form->value($form->csrfName());
+    }
+
+    /**
+     * The answer to an action that returns data rather than a redirect
+     *
+     * Everything an action reports, plus the token for the next one. Going through one method
+     * means a new action cannot forget it and leave the second click of a pair failing.
+     */
+    protected function answer(array $data = []): array {
+        return $data + ['csrf' => $this->actionToken()];
     }
 
     /**
