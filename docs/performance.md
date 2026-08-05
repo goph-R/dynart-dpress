@@ -12,9 +12,9 @@ reports the time.
 
 ## 1. Is OPcache on?
 
-**This is the first thing to check and usually the largest single factor.** Without it, PHP
-recompiles every file on every request. A dpress page loads **153 files, 667 KB of PHP** — that
-compile is most of the response time on a cold setup and nearly free on a warm one.
+**Check it first**, though it is not the whole story: measured here it took a request from
+44.9 ms to 31.1 ms — worth having, and a third of the problem rather than all of it. A dpress
+page loads **153 files, 667 KB of PHP**, and compiling them is what OPcache removes.
 
 **The CLI and the web server have separate configurations**, and `opcache.enable_cli` is off by
 default. So `php -i` tells you nothing about what your site is doing. Ask the thing that serves
@@ -152,27 +152,45 @@ register_shutdown_function(function () {
 
 ## 4. The first baseline
 
-Measured 2026-08-05 on the development machine — **XAMPP, Windows, PHP 8.2, no OPcache**, which
-is a floor rather than a representative number. Recorded so the *shape* can be compared later.
+Measured 2026-08-05 on the development machine — XAMPP, Windows, PHP 8.2, MariaDB 10.4 — as
+`time_starttransfer - time_pretransfer`, median of 20 requests. **`/admin` answering 401 is the
+useful one**: it boots everything and then does almost no work, so it separates the cost of
+*being dpress* from the cost of *rendering a page*.
+
+| | no OPcache | OPcache on |
+|---|---|---|
+| static file (server floor) | 0.7 ms | 0.7 ms |
+| `/admin` → 401 (boot, no work) | 44.9 ms | **31.1 ms** |
+| front page (9 queries) | 48.5 ms | **32.1 ms** |
+| single post (5 queries) | — | 31.6 ms |
+
+Two things fall out of that table, and both were surprises:
+
+**The page work is about 1 ms.** Routing, nine queries and rendering the whole front page cost
+one millisecond more than a request that authenticates nobody and returns 401. Query tuning
+cannot move a number that is already one millisecond.
+
+**Boot is everything, and OPcache only fixes a third of it.** Compiling 153 files / 667 KB costs
+~14 ms; the remaining ~31 ms is work done at runtime on every request. Where that goes, by
+direct measurement:
 
 | | |
 |---|---|
-| static file (web server alone) | 1.6 ms |
-| one line of PHP (startup) | 1.9 ms |
-| dpress front page | 50.4 ms |
-| compiled per request | 153 files, 667 KB |
+| Composer autoload | 0.2 ms |
+| `new DpressWebApp(...)` | 1.4 ms |
+| **micro's own `fullInit()`** (bare `WebApp`, same config) | **0.5 ms** |
+| `AttributeProcessor` reflecting all 44 registered classes | ~3 ms |
+| **`PDO` connect to MariaDB** | **~11 ms** |
+| dpress's `init()`, the rest — not yet attributed | ~12 ms |
 
-| Page | Queries |
-|---|---|
-| `/` (front, 5 posts) | 9 |
-| `/welcome-to-dpress` (single post) | 5 |
-| `/about` (page, in a menu) | 12 |
-| `/category/news` | 11 |
-| `/page/2` | 4 |
+**The framework is not the problem**: a bare `WebApp` with the same config boots in half a
+millisecond. Nor is attribute reflection, which was the obvious suspect and turned out to cost
+3 ms.
 
-What that says: with no OPcache, ~48 of those 50 ms is dpress being *compiled*, not run. The
-query counts are the number worth watching, because they are the part that grows with content
-and with features.
+**Treat the 11 ms connect as a Windows artifact until it is measured on Linux.** MariaDB over
+TCP on Windows is slow to hand-shake — 127.0.0.1 and localhost measured the same, so it is not
+the usual IPv6-fallback trap — while a Linux host connecting over a unix socket is normally
+under a millisecond. Do not go adding persistent connections on the strength of this number.
 
 ### A budget
 
@@ -180,7 +198,8 @@ Not measurements — targets to notice a regression against:
 
 - **a public page: 12 queries or fewer**, and flat as content grows. A count that rises with the
   number of posts, menu items or categories on the page is an N+1 and is the bug.
-- **a public page: under 20 ms of server time** on a warm OPcache with a local database.
+- **the page's own work: a few ms.** It is ~1 ms today; if that grows, something started doing
+  work per request that used to be done once.
 - **the admin: one request per screen** (0.13.0 made the lists seed their first page).
 
 ---
@@ -189,14 +208,18 @@ Not measurements — targets to notice a regression against:
 
 In the order they are worth fixing:
 
-1. **The menu resolves its targets one at a time.** Every item runs its own
+1. **Boot is ~95% of a request, and it is not compilation.** See the table above. This is the
+   only finding that affects every page equally, and the ~12 ms not yet attributed to anything
+   is the next thing to measure — it needs four `microtime()` calls inside `AbstractApp::fullInit()`,
+   which is the one measurement this document cannot take from the outside.
+2. **The menu resolves its targets one at a time.** Every item runs its own
    `select * from dp_content where id = ?` or `dp_category`, so a ten-item menu is ten extra
-   queries **on every page of the site**. This is the only finding that scales with content, and
-   the only one that matters much.
-2. **Loading a row takes two queries.** The pattern is "query for the id, then `findById()`" —
+   queries **on every page of the site**. Worth fixing because it *scales with content*, which
+   flat one-millisecond page work does not — but it will not move the total today.
+3. **Loading a row takes two queries.** The pattern is "query for the id, then `findById()`" —
    `findByEmail`, the slug lookup, the menu place lookup all do it. Correct, and one round trip
    more than necessary each time.
-3. **Two wasted round trips per request**: `use <database>` and `set names 'utf8'` are sent on
+4. **Two wasted round trips per request**: `use <database>` and `set names 'utf8'` are sent on
    every connect. Both vanish if the DSN carries them —
    `mysql:host=localhost;dbname=dpress;charset=utf8mb4`.
 
