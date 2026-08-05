@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.16.1] &ndash; 2026-08-05
+
+### Fixed
+- **The featured image never showed its thumbnail.** The media field's preview was rendered from a `$media_preview` view variable that **nothing anywhere set**, so a field with an image chosen showed an empty box - the id was there, the Remove button was there, the picture was not. The preview is now part of the field definition, rendered by the form builder from the controller's context.
+
+### Notes
+On the field rather than in a view variable, because one variable cannot be the preview of two media fields on the same form - and a category thumbnail next to a featured image is the obvious second one. A media id that no longer resolves shows no preview rather than failing: the field still holds the id, so the editor can see it is set and change it.
+
+---
+
 ## [0.16.0] &ndash; 2026-08-05
 
 The attachments panel, in the content editor.

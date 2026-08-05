@@ -90,7 +90,8 @@ class AdminForms {
         }
 
         $form->addFields([
-            'featured_media_id' => ['type' => 'media', 'label' => 'Featured image', 'required' => false],
+            'featured_media_id' => ['type' => 'media', 'label' => 'Featured image', 'required' => false,
+                                    'preview' => (string)($context['featured_preview'] ?? '')],
         ], false);
 
         if ($isPage) {

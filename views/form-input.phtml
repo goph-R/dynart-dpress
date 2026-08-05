@@ -15,8 +15,12 @@ $attrs = $field['attributes'] ?? [];
     <?php $value = (string)$form->value($name) ?>
     <div class="media-field" data-media-field>
         <input type="hidden" id="<?= $id ?>" name="<?= $inputName ?>" value="<?= esc_attr($value) ?>" data-media-input>
+        <?php // The preview is the field's own, not a view variable: a form may hold more than
+              // one media field - a featured image and a thumbnail - and one variable cannot be
+              // the preview of both. It is markup the builder rendered; the picker replaces it
+              // with its own when somebody chooses a different file. ?>
         <div class="media-field-preview" data-media-preview>
-            <?php if ($value !== '' && !empty($media_preview)): ?><?= $media_preview ?><?php endif ?>
+            <?php if ($value !== '' && !empty($field['preview'])): ?><?= $field['preview'] ?><?php endif ?>
         </div>
         <button type="button" class="button small" data-media-pick>Choose…</button>
         <button type="button" class="button small" data-media-clear<?= $value === '' ? ' hidden' : '' ?>>Remove</button>

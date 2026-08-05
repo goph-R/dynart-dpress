@@ -371,6 +371,9 @@ class ContentAdminController extends AbstractAdminController {
             'can_attach'  => $this->can(Permissions::MEDIA_VIEW),
             'attach_url'  => $content !== null
                 ? $this->router->url('/admin/content/'.$type.'/attach/'.$content->id) : '',
+            // the thumbnail the field shows for what is already chosen. Rendered here because a
+            // template has no business asking a service what a media id looks like.
+            'featured_preview' => $this->featuredPreview($content),
         ];
         if ($type === Content::TYPE_PAGE) {
             $context['pages'] = $this->pageOptions($content);
@@ -382,6 +385,23 @@ class ContentAdminController extends AbstractAdminController {
             }
         }
         return $context;
+    }
+
+    /**
+     * The thumbnail of the currently chosen featured image, or nothing
+     *
+     * The field carries its own preview rather than reading a view variable, because a form may
+     * hold more than one media field and one variable cannot be the preview of both.
+     *
+     * A media id that no longer resolves - the file was purged - shows no preview rather than
+     * failing: the field still holds the id, and the editor can see it is set and change it.
+     */
+    protected function featuredPreview(?Content $content): string {
+        if ($content === null || $content->featured_media_id === null) {
+            return '';
+        }
+        $media = $this->media->findById($content->featured_media_id);
+        return $media === null ? '' : $this->mediaView->tag($media, 'thumb');
     }
 
     /**
