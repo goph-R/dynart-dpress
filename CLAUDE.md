@@ -197,6 +197,8 @@ Everything behind `/admin`. **A screen is two actions**: one that renders the pa
 
 **A row action is an icon with its name in `title` and `aria-label`.** The label is not decoration: an icon has no accessible name of its own and a `title` is a tooltip, which a screen reader may or may not announce.
 
+**The uploads `.htaccess` is written by `MediaStorage::protect()`**, once at install, and `dpress media:protect` rewrites it. **Every module-specific directive in it must sit inside an `<IfModule>`**: Apache does not skip a directive it does not recognise, it refuses the whole directory with a 500, so an unguarded `php_flag` turned every image on a PHP-FPM site into a server error. The `<FilesMatch>` deny is the actual lock and stays outside — it needs no module and is what stops an uploaded `.php` being a remote shell.
+
 **The assets are served from the package** by `AssetController`, so installing the package installs the admin — no publish step to forget after an update, which would otherwise leave last version's list code talking to this version's endpoints. The URL carries `Dpress::VERSION`, so the answer is cached forever.
 
 **A template must never pass `get_defined_vars()` to a nested `fetch()`.** A template body is `include`d inside `View::fetch()` and shares its scope, so that hands down the *path of the file being included*; the nested fetch extracts it over its own and includes the caller instead — forever. micro 0.17.0 unsets the reserved names, but naming the variables is still the honest way to write it.

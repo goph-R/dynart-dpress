@@ -113,33 +113,67 @@ class MediaStorage {
      * Creates the uploads folder and the .htaccess that keeps it from executing anything
      *
      * The folder is inside the document root, so without this an uploaded `.php` would be a
-     * remote shell. The `.svg` rule is the cheap half of the SVG story until the sanitiser
-     * lands: a strict CSP stops scripts running when somebody navigates straight to the file.
-     * An SVG used as `<img src>` never ran scripts anyway.
+     * remote shell. The `.svg` rule is the second lock behind the sanitiser: a strict CSP stops
+     * scripts running when somebody navigates straight to the file. An SVG used as `<img src>`
+     * is a non-scripted context regardless.
+     *
+     * **Every directive is inside an `<IfModule>`**, and that is not tidiness. Apache does not
+     * skip a directive it does not recognise - it refuses to serve the directory at all, with a
+     * 500 and `Invalid command` in the log. `php_flag` belongs to mod_php, so under PHP-FPM this
+     * file turned every image on the site into a server error; `Header` belongs to mod_headers,
+     * which is not enabled everywhere either. Both are now no-ops when the module is absent.
+     *
+     * Losing `php_flag` on FPM costs nothing, because the `<FilesMatch>` below is the actual
+     * lock: it refuses to serve those files at all, so there is nothing left to interpret.
+     *
+     * @param bool $force Rewrite a file that is already there - for `dpress media:protect`,
+     *                    since an installation that got the old one needs a way to be fixed
      */
-    public function protect(): void {
+    public function protect(bool $force = false): void {
         $base = $this->basePath();
         $this->makeDirectory($base);
         $path = $base.'/.htaccess';
-        if (is_file($path)) {
+        if (is_file($path) && !$force) {
             return;
         }
-        file_put_contents($path, <<<'HTACCESS'
-# Uploaded files are data, never code.
-php_flag engine off
+        file_put_contents($path, self::PROTECTION);
+    }
+
+    /**
+     * What `protect()` writes. A constant so a test can read it without touching a disk.
+     */
+    const PROTECTION = <<<'HTACCESS'
+# Uploaded files are data, never code. Written by dpress - `dpress media:protect` rewrites it.
+#
+# Every directive is inside an <IfModule> on purpose: Apache does not ignore one it does not
+# know, it answers 500 for the whole directory. `php_flag` is mod_php, so without a guard this
+# file turns every image into a server error under PHP-FPM.
+
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php5.c>
+    php_flag engine off
+</IfModule>
+
+# The real lock, and the one that works whatever PHP is running as: these are not served at all,
+# so there is nothing left to interpret.
 <FilesMatch "\.(php|phtml|php[0-9]|phar|pl|py|cgi|asp|aspx|sh|htaccess)$">
     Require all denied
 </FilesMatch>
 
-# SVGs are sanitised on the way in, so nothing executable should reach this folder. This is the
-# second lock: it stops anything that got past the sanitiser - or that predates it - from running
-# when the file is opened directly. An <img src> is a non-scripted context regardless.
-<FilesMatch "\.svg$">
-    Header set Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox"
-    Header set X-Content-Type-Options "nosniff"
-</FilesMatch>
-HTACCESS);
-    }
+# SVGs are sanitised on the way in. This stops anything that got past the sanitiser - or that
+# predates it - from running when the file is opened directly.
+<IfModule mod_headers.c>
+    <FilesMatch "\.svg$">
+        Header set Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+        Header set X-Content-Type-Options "nosniff"
+    </FilesMatch>
+</IfModule>
+HTACCESS;
 
     protected function makeDirectory(string $path): void {
         if (is_dir($path)) {

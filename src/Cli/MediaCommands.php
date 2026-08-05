@@ -7,6 +7,7 @@ use Dynart\Micro\CliOutputInterface;
 use Dynart\Dpress\DpressException;
 use Dynart\Dpress\Entity\Media;
 use Dynart\Dpress\Media\ImageProcessor;
+use Dynart\Dpress\Media\MediaStorage;
 use Dynart\Dpress\Media\MediaTypes;
 use Dynart\Dpress\Service\MediaService;
 use Dynart\Dpress\Service\UserService;
@@ -21,6 +22,7 @@ class MediaCommands extends AbstractCommands {
         protected MediaService $media,
         protected UserService $users,
         protected ImageProcessor $images,
+        protected MediaStorage $storage,
     ) {
         parent::__construct($output);
     }
@@ -148,6 +150,24 @@ class MediaCommands extends AbstractCommands {
         $count = $this->media->clearDerivatives($media);
         $this->output->writeLine('Presets: '.join(', ', array_keys($this->images->presets())));
         return $this->success("Cleared $count derivative(s). They are rebuilt on the next request.");
+    }
+
+    /**
+     * `dpress media:protect`
+     *
+     * Rewrites `uploads/.htaccess`, which is what stops an uploaded file from being executed.
+     * It is written at install and left alone afterwards, so an installation that got an older
+     * one has no other way to be brought up to date - and the older one 500s the whole folder
+     * under PHP-FPM, because `php_flag` is a mod_php directive and Apache refuses a directive
+     * it does not know rather than skipping it.
+     *
+     * Overwrites without asking, on purpose: this file belongs to dpress, and a site that has
+     * edited it wants its own rules in the vhost, not here where an upload can rewrite them.
+     */
+    public function protect(array $params = []): int {
+        $this->storage->protect(true);
+        $this->output->writeLine($this->storage->basePath().'/.htaccess');
+        return $this->success('Rewritten. Uploaded files cannot be executed.');
     }
 
     /**

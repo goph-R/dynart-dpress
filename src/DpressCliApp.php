@@ -157,6 +157,11 @@ class DpressCliApp extends CliApp {
             'flags' => ['confirm'],
             'needsConfig' => true,
         ],
+        'media:protect' => [
+            'callable' => [MediaCommands::class, 'protect'],
+            'description' => 'Rewrite the uploads .htaccess that stops uploads being executed',
+            'needsConfig' => true,
+        ],
         'media:regenerate' => [
             'callable' => [MediaCommands::class, 'regenerate'],
             'description' => 'Clear the generated thumbnails so they are rebuilt on demand',

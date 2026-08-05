@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.14.2] &ndash; 2026-08-05
+
+### Fixed
+- **The uploads `.htaccess` 500'd every file under PHP-FPM.** `php_flag engine off` is a mod_php directive, and Apache does not skip a directive it does not recognise — it refuses the whole directory with `Invalid command`. On any site not running mod_php, every image, every download and every thumbnail was a server error. `Header` had the same problem waiting behind it, since mod_headers is not enabled everywhere either. Every module-specific directive is now inside an `<IfModule>`.
+
+### Added
+- **`dpress media:protect`** rewrites `uploads/.htaccess`. It is written once at install and left alone afterwards, so an installation that got the old one had no way back out — and could not be fixed by re-running `install` either.
+
+### Notes
+Nothing is lost when `php_flag` is skipped. The `<FilesMatch>` rule below it is the actual lock and does not depend on any module: those files are not served at all, so there is nothing left to interpret. Verified against the running Apache — an uploaded `.php` answers 403 and its contents never execute, while images and SVGs serve normally with the CSP header intact.
+
+---
+
 ## [0.14.1] &ndash; 2026-08-05
 
 ### Fixed
