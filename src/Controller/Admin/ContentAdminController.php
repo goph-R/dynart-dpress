@@ -211,6 +211,7 @@ class ContentAdminController extends AbstractAdminController {
                 $this->applyTaxonomy($created, $values);
                 return $created;
             });
+            $this->applyStatus($content, $form->values(), $type);
             $this->done('/admin/content/'.$type, 'Created.');
         }
         return $this->editor($type, $form, null);
@@ -230,6 +231,7 @@ class ContentAdminController extends AbstractAdminController {
                 $this->applyTaxonomy($content, $values);
                 return $content;
             });
+            $this->applyStatus($content, $form->values(), $type);
             $this->done('/admin/content/'.$type, 'Saved.');
         }
         return $this->editor($type, $form, $content);
@@ -252,10 +254,61 @@ class ContentAdminController extends AbstractAdminController {
     }
 
     /**
+     * Publishes or unpublishes, when the editor asked for it and may
+     *
+     * **The status is not an update field.** `ContentService::update()` deliberately ignores it,
+     * because becoming visible is not the same kind of change as a corrected typo: it sets
+     * `published_at` and it is what a plugin, a feed or a cache listens for. So the editor's
+     * select goes through the same two methods the row actions use, and the transition is
+     * announced exactly once however it was asked for.
+     *
+     * Silently, when the permission is missing, rather than as an error - the field is not
+     * offered to somebody who cannot publish, so anything arriving here without it was not
+     * typed into a form this admin rendered.
+     */
+    protected function applyStatus(?Content $content, array $values, string $type): void {
+        if (!$content instanceof Content
+            || !array_key_exists('status', $values)
+            || !$this->can(Permissions::forContent($type, 'publish'))) {
+            return;
+        }
+        $change = $this->statusChange($content->status, (string)$values['status']);
+        if ($change === 'publish') {
+            $this->content->publish($content);
+        } else if ($change === 'unpublish') {
+            $this->content->unpublish($content);
+        }
+    }
+
+    /**
+     * What has to happen to get from one status to another, or nothing
+     *
+     * A status the form does not offer is not a third state to move to - it is somebody sending
+     * whatever they like, and the answer is to leave the content where it is.
+     *
+     * @return string|null `publish`, `unpublish`, or null when there is nothing to do
+     */
+    protected function statusChange(string $current, string $wanted): ?string {
+        if ($wanted === Content::STATUS_PUBLISHED && $current !== Content::STATUS_PUBLISHED) {
+            return 'publish';
+        }
+        if ($wanted === Content::STATUS_DRAFT && $current !== Content::STATUS_DRAFT) {
+            return 'unpublish';
+        }
+        return null;
+    }
+
+    /**
      * What the form builder needs to offer the right fields
      */
     protected function editorContext(string $type, ?Content $content): array {
-        $context = ['is_page' => $type === Content::TYPE_PAGE, 'content' => $content];
+        $context = [
+            'is_page' => $type === Content::TYPE_PAGE,
+            'content' => $content,
+            // a select that cannot do anything is worse than no select: the page says "Saved."
+            // and nothing moved, which is exactly the bug this whole method exists to fix
+            'can_publish' => $this->can(Permissions::forContent($type, 'publish')),
+        ];
         if ($type === Content::TYPE_PAGE) {
             $context['pages'] = $this->pageOptions($content);
         } else {
@@ -302,10 +355,16 @@ class ContentAdminController extends AbstractAdminController {
      *
      * A key that is not in the form is left out entirely, because `update()` treats "absent" as
      * "leave it alone" - a page editor has no `categories` field and must not clear them.
+     *
+     * **`status` is not here.** It went through `create()`, which honours it, and through
+     * `update()`, which ignores it - so the same select published a new post and did nothing at
+     * all to an existing one. Worse, the create path took it without asking whether this person
+     * may publish, and the stock `editor` role holds `post.publish` but not `page.publish`.
+     * Everything now starts as a draft and `applyStatus()` decides, once, in one place.
      */
     protected function contentData(array $values): array {
         $data = [];
-        foreach (['title', 'markdown', 'slug', 'status'] as $field) {
+        foreach (['title', 'markdown', 'slug'] as $field) {
             if (array_key_exists($field, $values)) {
                 $data[$field] = (string)$values[$field];
             }

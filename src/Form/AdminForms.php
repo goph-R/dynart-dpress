@@ -68,10 +68,21 @@ class AdminForms {
         $form->addFields([
             'slug'   => ['type' => 'text', 'label' => 'Slug', 'required' => false,
                          'description' => 'Left empty it is made from the title.'],
-            'status' => ['type' => 'select', 'label' => 'Status', 'required' => false, 'options' => [
-                Content::STATUS_DRAFT     => 'Draft',
-                Content::STATUS_PUBLISHED => 'Published',
-            ]],
+        ], false);
+
+        // Only for somebody who may publish this kind of content - the stock editor role holds
+        // `post.publish` but not `page.publish`. A select that is ignored on save is the worst
+        // of the three options: the screen says "Saved." and the status did not move.
+        if ($context['can_publish'] ?? true) {
+            $form->addFields([
+                'status' => ['type' => 'select', 'label' => 'Status', 'required' => false, 'options' => [
+                    Content::STATUS_DRAFT     => 'Draft',
+                    Content::STATUS_PUBLISHED => 'Published',
+                ]],
+            ], false);
+        }
+
+        $form->addFields([
             'featured_media_id' => ['type' => 'media', 'label' => 'Featured image', 'required' => false],
         ], false);
 

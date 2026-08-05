@@ -5,6 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.14.1] &ndash; 2026-08-05
+
+### Fixed
+- **The editor's Status select did nothing.** Setting a post to Published and saving said "Saved." and left it a draft. `ContentService::update()` ignores `status` on purpose — becoming visible sets `published_at` and is what a feed, a cache or a plugin listens for, so it belongs to `publish()` / `unpublish()` — but the editor handed `status` to `update()` anyway and it was dropped on the floor. The editor now makes the transition through the same two service methods the row actions use, so it is announced exactly once however it was asked for.
+- **Creating content ignored the publish permission.** `ContentService::create()` *does* honour the status it is given, and nothing checked whether the person may publish before passing it on — so the same select that did nothing on edit published on create. It is checked now, on both paths.
+- **The Status select is only rendered for somebody who may publish** that kind of content. The stock `editor` role holds `post.publish` but not `page.publish`, so this was not hypothetical: that role got a select on the page editor that the server then ignored.
+
+### Notes
+The three are one bug seen from three sides: `status` was travelling with the ordinary fields, through a method that honours it and a method that ignores it, with nobody asking a permission question on the way. It travels on its own now, through `applyStatus()`, which asks both questions in one place — and a status that is neither `draft` nor `published` is not a third state to move to.
+
+Saving a published post without touching the select no longer re-publishes it. It never visibly did, but it would have moved `published_at` and announced the post again on every corrected typo.
+
+---
+
 ## [0.14.0] &ndash; 2026-08-05
 
 Guessing a password now costs something.
