@@ -2,7 +2,9 @@
  * The admin's small pieces of behaviour
  *
  * Everything here is an enhancement of markup the server already rendered. No build step, no
- * framework: a `<script>` tag, and each piece finds its own elements by a `data-` attribute.
+ * framework: a `<script>` tag, and each piece finds its own elements by a `data-` attribute -
+ * which is also what lets a screen that arrived as a partial be bound exactly like one that
+ * arrived with the page, since inserted markup never runs a `<script>` of its own.
  */
 (function (global) {
     'use strict';
@@ -118,6 +120,7 @@
             allOrderDisabled: config.allOrderDisabled || false,
             orderDisabled: config.orderDisabled || [],
             texts: config.texts || {},
+            firstPage: config.firstPage || null,
             columnViews: columnViews,
             rowActions: (config.rowActions || []).map(declaredRowAction),
             groupActions: (config.groupActions || []).map(declaredGroupAction),
@@ -129,6 +132,28 @@
         }
         return list;
     };
+
+    /**
+     * Builds every list on a piece of the page that has not been built yet
+     *
+     * `<div data-list="{…}">`, rather than a `<script>` next to it, because a screen that arrived
+     * as a partial was *inserted*, and inserted HTML does not run its scripts. This is called on
+     * the first load and after every navigation, and the flag on the element is what keeps a
+     * second call from building the same list twice.
+     */
+    function initLists(root) {
+        root.querySelectorAll('[data-list]').forEach(function (element) {
+            if (element.dataset.listBound) {
+                return;
+            }
+            element.dataset.listBound = '1';
+            try {
+                Dpress.list(element, JSON.parse(element.getAttribute('data-list')));
+            } catch (error) {
+                console.error('dpress: the list configuration could not be read', error);
+            }
+        });
+    }
 
     function declaredRowAction(declared) {
         var action = Object.assign({}, declared);
@@ -387,11 +412,185 @@
         });
     };
 
+    // --- moving between screens without leaving the page ---
+
+    /** The parameter that asks a screen for its `<main>` element rather than the whole page */
+    var PARTIAL = 'ajax';
+
+    /**
+     * Loads an admin screen into this page instead of going to it
+     *
+     * The chrome - the header, the navigation, the stylesheet, this script - is the same on every
+     * screen, so a navigation that fetches all of it again is throwing away what the browser
+     * already has. This asks the same URL for the same screen with the layout left off and puts
+     * the answer where the old one was.
+     *
+     * **Anything unexpected is a real navigation.** An expired session redirects to the login
+     * page, a deleted row answers 404, a screen a plugin serves may not be a fragment at all:
+     * in every one of those cases the browser renders the URL properly, which is both the honest
+     * answer and the one that cannot leave somebody looking at half a page.
+     */
+    /** Counts the navigations, so an answer that arrives after a later one is dropped */
+    var navigation = 0;
+
+    Dpress.navigate = function (url, push) {
+        var target = withoutPartial(url);
+        var main = document.querySelector('.admin-main');
+        if (!main) {
+            global.location.href = target;
+            return;
+        }
+        var asked = new URL(target);
+        asked.searchParams.set(PARTIAL, '1');
+        var id = ++navigation;
+        main.setAttribute('aria-busy', 'true');
+        fetch(asked.href, {headers: {'Accept': 'text/html'}, credentials: 'same-origin'})
+            .then(function (response) {
+                if (!response.ok || withoutPartial(response.url) !== target) {
+                    throw new Error(response.status + ' ' + response.url);
+                }
+                return response.text();
+            })
+            .then(function (html) {
+                if (id !== navigation) {
+                    return; // two clicks, and this is the older one: the newer answer is the page
+                }
+                html = html.trim();
+                if (!/^<main[\s>]/i.test(html)) {
+                    throw new Error('the answer was not a screen');
+                }
+                swap(html, target, push !== false);
+            })
+            .catch(function (error) {
+                if (id !== navigation) {
+                    return; // and a stale failure must not drag the browser off the newer screen
+                }
+                console.warn('dpress: ' + target + ' did not load into the page, going there', error);
+                global.location.href = target;
+            });
+    };
+
+    function withoutPartial(url) {
+        var without = new URL(url, global.location.href);
+        without.searchParams.delete(PARTIAL);
+        return without.href;
+    }
+
+    function swap(html, target, push) {
+        var main = document.querySelector('.admin-main');
+        // `outerHTML` deliberately. It parses in *this* document, where a `<script>` in inserted
+        // markup stays inert - which is the point - while an `onclick` attribute still becomes a
+        // working handler. Markup parsed anywhere else, a `DOMParser` document or a `<template>`,
+        // comes from a document with scripting disabled, and its inline handlers never wake up
+        // even after the elements are adopted here.
+        main.outerHTML = html;
+        main = document.querySelector('.admin-main');
+        if (!main) {
+            global.location.href = target;
+            return;
+        }
+        document.title = main.getAttribute('data-title') || document.title;
+        markSection(main.getAttribute('data-section') || '');
+        if (push) {
+            history.pushState({dpress: true}, '', target);
+        }
+        global.scrollTo(0, 0);
+        Dpress.init(main);
+        // the page changed under somebody who may not be able to see that it did: without this
+        // the focus stays on a link that no longer exists, and the next Tab starts from the top
+        main.focus({preventScroll: true});
+    }
+
+    function markSection(key) {
+        document.querySelectorAll('.admin-nav a[data-section]').forEach(function (link) {
+            var current = key !== '' && link.getAttribute('data-section') === key;
+            link.classList.toggle('current', current);
+            if (current) {
+                link.setAttribute('aria-current', 'page');
+            } else {
+                link.removeAttribute('aria-current');
+            }
+        });
+    }
+
+    function initNavigation() {
+        if (!global.fetch || !global.history || !global.history.pushState
+            || !document.querySelector('.admin-main')) {
+            return; // without any one of these the admin is simply the admin it always was
+        }
+        // so that going back to the screen this page started on is ours to answer as well
+        history.replaceState({dpress: true}, '', global.location.href);
+
+        document.addEventListener('click', function (event) {
+            var url = clickedScreen(event);
+            if (url) {
+                event.preventDefault();
+                Dpress.navigate(url, true);
+            }
+        });
+
+        global.addEventListener('popstate', function (event) {
+            // an entry this never pushed belongs to somebody else: let the browser have it
+            if (event.state && event.state.dpress) {
+                Dpress.navigate(global.location.href, false);
+            }
+        });
+    }
+
+    /**
+     * The admin screen a click is asking for, or nothing when the browser should handle it
+     */
+    function clickedScreen(event) {
+        if (event.defaultPrevented || event.button !== 0
+            || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+            return null; // a new tab, a new window, or a `data-confirm` that has already said no
+        }
+        var link = event.target.closest ? event.target.closest('a[href]') : null;
+        if (!link || link.target || link.hasAttribute('download') || link.hasAttribute('data-full-load')) {
+            return null;
+        }
+        var url = new URL(link.getAttribute('href'), global.location.href);
+        if (url.origin !== global.location.origin || url.hash || !isAdminUrl(url)) {
+            return null; // another site, another part of this one, or a place on this page
+        }
+        return url.href;
+    }
+
+    /**
+     * Does this URL name a screen of this admin?
+     *
+     * There are two ways of writing the same thing. With rewriting on the route is the path; with
+     * it off - which is the framework's default - every screen there is shares `index.php` and
+     * the route travels in a parameter. The server says which, because only it knows.
+     *
+     * Being wrong either way costs a partial load and nothing more: a link that fails this is
+     * followed the ordinary way, and one that passes it but answers with something other than a
+     * screen falls back to exactly that.
+     */
+    function isAdminUrl(url) {
+        var declared = document.body.getAttribute('data-admin-url');
+        if (!declared) {
+            return false;
+        }
+        var admin = new URL(declared, global.location.href);
+        var param = document.body.getAttribute('data-route-param');
+        if (param) {
+            return url.pathname === admin.pathname
+                && under(url.searchParams.get(param) || '', admin.searchParams.get(param) || '');
+        }
+        return under(url.pathname, admin.pathname);
+    }
+
+    function under(path, base) {
+        return base !== '' && (path === base || path.indexOf(base + '/') === 0);
+    }
+
     Dpress.init = function (root) {
         root = root || document;
         initConfirms(root);
         initMarkdown(root);
         initMediaFields(root);
+        initLists(root);
     };
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -399,6 +598,7 @@
             global.DynamicListColumnView.locale = document.documentElement.lang || 'en';
         }
         Dpress.init(document);
+        initNavigation();
     });
 
 }(window));

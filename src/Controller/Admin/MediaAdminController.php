@@ -50,23 +50,38 @@ class MediaAdminController extends AbstractAdminController {
     #[Route('GET', '/admin/media')]
     public function index(): string {
         $this->requirePermission(Permissions::MEDIA_VIEW);
+        $config = $this->listConfig();
+        $config['firstPage'] = $this->page($this->withDeleted($this->firstPageContext($config, self::SORTABLE, ['search', 'category'])));
         return $this->admin('dpress:admin/media/list', [
             'title'       => 'Media',
             'can_upload'  => $this->can(Permissions::MEDIA_CREATE),
             'upload_url'  => $this->router->url('/admin/media/upload'),
             'categories'  => Media::CATEGORIES,
             'list_id'     => 'media-list',
-            'list_config' => $this->listConfig(),
+            'list_config' => $config,
         ]);
     }
 
     #[Route('GET', '/admin/media/list')]
     public function rowsJson(): array {
         $this->requirePermission(Permissions::MEDIA_VIEW);
-        $context = $this->list->context(self::SORTABLE, ['search', 'category']);
+        return $this->page($this->withDeleted($this->list->context(self::SORTABLE, ['search', 'category'])));
+    }
+
+    /**
+     * The one filter that is a permission rather than a field
+     */
+    protected function withDeleted(array $context): array {
         if ($this->can(Permissions::MEDIA_DELETE) && $this->request->get('with_deleted')) {
             $context['with_deleted'] = true;
         }
+        return $context;
+    }
+
+    /**
+     * One page of rows, for this endpoint and for the screen that seeds its first page
+     */
+    protected function page(array $context): array {
         $rows = $this->media->findAll($context);
         return $this->rows(array_map([$this, 'row'], $rows), $this->media->countAll($context));
     }

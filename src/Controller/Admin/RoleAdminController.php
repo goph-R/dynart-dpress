@@ -66,6 +66,9 @@ class RoleAdminController extends AbstractAdminController {
                     'users'       => ['label' => 'Users', 'align' => 'right', 'sortable' => false],
                 ],
                 'rowActions' => $this->rowActions(),
+                // there are as many roles as somebody made: one page, no paging, and the screen
+                // may as well arrive with it rather than send the browser back for it
+                'firstPage' => $this->page(),
             ],
         ]);
     }
@@ -73,6 +76,10 @@ class RoleAdminController extends AbstractAdminController {
     #[Route('GET', '/admin/roles/list')]
     public function rowsJson(): array {
         $this->requirePermission(Permissions::ROLE_VIEW);
+        return $this->page();
+    }
+
+    protected function page(): array {
         $rows = [];
         foreach ($this->roles->findAll() as $role) {
             $isAdmin = $role['name'] === Role::NAME_ADMIN;

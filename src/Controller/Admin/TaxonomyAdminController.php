@@ -48,31 +48,39 @@ class TaxonomyAdminController extends AbstractAdminController {
     #[Route('GET', '/admin/categories')]
     public function categories(): string {
         $this->requirePermission(Permissions::CATEGORY_VIEW);
+        $config = [
+            'endpoint' => $this->router->url('/admin/categories/list'),
+            'orderBy'  => 'name',
+            'columns'  => [
+                'name'      => ['label' => 'Name', 'view' => 'link', 'options' => ['hrefProperty' => 'edit_url']],
+                'slug'      => ['label' => 'Slug'],
+                'parent'    => ['label' => 'Parent', 'sortable' => false],
+                'position'  => ['label' => 'Position', 'align' => 'right'],
+            ],
+            'rowActions' => $this->rowActions('categories', Permissions::CATEGORY_UPDATE, Permissions::CATEGORY_DELETE,
+                'Delete this category? The posts in it keep their other categories.'),
+        ];
+        $config['firstPage'] = $this->categoryPage($this->firstPageContext($config, self::CATEGORY_SORTABLE, ['search']));
         return $this->admin('dpress:admin/taxonomy/categories', [
             'title'      => 'Categories',
             'can_create' => $this->can(Permissions::CATEGORY_CREATE),
             'new_url'    => $this->router->url('/admin/categories/new'),
             'tags_url'   => $this->router->url('/admin/tags'),
             'list_id'    => 'category-list',
-            'list_config' => [
-                'endpoint' => $this->router->url('/admin/categories/list'),
-                'orderBy'  => 'name',
-                'columns'  => [
-                    'name'      => ['label' => 'Name', 'view' => 'link', 'options' => ['hrefProperty' => 'edit_url']],
-                    'slug'      => ['label' => 'Slug'],
-                    'parent'    => ['label' => 'Parent', 'sortable' => false],
-                    'position'  => ['label' => 'Position', 'align' => 'right'],
-                ],
-                'rowActions' => $this->rowActions('categories', Permissions::CATEGORY_UPDATE, Permissions::CATEGORY_DELETE,
-                    'Delete this category? The posts in it keep their other categories.'),
-            ],
+            'list_config' => $config,
         ]);
     }
 
     #[Route('GET', '/admin/categories/list')]
     public function categoryRows(): array {
         $this->requirePermission(Permissions::CATEGORY_VIEW);
-        $context = $this->list->context(self::CATEGORY_SORTABLE, ['search']);
+        return $this->categoryPage($this->list->context(self::CATEGORY_SORTABLE, ['search']));
+    }
+
+    /**
+     * One page of categories, for the endpoint and for the screen that seeds its first page
+     */
+    protected function categoryPage(array $context): array {
         $names = $this->categoryNames();
         $rows = [];
         foreach ($this->taxonomy->categories($context) as $category) {
@@ -177,29 +185,37 @@ class TaxonomyAdminController extends AbstractAdminController {
     #[Route('GET', '/admin/tags')]
     public function tags(): string {
         $this->requirePermission(Permissions::TAG_VIEW);
+        $config = [
+            'endpoint' => $this->router->url('/admin/tags/list'),
+            'orderBy'  => 'name',
+            'columns'  => [
+                'name' => ['label' => 'Name', 'view' => 'link', 'options' => ['hrefProperty' => 'edit_url']],
+                'slug' => ['label' => 'Slug'],
+            ],
+            'rowActions' => $this->rowActions('tags', Permissions::TAG_UPDATE, Permissions::TAG_DELETE,
+                'Delete this tag? It is removed from every post that carries it.'),
+        ];
+        $config['firstPage'] = $this->tagPage($this->firstPageContext($config, self::TAG_SORTABLE, ['search']));
         return $this->admin('dpress:admin/taxonomy/tags', [
             'title'      => 'Tags',
             'can_create' => $this->can(Permissions::TAG_CREATE),
             'new_url'    => $this->router->url('/admin/tags/new'),
             'categories_url' => $this->router->url('/admin/categories'),
             'list_id'    => 'tag-list',
-            'list_config' => [
-                'endpoint' => $this->router->url('/admin/tags/list'),
-                'orderBy'  => 'name',
-                'columns'  => [
-                    'name' => ['label' => 'Name', 'view' => 'link', 'options' => ['hrefProperty' => 'edit_url']],
-                    'slug' => ['label' => 'Slug'],
-                ],
-                'rowActions' => $this->rowActions('tags', Permissions::TAG_UPDATE, Permissions::TAG_DELETE,
-                    'Delete this tag? It is removed from every post that carries it.'),
-            ],
+            'list_config' => $config,
         ]);
     }
 
     #[Route('GET', '/admin/tags/list')]
     public function tagRows(): array {
         $this->requirePermission(Permissions::TAG_VIEW);
-        $context = $this->list->context(self::TAG_SORTABLE, ['search']);
+        return $this->tagPage($this->list->context(self::TAG_SORTABLE, ['search']));
+    }
+
+    /**
+     * One page of tags, for the endpoint and for the screen that seeds its first page
+     */
+    protected function tagPage(array $context): array {
         $rows = [];
         foreach ($this->taxonomy->tags($context) as $tag) {
             $rows[] = [

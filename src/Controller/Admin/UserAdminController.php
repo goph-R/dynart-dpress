@@ -48,31 +48,43 @@ class UserAdminController extends AbstractAdminController {
     #[Route('GET', '/admin/users')]
     public function index(): string {
         $this->requirePermission(Permissions::USER_VIEW);
+        $config = $this->listConfig();
+        $config['firstPage'] = $this->page($this->firstPageContext($config, self::SORTABLE, ['search', 'status']));
         return $this->admin('dpress:admin/user/list', [
             'title'      => 'Users',
             'can_create' => $this->can(Permissions::USER_CREATE),
             'new_url'    => $this->router->url('/admin/users/new'),
             'statuses'   => User::STATUSES,
             'list_id'    => 'user-list',
-            'list_config' => [
-                'endpoint' => $this->router->url('/admin/users/list'),
-                'orderBy'  => 'name',
-                'columns'  => [
-                    'name'   => ['label' => 'Name', 'view' => 'link', 'options' => ['hrefProperty' => 'edit_url']],
-                    'email'  => ['label' => 'Email'],
-                    'roles'  => ['label' => 'Roles', 'view' => 'list', 'sortable' => false],
-                    'status' => ['label' => 'Status', 'view' => 'badge'],
-                    'created_at' => ['label' => 'Joined', 'view' => 'date'],
-                ],
-                'rowActions' => $this->rowActions(),
-            ],
+            'list_config' => $config,
         ]);
+    }
+
+    protected function listConfig(): array {
+        return [
+            'endpoint' => $this->router->url('/admin/users/list'),
+            'orderBy'  => 'name',
+            'columns'  => [
+                'name'   => ['label' => 'Name', 'view' => 'link', 'options' => ['hrefProperty' => 'edit_url']],
+                'email'  => ['label' => 'Email'],
+                'roles'  => ['label' => 'Roles', 'view' => 'list', 'sortable' => false],
+                'status' => ['label' => 'Status', 'view' => 'badge'],
+                'created_at' => ['label' => 'Joined', 'view' => 'date'],
+            ],
+            'rowActions' => $this->rowActions(),
+        ];
     }
 
     #[Route('GET', '/admin/users/list')]
     public function rowsJson(): array {
         $this->requirePermission(Permissions::USER_VIEW);
-        $context = $this->list->context(self::SORTABLE, ['search', 'status']);
+        return $this->page($this->list->context(self::SORTABLE, ['search', 'status']));
+    }
+
+    /**
+     * One page of rows, for this endpoint and for the screen that seeds its first page
+     */
+    protected function page(array $context): array {
         $rows = [];
         foreach ($this->users->findAll($context) as $user) {
             $rows[] = [

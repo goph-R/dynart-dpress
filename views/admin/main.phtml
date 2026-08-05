@@ -1,0 +1,33 @@
+<?php
+/**
+ * The part of an admin screen that changes
+ *
+ * Both the middle of the full layout and, on its own, the entire answer to a partial request:
+ * the layout fetches this file, and `admin_layout` points a partial request straight at it. One
+ * definition, so the browser can never be handed a `<main>` that a whole page would not have had.
+ *
+ * The two data attributes are what the chrome cannot work out for itself after a swap - what the
+ * tab is called, and which navigation item is now the current one. They ride on the element
+ * rather than in a header or a JSON envelope, so the answer stays HTML: a title with an accent in
+ * it survives, and `?ajax=1` in a browser shows exactly what the browser will be given.
+ */
+?>
+<main class="admin-main<?= !empty($narrow) ? ' narrow' : '' ?>" tabindex="-1"
+      data-title="<?= esc_attr($page_title ?? '') ?>"
+      data-section="<?= esc_attr($admin_section ?? '') ?>">
+    <?php if (!empty($notice)): ?>
+        <p class="notice"><?= esc_html($notice) ?></p>
+    <?php endif ?>
+    <?= $this->block('content') ?>
+
+    <?php // one hidden form per page, so a row action can POST with a CSRF token behind it.
+          // Inside the swapped region rather than beside it, because generating that token
+          // stores it in the session: a form left outside would keep the token of the screen it
+          // was rendered with, which this render has just replaced, and every row action after
+          // the first partial load would be turned away as a forgery. ?>
+    <?php if (!empty($action_form)): ?>
+        <form method="post" data-action-form hidden>
+            <?= $action_form->fetch() ?>
+        </form>
+    <?php endif ?>
+</main>

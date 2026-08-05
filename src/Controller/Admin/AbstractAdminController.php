@@ -6,6 +6,7 @@ use Dynart\Micro\Attribute\Authorize;
 use Dynart\Micro\ConfigInterface;
 use Dynart\Micro\JwtAuthInterface;
 use Dynart\Micro\RequestInterface;
+use Dynart\Micro\Router;
 use Dynart\Micro\RouterInterface;
 use Dynart\Micro\ViewInterface;
 use Dynart\Dpress\Controller\AbstractController;
@@ -30,6 +31,17 @@ use Dynart\Dpress\Security\Permissions;
 abstract class AbstractAdminController extends AbstractController {
 
     const LAYOUT = 'dpress:admin/layout';
+
+    /**
+     * The layout of a partial request: the `<main>` element on its own, no chrome around it
+     *
+     * The full layout fetches the same file, so what a partial answers with is by construction
+     * what a whole page would have contained - there is no second definition to drift.
+     */
+    const LAYOUT_PARTIAL = 'dpress:admin/main';
+
+    /** The query parameter that asks for the fragment instead of the page */
+    const PARTIAL = 'ajax';
 
     public function __construct(
         ViewInterface $view,
@@ -74,9 +86,41 @@ abstract class AbstractAdminController extends AbstractController {
         $this->view->set('site_icon', $this->siteIcon());
         $this->view->set('admin_nav', $this->navigation());
         $this->view->set('admin_section', $this->section());
+        $this->view->set('admin_layout', $this->isPartial() ? self::LAYOUT_PARTIAL : self::LAYOUT);
+        $this->view->set('admin_route_param', $this->routeParam());
+        $this->view->set('admin_url', $this->router->url('/admin'));
         $this->view->set('notice', $this->notice());
         $this->view->set('action_form', $this->actionForm());
+        // `title` and `narrow` are the two screen variables the chrome reads, and the layout
+        // fetches `main.phtml` rather than passing its own variables down, so they have to be
+        // view data as well. The composed title is here rather than in the layout because both
+        // the `<title>` element and the fragment's `data-title` need exactly the same string.
+        $this->view->set('narrow', !empty($variables['narrow']));
+        $this->view->set('page_title', ((string)($variables['title'] ?? '') ?: 'Admin').' – '.($this->siteName() ?: 'dpress'));
         return $this->view->fetch($template, $variables);
+    }
+
+    /**
+     * Is this a request for the fragment rather than the page?
+     *
+     * The URL is otherwise the same one, so every permission check on the way here is the same
+     * one - a partial can never reach a screen the whole page could not.
+     */
+    protected function isPartial(): bool {
+        return $this->request->get(self::PARTIAL) !== null;
+    }
+
+    /**
+     * The query parameter routes travel in, or '' when the URLs are real paths
+     *
+     * The browser has to know which links stay inside the admin before it may answer one with a
+     * partial load, and without rewriting every screen in the site shares one path - `index.php`
+     * - with the route in a parameter. Getting this wrong only costs a partial load, because a
+     * link that fails the test is followed the ordinary way.
+     */
+    protected function routeParam(): string {
+        return $this->config->get(Router::CONFIG_USE_REWRITE, Router::DEFAULT_USE_REWRITE)
+            ? '' : (string)$this->config->get(Router::CONFIG_ROUTE_PARAMETER, Router::DEFAULT_ROUTE_PARAMETER);
     }
 
     /**
@@ -130,6 +174,32 @@ abstract class AbstractAdminController extends AbstractController {
      */
     protected function rows(array $items, int $total): array {
         return ['items' => array_values($items), 'total' => $total];
+    }
+
+    /**
+     * The context for the first page of a list, as the browser is about to ask for it
+     *
+     * A list screen used to be two requests: the page, and then the rows the moment the list had
+     * built itself. The page knows the answer to the second one already, so it renders it into
+     * the configuration and the table arrives filled.
+     *
+     * Nothing is in the request yet on a first load, so **the sort comes out of the same config
+     * that is about to be handed to the browser** - which is what its own hidden inputs get
+     * primed with. That is the one thing here that has to stay honest: a seeded page ordered
+     * differently from what the list thinks it is showing would rearrange itself on the first
+     * click. Anything that *is* in the request - a filter, a sort, a page somebody linked to -
+     * wins over the defaults, exactly as it does at the endpoint.
+     */
+    protected function firstPageContext(array $config, array $sortable, array $filters = []): array {
+        $context = $this->list->context($sortable, $filters);
+        if (!isset($context['order_by']) && !empty($config['orderBy'])) {
+            $context['order_by'] = (string)$config['orderBy'];
+            $context['order_dir'] = ($config['orderDir'] ?? 'asc') === 'desc' ? 'desc' : 'asc';
+        }
+        if (!empty($config['pageSize']) && $this->request->get(ListRequest::MAX) === null) {
+            $context['max'] = (int)$config['pageSize'];
+        }
+        return $context;
     }
 
     /** @var string[] Rendered once each: the same icon repeats across a screen */

@@ -101,6 +101,12 @@ body.admin {
 
 .admin-main { flex: 1; min-width: 0; }
 .admin-main.narrow { max-width: 680px; }
+/* focused after a partial load, so somebody reading with a keyboard or a screen reader carries
+   on from the new screen rather than from the top of the document - a move, not a highlight */
+.admin-main:focus { outline: none; }
+/* the screen being replaced stays readable and stops taking clicks. No spinner: a partial is a
+   few kilobytes and a spinner that flashes for 80ms is worse than nothing at all */
+.admin-main[aria-busy="true"] { opacity: .6; pointer-events: none; }
 
 .page-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
 .page-head h1 { font-size: 20px; margin: 0; }

@@ -68,6 +68,8 @@ class MenuAdminController extends AbstractAdminController {
                     'items' => ['label' => 'Items', 'align' => 'right', 'sortable' => false],
                 ],
                 'rowActions' => $this->menuRowActions(),
+                // as with the roles: every menu there is fits on one page, so the page brings it
+                'firstPage' => $this->page(),
             ],
         ]);
     }
@@ -75,6 +77,10 @@ class MenuAdminController extends AbstractAdminController {
     #[Route('GET', '/admin/menus/list')]
     public function rowsJson(): array {
         $this->requirePermission(Permissions::MENU_VIEW);
+        return $this->page();
+    }
+
+    protected function page(): array {
         $places = $this->themes->places();
         $rows = [];
         foreach ($this->menus->menus() as $menu) {

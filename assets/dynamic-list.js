@@ -7,10 +7,12 @@
  *
  * The server renders the *page* - the filter form, the buttons, the permissions that decide
  * which of them exist. This renders the rows, and asks for them again whenever a filter, a sort
- * or a page changes.
+ * or a page changes. `firstPage` is the server handing over the first of those answers with the
+ * page, so a list screen is one request rather than two.
  *
  *   new DynamicList(document.querySelector('#list'), {
  *       findItems: function (filters, done) { ... done({items: [...], total: 42}) },
+ *       firstPage: {items: [...], total: 42},   // optional: rendered instead of the first ask
  *       columnViews: {
  *           title:  {label: 'Title', view: DynamicListColumnView.link},
  *           status: {label: 'Status'},
@@ -318,7 +320,17 @@
         // none of it exists until the constructor has run past it. A list that asked for its
         // rows before that point called a method that was still undefined.
         build();
-        this.refresh();
+
+        // The page may bring its first page of rows with it, in which case there is nothing to
+        // ask for yet and the table is filled before the screen is painted - the difference
+        // between a list screen costing one request and costing two. Everything after this - a
+        // sort, a filter, another page - is an ordinary `refresh()`, so the seed is a head start
+        // and never a second source of truth.
+        if (options.firstPage) {
+            render(options.firstPage);
+        } else {
+            this.refresh();
+        }
 
         // --- building ---
 

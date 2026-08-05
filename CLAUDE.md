@@ -158,9 +158,17 @@ The uploads `.htaccess` still sends a strict CSP for `.svg`. That is the second 
 
 Everything behind `/admin`. **A screen is two actions**: one that renders the page — the filter form, the buttons, the editor, all of which the server decides — and, where there is a list, one that answers with JSON. The rows are what the browser asks for again on every sort, filter and page change.
 
+**Moving between screens does not reload the page.** A link from one admin screen to another fetches the same URL with `?ajax=1`; `admin()` then renders `LAYOUT_PARTIAL` — `views/admin/main.phtml`, the `<main>` element and nothing else — and the browser swaps it in with `outerHTML`. That is `outerHTML` on purpose: it parses in the live document, where an inserted `<script>` stays inert but an `onclick` attribute still works, which is not true of a `DOMParser` document or a `<template>`. **The full layout fetches the same file**, so a partial can never contain something a whole page would not have. What the chrome cannot work out for itself rides on the element as `data-title` and `data-section` — attributes rather than headers, because a title with an accent in it does not survive a header.
+
+**Anything unexpected is a real navigation.** Not ok, redirected somewhere else, or a body that does not start with `<main>`: the browser is handed the URL. Which links get caught at all comes from `data-admin-url` and `data-route-param` on the body, because with `router.use_rewrite` off every screen shares one path and the route is a parameter — and being wrong either way costs a partial load and nothing more.
+
+**Anything a screen leaves outside `<main>` is stale after the first navigation.** That is why the hidden CSRF form is inside it: the token is regenerated and stored on every render, so a form left in the layout would be carrying one the server has already replaced.
+
 `#[Authorize]` sits on **`AbstractAdminController`** and nothing else needs it. That only works because `AttributeProcessor` looks for a class-level attribute along the inheritance chain (micro 0.17.0): PHP attributes are not inherited, and before that fix the base's `#[Authorize]` applied to nothing and every admin screen was reachable anonymously. Each action still checks the permission it actually needs — "may open the admin" and "may delete a user" are different questions.
 
-**The lists render themselves.** `assets/dynamic-list.js` is a rewrite of `dynart-micro-js/dynamic-list.js` with no jQuery and no build step. A list screen is a filter form, a container and one JSON object — no per-screen JavaScript — because `Dpress.list()` takes column views by *name* and row actions as `link` or `post`. Nothing there can be a function; it has been through JSON.
+**The lists render themselves.** `assets/dynamic-list.js` is a rewrite of `dynart-micro-js/dynamic-list.js` with no jQuery and no build step. A list screen is a filter form, a container and one JSON object — no per-screen JavaScript — because `Dpress.list()` takes column views by *name* and row actions as `link` or `post`. Nothing there can be a function; it has been through JSON. **The object is a `data-list` attribute, never an inline `<script>`**, because a screen that arrived as a partial was inserted and inserted HTML does not run its scripts; `Dpress.init(root)` binds whatever it has not bound yet.
+
+**A list screen is one request, not two.** The page seeds `firstPage` into that configuration — the same rows the endpoint would answer — so the table arrives filled and the endpoint is only asked again when a sort, a filter or a page changes. `firstPageContext()` takes the sort from the configuration the browser is about to be primed with, and anything actually in the URL still wins; a seed ordered differently from what the list thinks it is showing would rearrange itself on the first click.
 
 **A column view escapes by default.** `DynamicListColumnView.text` escapes, `html` does not, and the opt out is spelled out at the call site. A post title is whatever somebody typed.
 
@@ -168,7 +176,7 @@ Everything behind `/admin`. **A screen is two actions**: one that renders the pa
 
 **Never hand a request straight to `addOrderBy()`.** The name goes into the SQL. `ListRequest` drops anything not in the whitelist the screen passes in, and `CoreQueries::applyListOptions()` checks the shape again because a second caller may build the context by hand. The page size is clamped rather than rejected — a browser asking for everything gets a page.
 
-**Deletes and publishes are POSTs.** A link that changes something can be followed by a prefetcher, a crawler or an `<img>` on another page. Every admin page renders one hidden form carrying a CSRF token; `Dpress.post()` points it at the action and submits it. `requireAction()` is what validates it, and a failure is a 403 rather than a redirect with a message.
+**Deletes and publishes are POSTs.** A link that changes something can be followed by a prefetcher, a crawler or an `<img>` on another page. Every admin screen renders one hidden form carrying a CSRF token, inside `<main>` so a partial load brings a fresh one; `Dpress.post()` points it at the action and submits it. `requireAction()` is what validates it, and a failure is a 403 rather than a redirect with a message.
 
 **The markdown field is a textarea with a toolbar, deliberately not an editor.** A markdown field whose value is anything other than what the author typed eventually rewrites somebody's document on save, and the content model is "the markdown is the truth".
 

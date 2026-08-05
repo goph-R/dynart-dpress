@@ -6,6 +6,11 @@
  * permission checks live - and the browser does the rendering, the sorting and the paging. A
  * screen using this writes a filter form and one array; there is no per-screen JavaScript.
  *
+ * The configuration is an *attribute* rather than an inline `<script>`, because a screen loaded
+ * as a partial arrives as HTML that is inserted, and inserted HTML never runs its scripts. It is
+ * how everything else in `admin.js` finds its work anyway: `Dpress.init()` binds any `[data-list]`
+ * it has not bound yet, on the first page and after every navigation alike.
+ *
  * Expects: $list_id, $list_config (array). Optional: $filters (HTML for the filter form).
  */
 $listId = $list_id ?? 'list';
@@ -20,10 +25,4 @@ if (!empty($filters)) {
     </form>
 <?php endif ?>
 
-<div id="<?= esc_attr($listId) ?>"></div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        Dpress.list(<?= json_encode('#'.$listId) ?>, <?= json_encode($config, JSON_UNESCAPED_SLASHES) ?>);
-    });
-</script>
+<div id="<?= esc_attr($listId) ?>" data-list="<?= esc_attr(json_encode($config, JSON_UNESCAPED_SLASHES)) ?>"></div>

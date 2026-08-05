@@ -5,6 +5,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.13.0] &ndash; 2026-08-05
+
+The admin moves between screens without reloading itself, and a list screen costs one request instead of two.
+
+### Added
+- **Partial navigation.** A link from one admin screen to another fetches the same URL with `?ajax=1`, which answers with that screen's `<main>` element and nothing else, and the browser puts it where the old one was. The header, the navigation, the stylesheet and the script are the same on every screen; fetching all of them again was throwing away what the browser already had. Back and forward work, the tab's title follows, and the current navigation item is re-marked from a `data-section` the fragment carries.
+- **`AbstractAdminController::LAYOUT_PARTIAL`**, a real template - `views/admin/main.phtml` - that the *full* layout also fetches. There is one definition of what `<main>` is, so a partial can never contain something a whole page would not have.
+- **`firstPage` on a list configuration.** The screen renders the first page of rows into the list rather than making the browser come back for them, so a list screen is one request on a full load and on a partial one alike, and the table arrives filled instead of flashing empty. `AbstractAdminController::firstPageContext()` builds it, taking the sort from the same configuration the browser is about to be primed with - anything actually in the URL, a filter or a sort somebody linked to, still wins.
+
+### Changed
+- **The hidden CSRF action form moved inside `<main>`.** Its token is generated on every render and stored in the session, so a form left outside the swapped part would keep the token of a screen that has since been replaced and every row action after the first partial load would be refused as a forgery.
+- **A list is configured through `data-list` rather than an inline `<script>`.** Inserted HTML never runs its scripts, and this is how every other piece of `admin.js` already finds its work: `Dpress.init()` binds whatever it has not bound yet, on the first page and after every navigation.
+- The layout's unused `script` block is gone rather than left as a trap that silently swallows its contents on a partial load.
+- Every admin template takes its layout from `$admin_layout` instead of naming one. A test fails if a new one names its own, because that would answer a partial request with an entire document.
+
+### Notes
+**Anything unexpected is a real navigation.** An expired session, a deleted row, a screen that is not a fragment: the browser is handed the URL and renders it properly. The same goes for deciding which links to catch at all - with rewriting off every screen shares one path, so the server says how routes are written, and being wrong either way costs a partial load and nothing more.
+
+**The fragment is HTML, not JSON and not headers.** What the chrome cannot work out for itself rides on the element as `data-title` and `data-section`. A title with an accent in it survives that; a header would mangle it. And `?ajax=1` in a browser shows exactly what the browser will be given.
+
+**The seed is a head start, not a second source of truth.** The first sort, filter or page change goes to the endpoint like any other. Both sides read the same `ListRequest`, and every seeded page on the dev site is byte-identical to what its endpoint answers.
+
+---
+
 ## [0.12.1] &ndash; 2026-08-04
 
 ### Changed

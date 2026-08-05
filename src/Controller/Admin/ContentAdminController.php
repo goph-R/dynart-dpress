@@ -82,6 +82,10 @@ class ContentAdminController extends AbstractAdminController {
     public function index(string $type): string {
         $this->enter($type, 'view');
         $isPage = $type === Content::TYPE_PAGE;
+        $config = $this->listConfig($type);
+        $context = $this->firstPageContext($config, self::SORTABLE, ['search', 'status']);
+        $context['type'] = $type;
+        $config['firstPage'] = $this->page($context);
         return $this->admin('dpress:admin/content/list', [
             'title'  => $isPage ? 'Pages' : 'Posts',
             'type'   => $type,
@@ -89,7 +93,7 @@ class ContentAdminController extends AbstractAdminController {
             'can_create' => $this->can(Permissions::forContent($type, 'create')),
             'status'  => (string)$this->request->get('status', ''),
             'list_id' => 'content-list',
-            'list_config' => $this->listConfig($type),
+            'list_config' => $config,
         ]);
     }
 
@@ -104,6 +108,16 @@ class ContentAdminController extends AbstractAdminController {
         $this->enter($type, 'view');
         $context = $this->list->context(self::SORTABLE, ['search', 'status']);
         $context['type'] = $type;
+        return $this->page($context);
+    }
+
+    /**
+     * One page of rows
+     *
+     * Its own method because two callers want it: this endpoint, and the screen above, which
+     * renders the first page into the list rather than making the browser come back for it.
+     */
+    protected function page(array $context): array {
         $rows = $this->content->findAll($context);
         return $this->rows(array_map([$this, 'row'], $rows), $this->content->countAll($context));
     }

@@ -6,7 +6,9 @@
  * things, and a theme that restyles the front end should not be able to break the way in.
  *
  * `data-media-endpoint` is on the body so a media picker on any screen knows where the library
- * is without every template repeating it.
+ * is without every template repeating it. `data-admin-url` and `data-route-param` are there for
+ * the same reason: they are how the script decides whether a link it just caught stays inside
+ * the admin, and only the server knows how this installation writes its URLs.
  */
 use Dynart\Dpress\Controller\Admin\AssetController;
 ?>
@@ -16,18 +18,20 @@ use Dynart\Dpress\Controller\Admin\AssetController;
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
-    <title><?= esc_html(($title ?? 'Admin').' – '.($site_name ?? 'dpress')) ?></title>
+    <title><?= esc_html($page_title ?? 'Admin') ?></title>
     <?php if (!empty($site_icon)): ?>
         <link rel="icon" href="<?= esc_attr($site_icon) ?>">
         <link rel="apple-touch-icon" href="<?= esc_attr($site_icon) ?>">
     <?php endif ?>
     <link rel="stylesheet" href="<?= esc_attr(AssetController::url('admin.css')) ?>">
-    <?php // deferred, so they run in order and finish before DOMContentLoaded - which is what an
-          // inline `Dpress.list(...)` further down the page waits for ?>
+    <?php // deferred, so they run in order and are both there before DOMContentLoaded, which is
+          // when `Dpress.init()` goes looking for the lists and the fields to bind ?>
     <script src="<?= esc_attr(AssetController::url('dynamic-list.js')) ?>" defer></script>
     <script src="<?= esc_attr(AssetController::url('admin.js')) ?>" defer></script>
 </head>
-<body class="admin" data-media-endpoint="<?= esc_attr(route_url('/admin/media/list')) ?>">
+<body class="admin" data-media-endpoint="<?= esc_attr(route_url('/admin/media/list')) ?>"
+      data-admin-url="<?= esc_attr($admin_url ?? '') ?>"
+      data-route-param="<?= esc_attr($admin_route_param ?? '') ?>">
 
 <header class="admin-header">
     <div class="admin-header-inner">
@@ -55,7 +59,8 @@ use Dynart\Dpress\Controller\Admin\AssetController;
             <?php // `icon` is inline SVG the controller rendered - markup, like a row action's,
                   // and ours rather than anything that came in with a request.
                   // The title names the section when the rail is too narrow for the label. ?>
-            <a href="<?= esc_attr($section['url']) ?>" title="<?= esc_attr($section['label']) ?>"<?=
+            <a href="<?= esc_attr($section['url']) ?>" title="<?= esc_attr($section['label']) ?>"
+               data-section="<?= esc_attr($section['key']) ?>"<?=
                 $section['key'] === ($admin_section ?? '') ? ' class="current" aria-current="page"' : '' ?>>
                 <?= $section['icon'] ?>
                 <span class="label"><?= esc_html($section['label']) ?></span>
@@ -63,21 +68,10 @@ use Dynart\Dpress\Controller\Admin\AssetController;
         <?php endforeach ?>
     </nav>
 
-    <main class="admin-main<?= !empty($narrow) ? ' narrow' : '' ?>">
-        <?php if (!empty($notice)): ?>
-            <p class="notice"><?= esc_html($notice) ?></p>
-        <?php endif ?>
-        <?= $this->block('content') ?>
-    </main>
+    <?php // the same file a partial request is answered with, so a navigation that only replaces
+          // this element cannot end up with anything the server would not have rendered here ?>
+    <?= $this->fetch('dpress:admin/main') ?>
 </div>
 
-<?php // one hidden form per page, so a row action can POST with a CSRF token behind it ?>
-<?php if (!empty($action_form)): ?>
-    <form method="post" data-action-form hidden>
-        <?= $action_form->fetch() ?>
-    </form>
-<?php endif ?>
-
-<?= $this->block('script') ?>
 </body>
 </html>

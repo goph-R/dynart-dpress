@@ -135,6 +135,33 @@ const tests = {
     },
 
     /**
+     * A list screen used to cost two requests: the page, and then the rows the moment the list
+     * had built itself. The page already knows what the rows are.
+     */
+    'a seeded first page is rendered without asking for anything'() {
+        const it = build({columnViews: COLUMNS, pageSize: 2, firstPage: TWO_ROWS}, {items: [], total: 0});
+        assert.strictEqual(it.filters(), null, 'the rows came with the page and it asked anyway');
+        assert.strictEqual(it.list.items().length, 2);
+        assert.strictEqual(it.list.count(), 7);
+        assert.deepStrictEqual(it.paging().children.map(b => b.textContent), ['1', '2', '3', '4', 'Next']);
+    },
+
+    /**
+     * The seed is a head start, not a second source of truth: the first sort, filter or page
+     * change goes to the endpoint like any other.
+     */
+    'a seeded list still asks the endpoint when something changes'() {
+        const it = build(
+            {columnViews: COLUMNS, pageSize: 2, orderBy: 'title', firstPage: TWO_ROWS},
+            {items: [TWO_ROWS.items[1]], total: 1}
+        );
+        assert.strictEqual(it.filters(), null);
+        it.list.applyFilters();
+        assert.deepStrictEqual(it.filters(), {sort: 'title', order: 'asc', offset: '0', max: '2'});
+        assert.strictEqual(it.list.items().length, 1);
+    },
+
+    /**
      * A title is whatever an editor typed. Rendering it raw would put one person's markup into
      * every other person's browser.
      */
