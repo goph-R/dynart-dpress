@@ -234,6 +234,16 @@ button.link { background: none; border: 0; color: var(--muted); cursor: pointer;
 }
 
 .badge { display: inline-block; border-radius: var(--radius); padding: 2px 9px; font-size: 12px; background: var(--bg); }
+/* the attachments panel under the editor. Its own panel rather than part of the form: what it
+   does happens at once, and Save has nothing to do with it */
+.panel.attachments { margin-top: 20px; }
+.panel.attachments .page-head { margin-bottom: 12px; }
+.panel.attachments h2 { font-size: 16px; margin: 0; }
+.panel.attachments .form-description { margin: 0 0 14px; }
+/* the toolbar's odd one out: it attaches a file rather than marking up text, so it sits apart */
+.markdown-toolbar .markdown-insert { margin-left: auto; }
+.markdown-toolbar .markdown-insert[disabled] { opacity: .45; cursor: not-allowed; }
+
 .badge-published, .badge-active { background: #dcfce7; color: #166534; }
 .badge-draft, .badge-pending { background: #fef3c7; color: #92400e; }
 .badge-blocked, .badge-deleted { background: #fee2e2; color: #991b1b; }

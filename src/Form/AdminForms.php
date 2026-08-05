@@ -60,10 +60,17 @@ class AdminForms {
         $content = $context['content'] ?? null;
         $isPage = $context['is_page'] ?? ($content !== null && $content->isPage());
 
+        // the toolbar's insert button only exists where the server put an endpoint on the field,
+        // and it is inactive while that endpoint is empty - which is what a new post has, since
+        // there is no id to attach anything to yet
+        $markdown = ['type' => 'markdown', 'label' => 'Content',
+                     'description' => 'The first line that is only --- separates the lead from the body.'];
+        if (!empty($context['can_attach'])) {
+            $markdown['attributes'] = ['data-attach-hidden' => (string)($context['attach_url'] ?? '')];
+        }
         $form->addFields([
             'title'    => ['type' => 'text', 'label' => 'Title'],
-            'markdown' => ['type' => 'markdown', 'label' => 'Content',
-                           'description' => 'The first line that is only --- separates the lead from the body.'],
+            'markdown' => $markdown,
         ]);
         $form->addFields([
             'slug'   => ['type' => 'text', 'label' => 'Slug', 'required' => false,

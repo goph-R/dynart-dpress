@@ -79,6 +79,38 @@
         form.submit();
     };
 
+    /**
+     * The same POST, without leaving the page
+     *
+     * `Dpress.post()` submits a real form, which is right for a row action on a list screen: the
+     * page it lands on is the list again with a notice on it. It is wrong inside an *editor*,
+     * where leaving the page throws away everything typed since the last save. This sends the
+     * same thing with `fetch` and hands back a promise.
+     *
+     * The CSRF token comes from the same hidden form, so there is one mechanism and a partial
+     * navigation refreshes it for both.
+     */
+    Dpress.send = function (url, params) {
+        var form = document.querySelector('form[data-action-form]');
+        if (!form) {
+            return Promise.reject(new Error('no action form on this page'));
+        }
+        var body = new FormData();
+        new FormData(form).forEach(function (value, name) {
+            body.append(name, value);   // the token, under whatever name the form gave it
+        });
+        Object.keys(params || {}).forEach(function (name) {
+            body.append(name, params[name]);
+        });
+        return fetch(url, {method: 'POST', body: body, credentials: 'same-origin'})
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                return response.json().catch(function () { return {}; });
+            });
+    };
+
 
     /**
      * Builds a list from a configuration the server rendered
@@ -111,7 +143,10 @@
             ? (typeof config.filterForm === 'string' ? document.querySelector(config.filterForm) : config.filterForm)
             : null;
 
-        var list = new global.DynamicList(container, {
+        // declared before the constructor, because a row action built now may need to refresh
+        // the list it belongs to when it is clicked long afterwards
+        var list;
+        list = new global.DynamicList(container, {
             filterForm: filterForm,
             idProperty: config.idProperty || 'id',
             pageSize: config.pageSize || 25,
@@ -122,7 +157,9 @@
             texts: config.texts || {},
             firstPage: config.firstPage || null,
             columnViews: columnViews,
-            rowActions: (config.rowActions || []).map(declaredRowAction),
+            rowActions: (config.rowActions || []).map(function (declared) {
+                return declaredRowAction(declared, function () { return list; });
+            }),
             groupActions: (config.groupActions || []).map(declaredGroupAction),
             findItems: config.findItems || Dpress.endpoint(config.endpoint)
         });
@@ -148,18 +185,50 @@
             }
             element.dataset.listBound = '1';
             try {
-                Dpress.list(element, JSON.parse(element.getAttribute('data-list')));
+                // kept on the element so anything else on the screen can refresh it - the
+                // attachments panel is changed by two buttons that are not part of the list
+                element.dpressList = Dpress.list(element, JSON.parse(element.getAttribute('data-list')));
             } catch (error) {
                 console.error('dpress: the list configuration could not be read', error);
             }
         });
     }
 
-    function declaredRowAction(declared) {
+    function declaredRowAction(declared, listOf) {
         var action = Object.assign({}, declared);
         if (declared.post) {
             action.action = function (id) {
                 Dpress.post(declared.post + id, declared.confirm || null);
+            };
+            delete action.link;
+        }
+        if (declared.ajax) {
+            // the same change without leaving the page, for a list that lives inside an editor.
+            // `params` is whatever the endpoint needs beyond the row - which of the two states a
+            // hide/show pair is asking for, say. The row's own id always goes as `media_id`.
+            action.action = function (id) {
+                if (declared.confirm && !global.confirm(declared.confirm)) {
+                    return;
+                }
+                Dpress.send(declared.ajax, Object.assign({media_id: id}, declared.params || {}))
+                    .then(function () {
+                        var list = listOf ? listOf() : null;
+                        if (list) {
+                            list.refresh();
+                        }
+                    })
+                    .catch(function (error) {
+                        console.error('dpress: the action failed', error);
+                        global.alert('That did not work. Reload the page and try again.');
+                    });
+            };
+            delete action.link;
+        }
+        if (declared.insert) {
+            // purely client side: it writes into the field the author is typing in, and there is
+            // nothing to save until they save the post
+            action.action = function (id, item) {
+                Dpress.insertMedia(item);
             };
             delete action.link;
         }
@@ -245,6 +314,29 @@
                 });
                 toolbar.appendChild(button);
             });
+            // The one toolbar button that is not a formatting mark: it attaches a file to this
+            // post *and* writes it into the body. Rendered only where the server said there is
+            // an attach endpoint, and inactive until the post has an id to attach to.
+            if (textarea.hasAttribute('data-attach-hidden')) {
+                var attachUrl = textarea.getAttribute('data-attach-hidden');
+                var insert = document.createElement('button');
+                insert.type = 'button';
+                insert.className = 'markdown-insert';
+                insert.textContent = '🖼';
+                if (attachUrl === '') {
+                    insert.disabled = true;
+                    insert.title = 'Save the post first, then you can attach files to it';
+                } else {
+                    insert.title = 'Attach a file and insert it here';
+                    insert.addEventListener('click', function () {
+                        pickAndAttach(attachUrl, true, function (item) {
+                            Dpress.insertMedia(item, textarea);
+                        });
+                    });
+                }
+                toolbar.appendChild(insert);
+            }
+
             textarea.parentNode.insertBefore(toolbar, textarea);
 
             // a tab in a code block should indent, not leave the field
@@ -288,6 +380,77 @@
         }
         textarea.focus();
     }
+
+    // --- attachments, in the content editor ---
+
+    /**
+     * Picks a library item, attaches it, and does whatever the caller wanted afterwards
+     *
+     * The two buttons differ in exactly two ways, so they share everything else: the toolbar's
+     * attaches **hidden** and then writes the file into the body, because a picture that is in
+     * the article should not be listed under it as well; "Add attachment" attaches visible and
+     * writes nothing, because that is what an attachment list is for.
+     *
+     * Neither decides anything afterwards. Whether a row is hidden, and whether the body still
+     * mentions it, stays the author's - nothing here recalculates it later.
+     */
+    function pickAndAttach(attachUrl, hidden, after) {
+        Dpress.pickMedia(function (item) {
+            Dpress.send(attachUrl, {media_id: item.id, hidden: hidden ? 1 : 0})
+                .then(function () {
+                    refreshAttachments();
+                    if (after) {
+                        after(item);
+                    }
+                })
+                .catch(function (error) {
+                    console.error('dpress: the file could not be attached', error);
+                    global.alert('That file could not be attached. Reload the page and try again.');
+                });
+        });
+    }
+
+    function refreshAttachments() {
+        var element = document.querySelector('[data-attachment-list]');
+        if (element && element.dpressList) {
+            element.dpressList.refresh();
+        }
+    }
+
+    /**
+     * The "Add attachment" button beside the list
+     */
+    function initAttachments(root) {
+        root.querySelectorAll('[data-attach-visible]').forEach(function (button) {
+            if (button.dataset.attachBound) {
+                return;
+            }
+            button.dataset.attachBound = '1';
+            button.addEventListener('click', function () {
+                pickAndAttach(button.getAttribute('data-attach-visible'), false, null);
+            });
+        });
+    }
+
+    /**
+     * Writes a library item into the markdown field, at the cursor
+     *
+     * An image is `![alt](url)` and anything else is a link, because the library holds documents
+     * too and a PDF is not a picture. The label is the item's own alt text: an image with no alt
+     * is invisible to somebody using a screen reader, and this is the moment anybody knows what
+     * the picture is *for*.
+     *
+     * A `]` in that text would end the label early and leave the rest loose in the paragraph.
+     */
+    Dpress.insertMedia = function (item, textarea) {
+        textarea = textarea || document.querySelector('textarea.markdown-editor');
+        if (!textarea || !item) {
+            return;
+        }
+        var label = String(item.alt || item.title || item.file_name || '').replace(/([\[\]])/g, '\\$1');
+        var markdown = (item.category === 'image' ? '!' : '') + '[' + label + '](' + item.url + ')';
+        replaceSelection(textarea, markdown, '', false);
+    };
 
     /**
      * The media picker behind a `media` form field
@@ -591,6 +754,7 @@
         initMarkdown(root);
         initMediaFields(root);
         initLists(root);
+        initAttachments(root);
     };
 
     document.addEventListener('DOMContentLoaded', function () {

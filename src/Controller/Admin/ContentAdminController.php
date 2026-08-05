@@ -209,7 +209,6 @@ class ContentAdminController extends AbstractAdminController {
                 $data['type'] = $type;
                 $created = $this->content->create($data, (int)$this->currentUser()->id());
                 $this->applyTaxonomy($created, $values);
-                $this->media->syncInlineAttachments($created->id, $data['markdown'] ?? null);
                 return $created;
             });
             $this->applyStatus($content, $form->values(), $type);
@@ -228,13 +227,8 @@ class ContentAdminController extends AbstractAdminController {
         if ($form->process()) {
             $form->handle(function ($form) use ($content) {
                 $values = $form->values();
-                $data = $this->contentData($values);
-                $this->content->update($content, $data);
+                $this->content->update($content, $this->contentData($values));
                 $this->applyTaxonomy($content, $values);
-                // `$data`, not `$values`: an absent body means "leave it alone" here exactly as
-                // it does in `update()`, and reconciling against one that was never submitted
-                // would detach every image in the post
-                $this->media->syncInlineAttachments($content->id, $data['markdown'] ?? null);
                 return $content;
             });
             $this->applyStatus($content, $form->values(), $type);
@@ -243,9 +237,69 @@ class ContentAdminController extends AbstractAdminController {
         return $this->editor($type, $form, $content);
     }
 
+    /**
+     * What the attachments panel under the editor needs
+     *
+     * Empty for a post that does not exist yet: there is no id to attach to, so the panel says
+     * so and the buttons are inactive. Attaching is an immediate write, the same as every other
+     * row action in the admin - keeping it in the form until save would be a second way of
+     * writing, and an abandoned form would leave files attached to nothing.
+     */
+    protected function attachmentPanel(string $type, ?Content $content): array {
+        if ($content === null) {
+            return [];
+        }
+        $base = $this->router->url('/admin/content/'.$type);
+        $id = '/'.$content->id;
+        return [
+            'list_id'    => 'attachment-list',
+            'attach_url' => $base.'/attach'.$id,
+            'config'     => [
+                'endpoint'  => $base.'/attachments'.$id,
+                'pageSize'  => 50,
+                'allOrderDisabled' => true,
+                'texts'     => ['noResults' => 'Nothing attached yet.'],
+                'columns'   => [
+                    'thumbnail_html' => ['label' => '', 'view' => 'html', 'sortable' => false, 'width' => '52px'],
+                    'file_name'      => ['label' => 'File'],
+                    'alt'            => ['label' => 'Alt text'],
+                    'visibility'     => ['label' => 'On the page', 'view' => 'badge', 'options' => [
+                        'labels'  => ['listed' => 'Listed', 'hidden' => 'Hidden'],
+                        'classes' => ['listed' => 'published', 'hidden' => 'draft'],
+                    ]],
+                ],
+                'rowActions' => [
+                    [
+                        'type' => 'insert', 'title' => 'Insert into the text', 'insert' => true,
+                        'icon' => $this->icon('insert'),
+                    ],
+                    [
+                        'type' => 'unpublish', 'title' => 'Hide from the attachment list',
+                        'icon' => $this->icon('unpublish'),
+                        'ajax' => $base.'/attachment-visibility'.$id, 'params' => ['hidden' => 1],
+                        'visibleWhen' => ['hidden' => false],
+                    ],
+                    [
+                        'type' => 'publish', 'title' => 'Show in the attachment list',
+                        'icon' => $this->icon('publish'),
+                        'ajax' => $base.'/attachment-visibility'.$id, 'params' => ['hidden' => 0],
+                        'visibleWhen' => ['hidden' => true],
+                    ],
+                    [
+                        'type' => 'delete', 'title' => 'Detach', 'icon' => $this->icon('delete'),
+                        'ajax' => $base.'/detach'.$id,
+                        'confirm' => 'Detach this file? The text is left alone - remove it from there yourself.',
+                    ],
+                ],
+            ],
+        ];
+    }
+
     protected function editor(string $type, $form, ?Content $content): string {
         $isPage = $type === Content::TYPE_PAGE;
         return $this->admin('dpress:admin/content/edit', [
+            'attachments' => $this->attachmentPanel($type, $content),
+            'can_attach'  => $this->can(Permissions::MEDIA_VIEW),
             'title'   => ($content === null ? 'New ' : 'Edit ').($isPage ? 'page' : 'post'),
             'type'    => $type,
             'form'    => $form,
@@ -314,6 +368,9 @@ class ContentAdminController extends AbstractAdminController {
             // a select that cannot do anything is worse than no select: the page says "Saved."
             // and nothing moved, which is exactly the bug this whole method exists to fix
             'can_publish' => $this->can(Permissions::forContent($type, 'publish')),
+            'can_attach'  => $this->can(Permissions::MEDIA_VIEW),
+            'attach_url'  => $content !== null
+                ? $this->router->url('/admin/content/'.$type.'/attach/'.$content->id) : '',
         ];
         if ($type === Content::TYPE_PAGE) {
             $context['pages'] = $this->pageOptions($content);
@@ -400,6 +457,98 @@ class ContentAdminController extends AbstractAdminController {
             $names = array_filter(array_map('trim', explode(',', (string)$values['tags'])));
             $this->taxonomy->setTags($content->id, $names);
         }
+    }
+
+    // --- attachments ---
+
+    /**
+     * The files attached to one piece of content
+     *
+     * **Everything, hidden included.** This is the editor's own list, and the whole point of it
+     * is to show what is attached and let somebody change it - a list that quietly omitted the
+     * hidden ones would be a list you cannot un-hide from.
+     *
+     * The permission is the *content's*: somebody who may edit this post may say what hangs off
+     * it. `media.view` is not enough and not required - the library and this list are different
+     * questions.
+     */
+    #[Route('GET', '/admin/content/?/attachments/?')]
+    public function attachmentRows(string $type, string $id): array {
+        $this->enter($type, 'update');
+        $content = $this->found($this->content->findById((int)$id));
+        $this->assertType($content, $type);
+        $rows = [];
+        foreach ($this->media->allAttachmentsOf($content->id) as $media) {
+            $rows[] = [
+                'id'             => (int)$media['id'],
+                'file_name'      => $media['file_name'],
+                'title'          => (string)($media['title'] ?? ''),
+                'alt'            => (string)($media['alt'] ?? ''),
+                'category'       => $media['category'],
+                // the flag the row actions branch on, and a word for the column to show. The
+                // badge view looks its label up by the value, and a JSON `false` is not a key
+                // anybody can write in a labels map.
+                'hidden'         => (bool)$media['hidden'],
+                'visibility'     => $media['hidden'] ? 'hidden' : 'listed',
+                'url'            => $this->mediaView->rowUrl($media),
+                'thumbnail_html' => $this->mediaView->rowTag($media),
+            ];
+        }
+        return $this->rows($rows, count($rows));
+    }
+
+    /**
+     * Attaches a library item to this content
+     *
+     * `hidden` comes from the caller rather than being decided here: the button above the
+     * textarea attaches hidden, because it also writes the image into the body and a picture
+     * that is in the article should not be listed under it as well. "Add attachment" attaches
+     * visible, because that is what an attachment list is for. Which one it is stays the
+     * author's to change afterwards, and nothing recalculates it behind their back.
+     */
+    #[Route('POST', '/admin/content/?/attach/?')]
+    public function attach(string $type, string $id): array {
+        $content = $this->attachable($type, $id);
+        $media = $this->found($this->media->findById((int)$this->request->get('media_id', 0)));
+        $this->media->attach($content->id, $media->id, 0, (bool)$this->request->get('hidden', false));
+        return ['ok' => true];
+    }
+
+    #[Route('POST', '/admin/content/?/detach/?')]
+    public function detach(string $type, string $id): array {
+        $content = $this->attachable($type, $id);
+        $this->media->detach($content->id, (int)$this->request->get('media_id', 0));
+        return ['ok' => true];
+    }
+
+    /**
+     * Shows or hides an attachment on the public page
+     *
+     * A toggle rather than two actions, because it is one state with two values and the row
+     * already knows which it is in.
+     */
+    #[Route('POST', '/admin/content/?/attachment-visibility/?')]
+    public function attachmentVisibility(string $type, string $id): array {
+        $content = $this->attachable($type, $id);
+        $this->media->setAttachmentHidden(
+            $content->id, (int)$this->request->get('media_id', 0), (bool)$this->request->get('hidden', false)
+        );
+        return ['ok' => true];
+    }
+
+    /**
+     * The content an attachment action is allowed to touch
+     *
+     * Every one of these is a POST that changes something, so all three go through the same
+     * check: the update permission for this type, a valid action token, and a row that exists
+     * and really is of the type the URL claims.
+     */
+    protected function attachable(string $type, string $id): Content {
+        $this->enter($type, 'update');
+        $this->requireAction();
+        $content = $this->found($this->content->findById((int)$id));
+        $this->assertType($content, $type);
+        return $content;
     }
 
     // --- the row actions ---

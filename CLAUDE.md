@@ -31,11 +31,12 @@ php ../dynart-dpress/bin/dpress.php migrate:status -config path/to/dpress.ini
 # from ../dynart-dpress-test/
 php vendor/bin/phpunit --stderr
 
-# the admin list, from this repo - a stub DOM, no dependency, no build step
+# the browser side, from this repo - a stub DOM, no dependency, no build step
 node assets/dynamic-list.test.js
+node assets/admin.test.js
 ```
 
-The PHP suite covers what the server sends; `dynamic-list.test.js` covers what the browser does
+The PHP suite covers what the server sends; the two JS suites cover what the browser does
 with it. Run both when touching the admin — a list whose constructor could not run was released
 once because only the first existed.
 
@@ -119,9 +120,9 @@ One `Content` table with a `type` column (`post` | `page`) — the reasoning is 
 
 **`lead_html` / `body_html` are a cache of `markdown`.** Only `ContentService::renderInto()` writes them; `dpress content:rerender` rebuilds everything after a rendering change. Nothing else should assign those columns.
 
-**An image in the body is a hidden attachment.** `MediaService::syncInlineAttachments()` runs after every content save, resolves the storage URLs in the markdown back to library items, and makes the `hidden` attachments match. Three things about it are load-bearing: `hidden` is on the *link* rather than on the media, because the same image can be an inline illustration in one post and a listed download in another; **visible attachments are never touched**, because somebody added those deliberately and the article text is not their owner; and an absent `markdown` key means "leave it alone", exactly as it does in `update()` — reconciling against a body that was never submitted would detach every image in the post.
+**Attachments are the author's, and nothing recalculates them.** The editor has an attachments panel under the textarea: attach, detach, and hide or show each one. `hidden` means "attached but left off the list at the bottom of the published page", which is what an image inside the article wants. **Nothing infers any of this from the text** — dpress 0.15.0 tried reconciling attachments against the markdown on save and it was withdrawn in 0.16.0, because it fights the author: detaching a row would re-attach on the next save, and a hidden flag set by hand would be overwritten. Removing a file from the text is a separate act from detaching it, and both are the author's.
 
-Matched on the **path**, not the whole URL, so the site can move hosts. A derivative suffix is stripped only when it names a real preset.
+The panel writes immediately over `Dpress.send()` rather than on Save, so the form is never reloaded and there is one write model — the same as every other row action. That is why it needs a saved post: a new one has no id to attach to, and the buttons say so rather than pretending.
 
 **`status` is not an editable field.** `ContentService::update()` ignores it deliberately — becoming visible sets `published_at` and is what a feed, a cache or a plugin listens for, so it belongs to `publish()` / `unpublish()`. Anything that offers a status control routes through `ContentAdminController::applyStatus()`, which checks `Permissions::forContent($type, 'publish')` and calls those two. Do **not** put `status` back into `contentData()`: `create()` honours what it is given while `update()` drops it, so the same field published a new post and silently did nothing to an existing one, and neither path asked whether the person may publish. The stock `editor` role holds `post.publish` but not `page.publish`, so the gap was reachable with the default roles.
 

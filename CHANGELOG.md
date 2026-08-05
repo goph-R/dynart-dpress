@@ -5,6 +5,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.16.0] &ndash; 2026-08-05
+
+The attachments panel, in the content editor.
+
+### Added
+- **An attachments list under the markdown field**, with the three things an author needs: **attach** a library item, **detach** it, and **hide or show** it — hidden meaning attached but left off the list at the bottom of the published page, which is what an image inside the article wants. There is also a row action that writes the file into the body at the cursor.
+- **A button on the markdown toolbar** that picks a file, attaches it **hidden**, and inserts it into the text in one go — because a picture that is in the article should not be listed under it as well.
+- Endpoints for all of it, and `Dpress.send()`: the same POST as a row action but over `fetch`, so an editor never reloads and loses what has been typed. Row actions can now be declared `ajax` (post and refresh the list) or `insert` (write into the field), next to the existing `link` and `post`.
+
+### Removed
+- **The automatic reconciling of attachments against the markdown**, added in 0.15.0. It fights the author, which is the whole reason the panel exists: detaching a row would re-attach it on the next save, and a hidden flag set by hand would be overwritten. **Removing a file from the text and detaching it are two separate acts, and both are the author's.**
+
+### Notes
+`ContentAttachment.hidden` and migration `0008` are unchanged — what moved is who decides. Nothing infers an attachment from the text any more, and nothing infers the text from an attachment.
+
+**The panel writes immediately rather than on Save.** One write model, the same as every other row action in the admin. That is also why it needs a saved post: a new one has no id to attach to, so the panel says so and the buttons are inactive rather than pretending. An abandoned form then cannot leave files attached to nothing either.
+
+The panel sits **outside** the editor's `<form>`. Its controls are buttons; nested inside they would submit the form, and their state would look like something Save is responsible for.
+
+---
+
 ## [0.15.0] &ndash; 2026-08-05
 
 An image in the article body is attached to it, and not listed twice.

@@ -191,7 +191,14 @@ class CoreQueries {
         $query->addCondition('`deleted_at` is null');
         if (empty($context['with_hidden'])) {
             $query->addCondition('`ca`.`hidden` = :notHidden', [':notHidden' => false]);
+            return $query;
         }
+        // Asking for the hidden ones means wanting to know *which* are hidden, so the flag comes
+        // along. Naming any field drops the default "every column of the source table", so they
+        // have to be listed again - and `hidden` is the one name both tables have, hence the
+        // explicit alias.
+        $query->addFields(array_keys($this->em->tableColumns(Media::class)));
+        $query->addFields(['hidden' => ['`ca`.`hidden`']]);
         return $query;
     }
 

@@ -20,4 +20,32 @@
             </div>
         </form>
     </div>
+
+    <?php // Outside the form on purpose. Attaching, detaching and hiding are immediate writes,
+          // and the things in here are buttons rather than fields - nested inside the form they
+          // would submit it, and their state would look like something Save is responsible for. ?>
+    <?php if (!empty($can_attach)): ?>
+        <div class="panel attachments">
+            <div class="page-head">
+                <h2>Attachments</h2>
+                <span class="spacer"></span>
+                <?php if (!empty($attachments)): ?>
+                    <button type="button" class="button"
+                            data-attach-visible="<?= esc_attr($attachments['attach_url']) ?>">Add attachment</button>
+                <?php endif ?>
+            </div>
+            <?php if (empty($attachments)): ?>
+                <p class="form-description">Save the post first, then you can attach files to it.</p>
+            <?php else: ?>
+                <p class="form-description">
+                    Attaching a file does not put it in the text, and detaching one does not take it
+                    out - both are yours to do. <strong>Hidden</strong> means the file is attached but
+                    left off the list at the bottom of the published page, which is what you want for
+                    a picture that is already inside the article.
+                </p>
+                <div id="<?= esc_attr($attachments['list_id']) ?>" data-attachment-list
+                     data-list="<?= esc_attr(json_encode($attachments['config'], JSON_UNESCAPED_SLASHES)) ?>"></div>
+            <?php endif ?>
+        </div>
+    <?php endif ?>
 <?php $this->endBlock() ?>

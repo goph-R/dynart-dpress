@@ -1,7 +1,10 @@
 # Media in the editor
 
-**Status: steps 1 and 2 are built** (micro-entities 0.7.0, dpress 0.15.0). Steps 3 and 4 — the
-JSON upload endpoint and the toolbar button — are still design.
+**Status: built, with one part of the design withdrawn** (micro-entities 0.7.0, dpress 0.15.0
+and 0.16.0). §3 below — reconciling attachments against the markdown — was built and then
+removed: **the attachments are the author's, and nothing recalculates them.** The panel in §5a
+replaces it. The JSON upload endpoint (§4) is still to do; the picker attaches what is already
+in the library.
 
 The goal, in one sentence: **while writing a post you can insert a picture without leaving the
 page** — pick one from the library or upload a new one in a dialog, and the URL lands in the
@@ -104,7 +107,19 @@ on a column count mismatch.
 
 ---
 
-## 3. Attachments follow the text
+## 3. Attachments follow the text — *withdrawn*
+
+
+> **This was built in 0.15.0 and removed in 0.16.0.** It reads well and it is wrong: it fights
+> the author. Detaching a row would re-attach it on the next save, because the text still
+> mentions the file; a hidden flag set by hand would be overwritten by whatever the text implied.
+> Two things can own the attachment list, and they cannot both be right.
+>
+> The author owns it. Removing a file from the text and detaching it are separate acts, and the
+> panel below is how the second one is done. Kept here because the reasoning is worth having when
+> somebody proposes it again.
+
+### The design that was withdrawn, for the record
 
 The dialog can attach on upload — but only when the content already has an id, and a brand new
 post does not have one until it is saved. Attaching at upload time also cannot notice when
@@ -140,7 +155,37 @@ site moved — the same reasoning as `siteAsset()` in `AbstractController`.
 
 ---
 
-## 4. Uploading from the dialog
+## 4. The attachments panel
+
+Under the markdown field, outside the editor's `<form>`, a `DynamicList` of everything attached
+to this content — hidden included, since the whole point is to be able to un-hide from it.
+
+| Row action | Does |
+|---|---|
+| **Insert** | writes `![alt](url)` into the textarea at the cursor. Client side only |
+| **Hide** / **Show** | flips `hidden`. Two actions with `visibleWhen`, not a toggle — the same pattern as publish/unpublish |
+| **Detach** | removes the link. **Leaves the text alone**, and says so in the confirmation |
+
+Plus **Add attachment**, which picks a library item and attaches it *visible*, and the toolbar's
+button, which picks one, attaches it *hidden*, and inserts it into the body.
+
+Those two differ in exactly two ways and share everything else. Hidden-and-inserted is one act
+because a picture in the article should not be listed under it as well; visible-and-not-inserted
+is the other because that is what an attachment list is for. **Neither decides anything
+afterwards.**
+
+**Everything writes at once, over `Dpress.send()`** — the same POST a row action makes, sent with
+`fetch` so the editor is never reloaded and nothing typed is lost. One write model, the same as
+the rest of the admin. It is also why the panel needs a saved post: there is no id to attach to
+before that, so it says so and the buttons are inactive rather than pretending.
+
+`Dpress.send()` also gave the list two new row action kinds next to `link` and `post`: **`ajax`**
+(post, then refresh the list) and **`insert`** (write into the field). Both are declared as data,
+so a plugin adding one is still adding an array rather than code.
+
+---
+
+## 5. Uploading from the dialog — *still to do*
 
 `MediaAdminController::upload()` renders a form and redirects on success. The dialog needs an
 endpoint that answers **data**:
@@ -165,7 +210,7 @@ POST /admin/media/upload/json   ->  ['item' => <the same row shape the list retu
 
 ---
 
-## 5. The dialog
+## 6. The dialog
 
 `Dpress.pickMedia()` already exists: a `<dialog>`, a search box, and the media list rendered by
 `DynamicList` against the same endpoint the library screen uses. That is most of the work
@@ -191,7 +236,7 @@ needs nothing from it either way.
 
 ---
 
-## 6. What changes, file by file
+## 7. What changes, file by file
 
 **micro-entities (0.7.0)**
 - `QueryBuilder::addColumn()` / `MariaQueryBuilder`, `QueryExecutor::addColumn()`.
@@ -218,7 +263,7 @@ needs nothing from it either way.
 
 ---
 
-## 7. Tests
+## 8. Tests
 
 - **PHP unit** — `syncInlineAttachments()` is the piece with real logic and no I/O worth
   mocking: URL extraction (markdown and raw `<img>`), derivative stripping, an unknown URL
@@ -236,7 +281,7 @@ The upload endpoint itself wants the integration suite that Phase 6 still owes.
 
 ---
 
-## 8. Risks, in the order they are likely to bite
+## 9. Risks, in the order they are likely to bite
 
 1. **The audit mirror and the new column.** Every audited write goes through the `_aud` table;
    forgetting it there means the *next save of any attachment* fails. The migration writes both
@@ -250,7 +295,7 @@ The upload endpoint itself wants the integration suite that Phase 6 still owes.
 
 ---
 
-## 9. Order of work
+## 10. Order of work
 
 Each step leaves the admin working, and the first two are worth shipping even if the rest slips.
 
