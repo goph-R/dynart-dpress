@@ -206,6 +206,14 @@ Everything behind `/admin`. **A screen is two actions**: one that renders the pa
 **A template must never pass `get_defined_vars()` to a nested `fetch()`.** A template body is `include`d inside `View::fetch()` and shares its scope, so that hands down the *path of the file being included*; the nested fetch extracts it over its own and includes the caller instead — forever. micro 0.17.0 unsets the reserved names, but naming the variables is still the honest way to write it.
 
 
+### Logging
+
+**`DpressLogger` exists so a dpress site never logs into its own document root.** `Logger`'s default directory is the relative `logs`, and a relative path resolves against the working directory — `public/` for a web request — so a site that configured nothing served its own stack traces at `/logs/...`. Both apps register it in their constructor, before `fullInit()` builds the logger.
+
+The config keys are **`log.dir` and `log.level`**, not `logger.*`. Getting them wrong is silent: the level falls back to `error` and the directory to the dangerous default.
+
+`log.level = debug` makes `Database` log every query with its parameters, which is how you count queries per request — and it writes a file per query, so it is a development setting only.
+
 ### The HTTP layer
 
 `DpressWebApp` wires a middleware order that makes cookie-based login work:

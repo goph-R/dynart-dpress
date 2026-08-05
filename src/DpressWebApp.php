@@ -3,6 +3,7 @@
 namespace Dynart\Dpress;
 
 use Dynart\Micro\ConfigInterface;
+use Dynart\Micro\LoggerInterface;
 use Dynart\Micro\Micro;
 use Dynart\Micro\TranslationInterface;
 use Dynart\Micro\ViewInterface;
@@ -79,6 +80,17 @@ class DpressWebApp extends WebApp {
      */
     const PRIORITY_JWT_COOKIE_READER = 40;
     const PRIORITY_TOKEN_REFRESHER = 45;
+
+    /**
+     * Swaps the logger before `fullInit()` builds it
+     *
+     * The framework's default log directory is relative, so it lands in the working directory -
+     * which for a web request is the document root. A log file in the document root is a URL.
+     */
+    public function __construct(array $configPaths) {
+        parent::__construct($configPaths);
+        Micro::add(LoggerInterface::class, DpressLogger::class);
+    }
 
     public function init(): void {
         parent::init();

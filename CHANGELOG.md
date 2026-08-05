@@ -5,6 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.14.4] &ndash; 2026-08-05
+
+### Security
+- **A dpress site no longer writes its logs into the document root.** `Logger`'s default directory is the relative `logs`, resolved against the working directory — which for a web request is `public/`. So a site that configured no log directory served its own error log, complete with stack traces, absolute filesystem paths and bound SQL parameters, at `/logs/log_2026-08-05.txt`. `DpressLogger` defaults to `~/logs`, one level above what Apache serves, and both apps register it before the logger is built.
+
+### Notes
+The dangerous option should not be the one you get by saying nothing. A site that wants its logs somewhere else still sets `log.dir`; a site that sets nothing is now safe by default.
+
+**Check your own installation.** If `public/logs/` exists, everything in it has been readable by anybody who guessed the filename: delete the directory after upgrading, and treat anything an error mentioned — paths, queries, parameters — as having been public.
+
+Needs micro 0.18.1, where the log directory finally goes through `getFullPath()` so `~/logs` means the site root rather than a folder called `~`.
+
+---
+
 ## [0.14.3] &ndash; 2026-08-05
 
 ### Fixed

@@ -6,6 +6,7 @@ use Dynart\Micro\CliApp;
 use Dynart\Micro\CliOutput;
 use Dynart\Micro\CliOutputInterface;
 use Dynart\Micro\ConfigInterface;
+use Dynart\Micro\LoggerInterface;
 use Dynart\Micro\Micro;
 use Dynart\Micro\TranslationInterface;
 use Dynart\Micro\ViewInterface;
@@ -233,6 +234,17 @@ class DpressCliApp extends CliApp {
             return false;
         }
         return self::COMMANDS[$name]['needsConfig'];
+    }
+
+    /**
+     * Swaps the logger before `fullInit()` builds it
+     *
+     * The framework's default log directory is relative, so it lands in the working directory -
+     * which for a web request is the document root. A log file in the document root is a URL.
+     */
+    public function __construct(array $configPaths) {
+        parent::__construct($configPaths);
+        Micro::add(LoggerInterface::class, DpressLogger::class);
     }
 
     public function init(): void {
