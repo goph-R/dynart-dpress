@@ -5,6 +5,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.17.0] &ndash; 2026-08-05
+
+Uploading from inside the picker, so a file can be added without leaving the editor.
+
+### Added
+- **`POST /admin/media/upload/json`** — the same upload as the form, answering with the row instead of a redirect.
+- **An upload pane in the media picker**: drop a file on it or choose one, with a progress bar. What lands goes straight to the callback the dialog was opened with, which is the same one a chosen row goes to — so uploading and picking are one path out of the dialog and nothing that opens it has to know which happened.
+
+### Notes
+**A separate action rather than a branch inside `upload()`.** That one stays exactly what it was: the way into the library for somebody with no JavaScript, and not a place to grow two behaviours. The dialog cannot follow a redirect anyway — the point of it is that the half-written post behind it is still there afterwards.
+
+**A rejected file is a 200 with an `error`.** Too large, or a type this site does not accept, are ordinary answers to an ordinary request, and `MediaService::upload()` already throws them with a sentence meant for a person. A 500 would claim the server broke and leave the dialog nothing useful to show. Verified: an unaccepted type answers `{"error":"Files of type 'application/octet-stream' are not accepted."}` with status 200, a missing token is a 403, and a missing file says so.
+
+**`XMLHttpRequest`, not `fetch`.** For the one thing it still does that `fetch` cannot: report upload progress. A large photo over a slow connection with no feedback reads as broken, and somebody presses the button again.
+
+The pane is only rendered where `media.create` is held — the endpoint checks it too; the attribute only keeps a useless control off the screen.
+
+---
+
 ## [0.16.1] &ndash; 2026-08-05
 
 ### Fixed

@@ -7,6 +7,7 @@ use Dynart\Micro\ConfigInterface;
 use Dynart\Micro\JwtAuthInterface;
 use Dynart\Micro\RequestInterface;
 use Dynart\Micro\RouterInterface;
+use Dynart\Micro\UploadedFile;
 use Dynart\Micro\ViewInterface;
 use Dynart\Dpress\DpressException;
 use Dynart\Dpress\Entity\Media;
@@ -162,6 +163,46 @@ class MediaAdminController extends AbstractAdminController {
     }
 
     // --- editing ---
+
+    /**
+     * The same upload, answering with data instead of a redirect
+     *
+     * The dialog cannot follow a redirect: the whole point of it is that the screen behind it -
+     * a half-written post, most likely - is still there afterwards. So this is a separate action
+     * rather than a branch inside `upload()`, which stays exactly what it was: the route into the
+     * library for somebody with no JavaScript, and not a place to grow two behaviours.
+     *
+     * **A rejected file is a 200 with an `error`.** Too large, or a type this site does not
+     * accept, are ordinary answers to an ordinary request - `MediaService::upload()` already
+     * throws them with a sentence meant for a person. A 500 would say the server broke, and the
+     * dialog would have nothing useful to show.
+     */
+    #[Route('POST', '/admin/media/upload/json')]
+    public function uploadJson(): array {
+        $this->requirePermission(Permissions::MEDIA_CREATE);
+        $this->requireAction();
+        $file = $this->request->uploadedFile('file');
+        if (!$file instanceof UploadedFile) {
+            return ['error' => 'No file arrived. It may be larger than the server accepts.'];
+        }
+        try {
+            $media = $this->media->upload($file, (int)$this->currentUser()->id());
+        } catch (DpressException $e) {
+            return ['error' => $e->getMessage()];
+        }
+        return ['item' => $this->row($this->mediaRow($media))];
+    }
+
+    /**
+     * A freshly saved entity as the row shape the list speaks
+     *
+     * `get_object_vars()` rather than a hand-written list: an `Entity`'s state is private on the
+     * base class, so its public properties *are* its columns. A column added to `Media` then
+     * reaches this without anybody remembering to add it here, which a literal list would not.
+     */
+    protected function mediaRow(Media $media): array {
+        return get_object_vars($media);
+    }
 
     #[Route('GET', '/admin/media/edit/?')]
     #[Route('POST', '/admin/media/edit/?')]

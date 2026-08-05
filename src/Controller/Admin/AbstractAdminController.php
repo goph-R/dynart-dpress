@@ -89,6 +89,10 @@ abstract class AbstractAdminController extends AbstractController {
         $this->view->set('admin_layout', $this->isPartial() ? self::LAYOUT_PARTIAL : self::LAYOUT);
         $this->view->set('admin_route_param', $this->routeParam());
         $this->view->set('admin_url', $this->router->url('/admin'));
+        // empty for somebody who may not add to the library, so the picker shows no upload pane.
+        // The endpoint checks the permission too - this only keeps a useless control off screen.
+        $this->view->set('media_upload_url', $this->can(Permissions::MEDIA_CREATE)
+            ? $this->router->url('/admin/media/upload/json') : '');
         $this->view->set('notice', $this->notice());
         $this->view->set('action_form', $this->actionForm());
         // `title` and `narrow` are the two screen variables the chrome reads, and the layout

@@ -501,13 +501,29 @@
             console.error('dpress: the page does not say where the media list is');
             return;
         }
+        var uploadUrl = document.body.getAttribute('data-media-upload') || '';
         var dialog = document.createElement('dialog');
         dialog.className = 'media-picker';
         dialog.innerHTML =
             '<header><h2>Media</h2><button type="button" class="close" title="Close">&times;</button></header>' +
+            (uploadUrl
+                ? '<div class="picker-upload" data-drop>' +
+                  '<p>Drop a file here, or <button type="button" class="button small" data-choose-file>choose one</button></p>' +
+                  '<input type="file" hidden data-file>' +
+                  '<progress hidden max="100" value="0"></progress>' +
+                  '<p class="form-error" hidden data-upload-error></p>' +
+                  '</div>'
+                : '') +
             '<form class="picker-filters"><input type="search" name="search" placeholder="Search…"></form>' +
             '<div class="picker-list"></div>';
         document.body.appendChild(dialog);
+
+        if (uploadUrl) {
+            initPickerUpload(dialog, uploadUrl, function (item) {
+                close();
+                chosen(item);
+            });
+        }
 
         var filterForm = dialog.querySelector('.picker-filters');
         filterForm.addEventListener('input', debounce(function () {
@@ -546,6 +562,97 @@
         });
         dialog.showModal();
     };
+
+    /**
+     * The upload half of the picker
+     *
+     * A file that lands here goes straight to the callback the dialog was opened with, which is
+     * the same one a chosen row goes to - so uploading and picking are one path out of the
+     * dialog, and whatever opened it does not have to know which happened.
+     *
+     * `XMLHttpRequest` rather than `fetch`, for the one thing it can still do that `fetch`
+     * cannot: report progress. A 20 MB photo over a phone connection with no feedback reads as
+     * broken, and somebody will press the button again.
+     */
+    function initPickerUpload(dialog, uploadUrl, uploaded) {
+        var zone = dialog.querySelector('[data-drop]');
+        var input = dialog.querySelector('[data-file]');
+        var bar = dialog.querySelector('progress');
+        var error = dialog.querySelector('[data-upload-error]');
+
+        dialog.querySelector('[data-choose-file]').addEventListener('click', function () {
+            input.click();
+        });
+        input.addEventListener('change', function () {
+            if (input.files && input.files[0]) {
+                send(input.files[0]);
+            }
+        });
+        ['dragenter', 'dragover'].forEach(function (name) {
+            zone.addEventListener(name, function (event) {
+                event.preventDefault();
+                zone.classList.add('over');
+            });
+        });
+        ['dragleave', 'drop'].forEach(function (name) {
+            zone.addEventListener(name, function (event) {
+                event.preventDefault();
+                zone.classList.remove('over');
+            });
+        });
+        zone.addEventListener('drop', function (event) {
+            if (event.dataTransfer && event.dataTransfer.files[0]) {
+                send(event.dataTransfer.files[0]);
+            }
+        });
+
+        function send(file) {
+            var form = document.querySelector('form[data-action-form]');
+            if (!form) {
+                return show('This page cannot upload.');
+            }
+            var body = new FormData();
+            new FormData(form).forEach(function (value, name) {
+                body.append(name, value);   // the CSRF token, as every other action sends it
+            });
+            body.append('file', file);
+
+            show('');
+            bar.hidden = false;
+            bar.value = 0;
+
+            var request = new XMLHttpRequest();
+            request.open('POST', uploadUrl);
+            request.upload.addEventListener('progress', function (event) {
+                if (event.lengthComputable) {
+                    bar.value = Math.round((event.loaded / event.total) * 100);
+                }
+            });
+            request.addEventListener('load', function () {
+                bar.hidden = true;
+                var answer = {};
+                try {
+                    answer = JSON.parse(request.responseText);
+                } catch (ignore) {
+                    // an HTML error page rather than an answer - the message below is all we know
+                }
+                if (request.status !== 200 || !answer.item) {
+                    return show(answer.error || 'That file could not be uploaded.');
+                }
+                uploaded(answer.item);
+            });
+            request.addEventListener('error', function () {
+                bar.hidden = true;
+                show('The upload did not finish. Check the connection and try again.');
+            });
+            request.send(body);
+        }
+
+        function show(message) {
+            error.textContent = message;
+            error.hidden = message === '';
+        }
+    }
 
     function debounce(callback, wait) {
         var timer = null;

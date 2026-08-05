@@ -234,6 +234,16 @@ button.link { background: none; border: 0; color: var(--muted); cursor: pointer;
 }
 
 .badge { display: inline-block; border-radius: var(--radius); padding: 2px 9px; font-size: 12px; background: var(--bg); }
+/* the upload half of the media picker */
+.media-picker .picker-upload {
+    border: 1px dashed var(--line); border-radius: var(--radius);
+    padding: 14px; margin-bottom: 14px; text-align: center; color: var(--muted);
+}
+.media-picker .picker-upload.over { border-color: var(--accent); color: var(--ink); }
+.media-picker .picker-upload p { margin: 0; }
+.media-picker .picker-upload progress { width: 100%; margin-top: 10px; }
+.media-picker .picker-upload .form-error { margin-top: 10px; }
+
 /* the attachments panel under the editor. Its own panel rather than part of the form: what it
    does happens at once, and Save has nothing to do with it */
 .panel.attachments { margin-top: 20px; }

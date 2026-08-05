@@ -1,10 +1,9 @@
 # Media in the editor
 
-**Status: built, with one part of the design withdrawn** (micro-entities 0.7.0, dpress 0.15.0
-and 0.16.0). §3 below — reconciling attachments against the markdown — was built and then
-removed: **the attachments are the author's, and nothing recalculates them.** The panel in §5a
-replaces it. The JSON upload endpoint (§4) is still to do; the picker attaches what is already
-in the library.
+**Status: built** (micro-entities 0.7.0, dpress 0.15.0 through 0.17.0), with one part of the
+design withdrawn. §3 — reconciling attachments against the markdown — was built and then
+removed: **the attachments are the author's, and nothing recalculates them.** The panel in §4
+replaces it.
 
 The goal, in one sentence: **while writing a post you can insert a picture without leaving the
 page** — pick one from the library or upload a new one in a dialog, and the URL lands in the
@@ -185,7 +184,7 @@ so a plugin adding one is still adding an array rather than code.
 
 ---
 
-## 5. Uploading from the dialog — *still to do*
+## 5. Uploading from the dialog
 
 `MediaAdminController::upload()` renders a form and redirects on success. The dialog needs an
 endpoint that answers **data**:
