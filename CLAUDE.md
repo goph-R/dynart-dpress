@@ -212,7 +212,7 @@ Everything behind `/admin`. **A screen is two actions**: one that renders the pa
 
 The config keys are **`log.dir` and `log.level`**, not `logger.*`. Getting them wrong is silent: the level falls back to `error` and the directory to the dangerous default.
 
-`log.level = debug` makes `Database` log every query with its parameters, which is how you count queries per request — and it writes a file per query, so it is a development setting only.
+`log.level = debug` makes `Database` log every query with its parameters, which is how you count queries per request — see [docs/performance.md](docs/performance.md) for the method and the baseline — and it writes a file per query, so it is a development setting only.
 
 ### The HTTP layer
 
