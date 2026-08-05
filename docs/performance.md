@@ -176,21 +176,34 @@ direct measurement:
 
 | | |
 |---|---|
-| Composer autoload | 0.2 ms |
-| `new DpressWebApp(...)` | 1.4 ms |
-| **micro's own `fullInit()`** (bare `WebApp`, same config) | **0.5 ms** |
-| `AttributeProcessor` reflecting all 44 registered classes | ~3 ms |
-| **`PDO` connect to MariaDB** | **~11 ms** |
-| dpress's `init()`, the rest — not yet attributed | ~12 ms |
+| Composer autoload + `new DpressWebApp(...)` | 1.6 ms |
+| config, logger, events | 0.5 ms |
+| `init()` → registering services, middlewares, controllers | 1.4 ms |
+| `init()` → **`applyTheme()`, which reads a setting: the first DB connect** | **11.7 ms** |
+| `init()` → registering entities, migrations, queries, forms, audit | 4.1 ms |
+| **`runMiddlewares()`** — attribute processing (~3 ms) plus the JWT and locale middlewares | **8.8 ms** |
+| routing, the 401 itself | ~2 ms |
+
+Measured by putting `microtime()` marks in `AbstractApp::fullInit()` and `DpressWebApp::initServices()`,
+reading them from a probe, and reverting. Stable to a few tenths across runs — except the very
+first request after an idle period, which comes in around 7 ms for the whole of `init()` because
+the database connection has not yet been made the slow way. Do not measure this once.
 
 **The framework is not the problem**: a bare `WebApp` with the same config boots in half a
 millisecond. Nor is attribute reflection, which was the obvious suspect and turned out to cost
 3 ms.
 
-**Treat the 11 ms connect as a Windows artifact until it is measured on Linux.** MariaDB over
+**Treat the 11.7 ms connect as a Windows artifact until it is measured on Linux.** MariaDB over
 TCP on Windows is slow to hand-shake — 127.0.0.1 and localhost measured the same, so it is not
 the usual IPv6-fallback trap — while a Linux host connecting over a unix socket is normally
 under a millisecond. Do not go adding persistent connections on the strength of this number.
+
+**But the connect itself is a design finding, whatever it costs.** `applyTheme()` runs during
+`init()`, and the active theme is a *setting*, so **every request opens a database connection
+before it has even routed**. A request for `/admin/assets/admin.css`, a 404, a 401 — none of
+them need the database, and all of them pay for it. Making the theme resolve lazily, on the
+first `View::fetch()` rather than at boot, would let those requests skip the connection
+entirely. That is worth doing on a Linux host too, where it is cheaper but not free.
 
 ### A budget
 
@@ -208,10 +221,9 @@ Not measurements — targets to notice a regression against:
 
 In the order they are worth fixing:
 
-1. **Boot is ~95% of a request, and it is not compilation.** See the table above. This is the
-   only finding that affects every page equally, and the ~12 ms not yet attributed to anything
-   is the next thing to measure — it needs four `microtime()` calls inside `AbstractApp::fullInit()`,
-   which is the one measurement this document cannot take from the outside.
+1. **Boot is ~95% of a request, and it is not compilation.** See the table above. Two items
+   dominate it: the database connection forced by `applyTheme()` during `init()`, and the
+   middleware pass. Nothing else in the boot is above 2 ms.
 2. **The menu resolves its targets one at a time.** Every item runs its own
    `select * from dp_content where id = ?` or `dp_category`, so a ten-item menu is ten extra
    queries **on every page of the site**. Worth fixing because it *scales with content*, which
