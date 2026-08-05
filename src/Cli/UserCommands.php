@@ -159,7 +159,6 @@ class UserCommands extends AbstractCommands {
         }
         try {
             if ($this->flag($params, 'revoke')) {
-                $this->guardLastAdmin($user, $roleName);
                 $this->users->revokeRole($user, $roleName);
                 $this->success("Revoked '$roleName' from <{$user->email}>.");
             } else {
@@ -190,18 +189,6 @@ class UserCommands extends AbstractCommands {
             }
         }
         return 0;
-    }
-
-    /**
-     * Refuses to leave the site without an administrator
-     */
-    protected function guardLastAdmin(User $user, string $roleName): void {
-        if ($roleName !== Role::NAME_ADMIN) {
-            return;
-        }
-        if ($this->users->countByRole(Role::NAME_ADMIN) <= 1) {
-            throw new DpressException('This is the last administrator, the role can not be revoked.');
-        }
     }
 
     protected function generatePassword(): string {

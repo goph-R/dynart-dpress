@@ -97,6 +97,8 @@ It rests on `Request::ip()` being trustworthy, which it only is from micro 0.18.
 
 **The admin role holds every permission implicitly** (`DpressUser::hasPermission()` short-circuits on it), so it is seeded with none and a permission invented later by a plugin needs no retroactive grant. It is also seeded `removable = false`, and `user:role -revoke` refuses to take it from the last administrator.
 
+**The site always keeps a way in.** `UserService::guardLastActiveAdmin()` refuses to block, demote or delete the last administrator who can still sign in, and it is in the *service* because the rule is about the state the site may end up in — it used to live in `UserCommands`, where it guarded one CLI flag while the admin UI walked past it three different ways. It counts **active** administrators: `AuthService::login()` refuses anybody who is not active, so an account that cannot sign in is not a way in, whatever roles it holds.
+
 **Permissions are plain strings** — `Permissions::add()` is all a plugin needs; there is no lookup table to migrate.
 
 Access tokens carry the user's roles and permissions in the payload, so an authorized request costs no database query — but a role change only lands on the next refresh, which is why the access TTL is 15 minutes. `AuthService::refresh()` revokes the old refresh token and issues a new one, so a stolen token is usable at most once.

@@ -5,6 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.14.3] &ndash; 2026-08-05
+
+### Fixed
+- **The last administrator could be locked out of their own site.** Setting them to Blocked, taking the admin role away in the user editor, or deleting the account all went through unguarded, and `AuthService::login()` refuses anybody who is not active — so the site was left with nobody who could sign in. Recovering needed shell access, which is exactly what the person locked out of their own admin does not necessarily have.
+
+### Notes
+The check existed, but only in `UserCommands`: it guarded `dpress user:role -revoke` and nothing else, while the admin UI revoked through `applyRoles()`, blocked through `setStatus()` and deleted through `delete()`. A rule about the state the **site** may end up in belongs in the service every path has to go through, so it moved to `UserService` and now covers all three, in the UI, on the command line, and for anything a plugin calls.
+
+**The rule counts *active* administrators**, not accounts holding the role. With two of them and one already blocked, blocking the other leaves nobody who can sign in while a naive count still says two. By the same reasoning an account that is already blocked is not protected: taking the role from somebody who cannot sign in anyway costs the site nothing.
+
+Pending counts as locked out, the same as blocked — `login()` makes no distinction, so neither does this.
+
+---
+
 ## [0.14.2] &ndash; 2026-08-05
 
 ### Fixed

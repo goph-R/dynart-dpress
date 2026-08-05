@@ -172,6 +172,10 @@ class UserService {
         if (!in_array($status, User::STATUSES)) {
             throw new DpressException("Unknown user status '$status'.");
         }
+        if ($status !== User::STATUS_ACTIVE) {
+            // pending locks somebody out exactly as thoroughly as blocked does
+            $this->guardLastActiveAdmin($user, "the account cannot be set to '$status'");
+        }
         $user->status = $status;
         $this->update($user);
     }
@@ -184,6 +188,7 @@ class UserService {
      * is written - the history would show the grant simply gone.
      */
     public function delete(User $user): void {
+        $this->guardLastActiveAdmin($user, 'the account cannot be deleted');
         $this->events->emit(self::EVENT_BEFORE_DELETE, [$user]);
         foreach ($this->roleNames($user->id) as $roleName) {
             $this->revokeRole($user, $roleName);
@@ -215,6 +220,9 @@ class UserService {
         if ($role === null || !$this->hasRole($user->id, $role->id)) {
             return;
         }
+        if ($roleName === Role::NAME_ADMIN) {
+            $this->guardLastActiveAdmin($user, 'the role cannot be taken away');
+        }
         $userRole = new UserRole();
         $userRole->user_id = $user->id;
         $userRole->role_id = $role->id;
@@ -235,6 +243,57 @@ class UserService {
             [':userId' => $userId, ':roleId' => $roleId]
         );
         return (int)$count > 0;
+    }
+
+    /**
+     * How many people could actually sign in and administer the site
+     *
+     * **Active**, not merely holding the role. Counting every administrator regardless of status
+     * gets the arithmetic wrong in the one case that matters: with two of them and one already
+     * blocked, blocking the other leaves nobody who can log in while a naive count still says
+     * two. `AuthService::login()` refuses anybody who is not active, so this is the number that
+     * decides whether the site still has a way in.
+     */
+    public function countActiveAdmins(): int {
+        return (int)$this->db->fetchOne(
+            'select count(1) from '.$this->em->safeTableName(UserRole::class).' ur'
+                .' inner join '.$this->em->safeTableName(Role::class).' r on `r`.`id` = `ur`.`role_id`'
+                .' inner join '.$this->em->safeTableName(User::class).' u on `u`.`id` = `ur`.`user_id`'
+                .' where `r`.`name` = :role and `u`.`status` = :status',
+            [':role' => Role::NAME_ADMIN, ':status' => User::STATUS_ACTIVE]
+        );
+    }
+
+    /**
+     * Is this the one account still able to administer the site?
+     *
+     * Somebody who is already blocked is not it, however many roles they hold - taking the role
+     * from an account that cannot log in anyway costs the site nothing.
+     */
+    public function isLastActiveAdmin(User $user): bool {
+        return $user->isActive()
+            && in_array(Role::NAME_ADMIN, $this->roleNames($user->id), true)
+            && $this->countActiveAdmins() <= 1;
+    }
+
+    /**
+     * Refuses to leave the site with no way in
+     *
+     * **Here rather than in the controller or the CLI.** The check used to live in
+     * `UserCommands`, which meant it guarded `dpress user:role -revoke` and nothing else: the
+     * admin UI revokes through `applyRoles()`, blocks through `setStatus()` and deletes through
+     * `delete()`, and all three walked straight past it. A rule about the state the *site* may
+     * end up in belongs where every path has to go through it.
+     *
+     * Recovering from this without a guard needs shell access - `dpress user:status` - which is
+     * exactly what the person locked out of their own admin does not necessarily have.
+     */
+    protected function guardLastActiveAdmin(User $user, string $consequence): void {
+        if ($this->isLastActiveAdmin($user)) {
+            throw new DpressException(
+                'This is the last administrator who can sign in, so '.$consequence.'.'
+            );
+        }
     }
 
     /**
