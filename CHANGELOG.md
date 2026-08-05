@@ -5,6 +5,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.14.0] &ndash; 2026-08-05
+
+Guessing a password now costs something.
+
+### Added
+- **Rate limiting on the way in.** `RateLimiter` counts attempts in a sliding window and refuses once a key has had its allowance. Three scopes: logging in (5 per account, 20 per address, in 15 minutes), asking for a password reset (3 per account, 10 per address, in an hour) and submitting a reset token (10 per token, 30 per address, in an hour). Every number is overridable — `dpress.rate_limit.<scope>.account`, `.address`, `.window` — and `dpress.rate_limit.enabled = false` turns the whole thing off.
+- **`auth_attempt` table** and migration `0007`. A row per attempt rather than a counter per key, because a counter cannot answer "how many in the last fifteen minutes" without also storing when it was last reset. Not audited, and pruned past the longest window: it is a working set that expires, not a record of anything.
+
+### Notes
+**Two limits, always.** A per account limit stops one account being hammered; on its own it hands anybody a way to lock a person out by failing on their behalf. A per address limit stops one password being sprayed across every account; on its own it does nothing about a botnet with a thousand addresses and one target. Neither is optional and neither is sufficient.
+
+**A sliding window, not a lockout.** Once the oldest attempt in the window expires there is room for another. A fixed lockout with a timer is a state somebody else can keep an account in indefinitely, one failure at a time.
+
+**Attempts are counted for addresses that have no account here.** Not counting them would make the limit itself a way of asking who has an account, and guessing addresses is how a spray attack starts. For the same reason the key is stored as a sha256 digest: the set of addresses typed into a login form is exactly the set this site has no business writing down.
+
+**A success clears the account, never the address.** Otherwise anybody holding one valid account could wipe their own address count between guesses at everybody else's.
+
+**The reset form still answers "check your inbox" when it is over the limit.** An error there would tell anybody willing to try that somebody has been asking about that address, and the endpoint exists precisely so that it says nothing about who has an account. Nothing is sent, and the mailbox stops being something a stranger can fill.
+
+**This needs micro 0.18.0**, where `Request::ip()` stopped believing `X-Forwarded-For` from anybody who is not a configured proxy. A limit keyed on an address the client can choose is decoration. **If the site is behind a proxy, set `request.trusted_proxies`** or every visitor shares one address and one allowance.
+
+Registration is not limited. It is one call to the same limiter if a site wants it, but `registration_open` is false by default and a flood of pending accounts is a nuisance rather than a way in.
+
+---
+
 ## [0.13.0] &ndash; 2026-08-05
 
 The admin moves between screens without reloading itself, and a list screen costs one request instead of two.

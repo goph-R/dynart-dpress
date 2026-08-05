@@ -86,6 +86,15 @@ The builder signatures differ because `Form` needs its name at construction (it 
 
 **The audited relation tables carry no `ON DELETE CASCADE`, on purpose.** A cascade happens inside the database, so no entity event fires and no audit row is written — the history would show a role grant simply *gone*. `UserService::delete()` and `RoleService::delete()` remove those rows through the entity manager first. If you add another audited relation table, do the same.
 
+**Getting in is rate limited.** `RateLimiter` counts attempts in a sliding window, in `auth_attempt`, and refuses once a key has had its allowance — logging in, asking for a reset, and submitting a reset token, each with a per account and a per address limit. Four things about it are load-bearing:
+
+- **Both limits, always.** Per account alone is a way to lock somebody out by failing on their behalf; per address alone does nothing about a botnet with one target.
+- **A sliding window, not a lockout.** A fixed lockout is a state somebody else can keep an account in indefinitely, one failure at a time.
+- **A success clears the account key, never the address key.** Otherwise one valid account wipes the address count between guesses at everybody else's.
+- **Unknown addresses are counted too, and every key is stored as a digest.** Skipping them would make the limit a way of asking who has an account here; storing them plainly would keep a list of what strangers typed into a login form.
+
+It rests on `Request::ip()` being trustworthy, which it only is from micro 0.18.0 and only when **`request.trusted_proxies`** names the proxy in front of the site. Behind an unconfigured proxy every visitor is one address with one allowance.
+
 **The admin role holds every permission implicitly** (`DpressUser::hasPermission()` short-circuits on it), so it is seeded with none and a permission invented later by a plugin needs no retroactive grant. It is also seeded `removable = false`, and `user:role -revoke` refuses to take it from the last administrator.
 
 **Permissions are plain strings** — `Permissions::add()` is all a plugin needs; there is no lookup table to migrate.

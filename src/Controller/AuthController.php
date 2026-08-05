@@ -13,6 +13,7 @@ use Dynart\Dpress\Form\CoreForms;
 use Dynart\Dpress\Form\FormFactory;
 use Dynart\Dpress\Mail\MailerInterface;
 use Dynart\Dpress\Security\AuthCookies;
+use Dynart\Dpress\Security\RateLimiter;
 use Dynart\Dpress\Service\AuthService;
 use Dynart\Dpress\Service\UserService;
 
@@ -32,6 +33,7 @@ class AuthController extends AbstractController {
         protected UserService $users,
         protected AuthCookies $cookies,
         protected MailerInterface $mailer,
+        protected RateLimiter $limiter,
     ) {
         parent::__construct($view, $router, $request, $config, $jwtAuth);
     }
@@ -43,15 +45,58 @@ class AuthController extends AbstractController {
         }
         $form = $this->forms->create(CoreForms::LOGIN);
         if ($form->process()) {
-            try {
-                $tokens = $form->handle(fn($f) => $this->auth->login($f->value('email'), $f->value('password')));
-                $this->cookies->set($tokens);
-                $this->app()->redirect('/');
-            } catch (DpressException $e) {
-                $form->addError($e->getMessage());
+            $account = $this->account($form->value('email'));
+            if ($this->limiter->reachedEither(RateLimiter::SCOPE_LOGIN, $account, $this->address())) {
+                $form->addError($this->tryAgainLater(RateLimiter::SCOPE_LOGIN, $account));
+            } else {
+                try {
+                    $tokens = $form->handle(fn($f) => $this->auth->login($f->value('email'), $f->value('password')));
+                    // the account only - see `RateLimiter::clear()`
+                    $this->limiter->clear(RateLimiter::SCOPE_LOGIN, $account);
+                    $this->cookies->set($tokens);
+                    $this->app()->redirect('/');
+                } catch (DpressException $e) {
+                    $this->limiter->record(RateLimiter::SCOPE_LOGIN, $account, $this->address());
+                    $form->addError($e->getMessage());
+                }
             }
         }
         return $this->render('dpress:auth/login', ['form' => $form, 'title' => 'Log in']);
+    }
+
+    /**
+     * The key an attempt is counted against, from whatever was typed in
+     *
+     * Normalised the same way a real login is, so `A@B.com` and `a@b.com` are one account and
+     * not two allowances. Counted **whether or not the address belongs to anybody**: an unknown
+     * address that was not counted would make the limit itself a way of asking who has an
+     * account here, and guessing addresses is how a spray attack starts.
+     */
+    protected function account(mixed $email): string {
+        return $this->users->normalizeEmail((string)$email);
+    }
+
+    /**
+     * Where the request came from, or '' when there is nothing to go on
+     *
+     * `Request::ip()` is `REMOTE_ADDR` unless a trusted proxy said otherwise - see
+     * `request.trusted_proxies`, and set it if this site is behind one, because otherwise every
+     * visitor arrives as the proxy and shares one allowance.
+     */
+    protected function address(): string {
+        return (string)($this->request->ip() ?? '');
+    }
+
+    /**
+     * The one thing a limited request is told
+     *
+     * No mention of which of the two limits it was, and no mention of the account: the message
+     * is the same for the person who mistyped their own password five times and for somebody
+     * working through a list.
+     */
+    protected function tryAgainLater(string $scope, string $account): string {
+        $seconds = $this->limiter->retryAfterEither($scope, $account, $this->address());
+        return 'Too many attempts. Try again in '.$this->limiter->humanRetryAfter($seconds).'.';
     }
 
     /**
@@ -103,14 +148,23 @@ class AuthController extends AbstractController {
     public function forgotPassword(): string {
         $form = $this->forms->create(CoreForms::FORGOT_PASSWORD);
         if ($form->process()) {
-            $form->handle(function($f) {
-                $email = $f->value('email');
-                $token = $this->auth->createPasswordResetToken($email);
-                if ($token !== null) {
-                    $this->sendPasswordResetMail($email, $token);
-                }
-                return null;
-            });
+            $account = $this->account($form->value('email'));
+            // Over the limit, the answer is the *same page* rather than an error. A reset form
+            // that says "too many attempts" tells anybody willing to try that somebody has been
+            // asking about this address, and the endpoint exists precisely so that it says
+            // nothing about who does and does not have an account. Nothing is sent, and the
+            // mailbox stops being something a stranger can fill.
+            if (!$this->limiter->reachedEither(RateLimiter::SCOPE_PASSWORD_RESET, $account, $this->address())) {
+                $this->limiter->record(RateLimiter::SCOPE_PASSWORD_RESET, $account, $this->address());
+                $form->handle(function($f) {
+                    $email = $f->value('email');
+                    $token = $this->auth->createPasswordResetToken($email);
+                    if ($token !== null) {
+                        $this->sendPasswordResetMail($email, $token);
+                    }
+                    return null;
+                });
+            }
             return $this->message(
                 'Check your inbox',
                 'If that address belongs to an account, a password reset link is on its way.'
@@ -125,15 +179,23 @@ class AuthController extends AbstractController {
             'token' => (string)$this->request->get('token', '')
         ]);
         if ($form->process()) {
-            try {
-                $form->handle(fn($f) => $this->auth->resetPassword($f->value('token'), $f->value('password')));
-                return $this->message(
-                    'Password changed',
-                    'Your password has been changed. You can log in with it now.',
-                    ['url' => $this->router->url('/login'), 'label' => 'Log in']
-                );
-            } catch (DpressException $e) {
-                $form->addError($e->getMessage());
+            // the token stands in for the account here, because until it resolves there is no
+            // account to name - so a single link can be guessed at a few times and no more
+            $token = (string)$form->value('token');
+            if ($this->limiter->reachedEither(RateLimiter::SCOPE_PASSWORD_RESET_TOKEN, $token, $this->address())) {
+                $form->addError($this->tryAgainLater(RateLimiter::SCOPE_PASSWORD_RESET_TOKEN, $token));
+            } else {
+                try {
+                    $form->handle(fn($f) => $this->auth->resetPassword($f->value('token'), $f->value('password')));
+                    return $this->message(
+                        'Password changed',
+                        'Your password has been changed. You can log in with it now.',
+                        ['url' => $this->router->url('/login'), 'label' => 'Log in']
+                    );
+                } catch (DpressException $e) {
+                    $this->limiter->record(RateLimiter::SCOPE_PASSWORD_RESET_TOKEN, $token, $this->address());
+                    $form->addError($e->getMessage());
+                }
             }
         }
         return $this->render('dpress:auth/reset-password', ['form' => $form, 'title' => 'Choose a new password']);

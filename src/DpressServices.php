@@ -30,6 +30,7 @@ use Dynart\Dpress\Cli\SystemCommands;
 use Dynart\Dpress\Cli\UserCommands;
 use Dynart\Dpress\Content\MarkdownRenderer;
 use Dynart\Dpress\Content\Slugger;
+use Dynart\Dpress\Entity\AuthAttempt;
 use Dynart\Dpress\Entity\Category;
 use Dynart\Dpress\Entity\Content;
 use Dynart\Dpress\Entity\ContentAttachment;
@@ -59,6 +60,7 @@ use Dynart\Dpress\Security\AuthCookies;
 use Dynart\Dpress\Mail\LogMailer;
 use Dynart\Dpress\Mail\MailerInterface;
 use Dynart\Dpress\Mail\NativeMailer;
+use Dynart\Dpress\Migration\CreateAuthAttemptTable;
 use Dynart\Dpress\Migration\CreateContentTables;
 use Dynart\Dpress\Migration\CreateMediaTables;
 use Dynart\Dpress\Migration\CreateMenuAndSettingTables;
@@ -69,6 +71,7 @@ use Dynart\Dpress\Query\CoreQueries;
 use Dynart\Dpress\Query\ListRequest;
 use Dynart\Dpress\Query\QueryFactory;
 use Dynart\Dpress\Security\Permissions;
+use Dynart\Dpress\Security\RateLimiter;
 use Dynart\Dpress\Security\PasswordHasher;
 use Dynart\Dpress\Service\AuthService;
 use Dynart\Dpress\Service\ContentHistoryService;
@@ -108,6 +111,7 @@ class DpressServices {
         CreateContentTables::class,
         CreateTaxonomyTables::class,
         CreateMenuAndSettingTables::class,
+        CreateAuthAttemptTable::class,
     ];
 
     /** The entities the CMS provides, registered explicitly rather than by a namespace scan */
@@ -128,6 +132,7 @@ class DpressServices {
         Setting::class,
         Menu::class,
         MenuItem::class,
+        AuthAttempt::class,
     ];
 
     /**
@@ -177,6 +182,7 @@ class DpressServices {
         Micro::add(ListRequest::class);
         Micro::add(Permissions::class);
         Micro::add(PasswordHasher::class);
+        Micro::add(RateLimiter::class);
         Micro::add(SchemaService::class);
         Micro::add(RoleService::class);
         Micro::add(UserService::class);
