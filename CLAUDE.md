@@ -119,6 +119,10 @@ One `Content` table with a `type` column (`post` | `page`) — the reasoning is 
 
 **`lead_html` / `body_html` are a cache of `markdown`.** Only `ContentService::renderInto()` writes them; `dpress content:rerender` rebuilds everything after a rendering change. Nothing else should assign those columns.
 
+**An image in the body is a hidden attachment.** `MediaService::syncInlineAttachments()` runs after every content save, resolves the storage URLs in the markdown back to library items, and makes the `hidden` attachments match. Three things about it are load-bearing: `hidden` is on the *link* rather than on the media, because the same image can be an inline illustration in one post and a listed download in another; **visible attachments are never touched**, because somebody added those deliberately and the article text is not their owner; and an absent `markdown` key means "leave it alone", exactly as it does in `update()` — reconciling against a body that was never submitted would detach every image in the post.
+
+Matched on the **path**, not the whole URL, so the site can move hosts. A derivative suffix is stripped only when it names a real preset.
+
 **`status` is not an editable field.** `ContentService::update()` ignores it deliberately — becoming visible sets `published_at` and is what a feed, a cache or a plugin listens for, so it belongs to `publish()` / `unpublish()`. Anything that offers a status control routes through `ContentAdminController::applyStatus()`, which checks `Permissions::forContent($type, 'publish')` and calls those two. Do **not** put `status` back into `contentData()`: `create()` honours what it is given while `update()` drops it, so the same field published a new post and silently did nothing to an existing one, and neither path asked whether the person may publish. The stock `editor` role holds `post.publish` but not `page.publish`, so the gap was reachable with the default roles.
 
 Every change emits **both** `content:updated` and the type alias `post:updated`, so a plugin that only cares about posts does not have to inspect the type on every content event of the site.

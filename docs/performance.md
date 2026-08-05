@@ -162,7 +162,22 @@ useful one**: it boots everything and then does almost no work, so it separates 
 | static file (server floor) | 0.7 ms | 0.7 ms |
 | `/admin` → 401 (boot, no work) | 44.9 ms | **31.1 ms** |
 | front page (9 queries) | 48.5 ms | **32.1 ms** |
-| single post (5 queries) | — | 31.6 ms |
+| single post, `/post/<slug>` (13 queries) | — | 34.1 ms |
+
+Queries per page:
+
+| Page | Queries |
+|---|---|
+| `/` (front, 5 posts) | 9 |
+| `/post/welcome-to-dpress` (single post, 3 attachments) | 13 |
+| `/about` (page, in a menu) | 12 |
+| `/category/news` | 11 |
+| `/page/2` | 4 |
+
+**Check the status code of every URL you measure.** An earlier version of this table put a
+single post at 5 queries — it was measuring `/welcome-to-dpress`, which is a **404**. Posts live
+at `/post/<slug>`; the bare slug is the page catch-all correctly refusing a post. A 404 is cheap
+and looks like a wonderful result.
 
 Two things fall out of that table, and both were surprises:
 

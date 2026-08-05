@@ -60,6 +60,7 @@ use Dynart\Dpress\Security\AuthCookies;
 use Dynart\Dpress\Mail\LogMailer;
 use Dynart\Dpress\Mail\MailerInterface;
 use Dynart\Dpress\Mail\NativeMailer;
+use Dynart\Dpress\Migration\AddHiddenToContentAttachment;
 use Dynart\Dpress\Migration\CreateAuthAttemptTable;
 use Dynart\Dpress\Migration\CreateContentTables;
 use Dynart\Dpress\Migration\CreateMediaTables;
@@ -112,6 +113,7 @@ class DpressServices {
         CreateTaxonomyTables::class,
         CreateMenuAndSettingTables::class,
         CreateAuthAttemptTable::class,
+        AddHiddenToContentAttachment::class,
     ];
 
     /** The entities the CMS provides, registered explicitly rather than by a namespace scan */

@@ -5,6 +5,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.15.0] &ndash; 2026-08-05
+
+An image in the article body is attached to it, and not listed twice.
+
+### Added
+- **`ContentAttachment.hidden`** and migration `0008`. An image inside the body is attached — so "is this file still used" has a true answer and a delete says what it affects — but it is already on the page, and listing it again under "Attachments" says the same thing twice.
+- **`MediaService::syncInlineAttachments()`**, called after every content save. It reads the body, resolves the storage URLs in it back to library items, and makes the hidden attachments match.
+- `MediaService::allAttachmentsOf()` for the places that want the true picture rather than the published one, and `referencedMediaIds()` for anything else that needs to ask what a body points at.
+
+### Notes
+**On the link, not on the media.** The same library image can be an inline illustration in one post and a listed download in another, so hidden is a fact about *this use* of it. On `Media` the two uses would fight over one flag.
+
+**Attaching happens on save, not on upload.** A new post has no id until it is saved, so there is nothing to attach to at upload time — and attaching then would never notice the image being deleted from the text again. Reconciling on save makes the markdown the truth for attachments too, which is the rule the rest of the content model already follows, and it means **pasting a URL by hand behaves exactly like using the picker**. There is no hidden state that only a dialog knows how to produce.
+
+**Visible attachments are never touched.** Somebody added those deliberately, to be listed; the article text is not their owner and must not remove them for going unmentioned.
+
+Matched on the **path**, so a full URL and a bare one resolve to the same file — `app.base_url` may be a different host tomorrow, and a stored document must not stop resolving because the site moved. A `-thumb` / `-medium` / `-large` suffix is stripped when it names a preset this installation actually has, so `notes-draft.txt` keeps its name. `usageCount()` counts hidden attachments too: an image inside a body breaks the page exactly as thoroughly as a listed one.
+
+Needs micro-entities 0.7.0 for `addColumnWithAudit()`.
+
+---
+
 ## [0.14.4] &ndash; 2026-08-05
 
 ### Security

@@ -173,11 +173,25 @@ class CoreQueries {
         return $query;
     }
 
+    /**
+     * The attachments of a piece of content
+     *
+     * **Hidden ones are left out unless asked for.** An image inside the article body is
+     * attached, but it is already on the page - listing it again under "Attachments" says the
+     * same thing twice. Filtering here rather than in the templates means a theme gets it right
+     * without knowing the rule exists.
+     *
+     * `with_hidden` is for the places that need the true picture rather than the published one:
+     * the admin's "where is this used", and anything deciding whether a file is safe to remove.
+     */
     public function contentAttachments(array $context): Query {
         $query = new Query(Media::class);
         $query->addInnerJoin([ContentAttachment::class, 'ca'], '`ca`.`media_id` = '.$this->safeTable(Media::class).'.`id`');
         $query->addCondition('`ca`.`content_id` = :contentId', [':contentId' => $context['content_id'] ?? 0]);
         $query->addCondition('`deleted_at` is null');
+        if (empty($context['with_hidden'])) {
+            $query->addCondition('`ca`.`hidden` = :notHidden', [':notHidden' => false]);
+        }
         return $query;
     }
 

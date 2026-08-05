@@ -209,6 +209,7 @@ class ContentAdminController extends AbstractAdminController {
                 $data['type'] = $type;
                 $created = $this->content->create($data, (int)$this->currentUser()->id());
                 $this->applyTaxonomy($created, $values);
+                $this->media->syncInlineAttachments($created->id, $data['markdown'] ?? null);
                 return $created;
             });
             $this->applyStatus($content, $form->values(), $type);
@@ -227,8 +228,13 @@ class ContentAdminController extends AbstractAdminController {
         if ($form->process()) {
             $form->handle(function ($form) use ($content) {
                 $values = $form->values();
-                $this->content->update($content, $this->contentData($values));
+                $data = $this->contentData($values);
+                $this->content->update($content, $data);
                 $this->applyTaxonomy($content, $values);
+                // `$data`, not `$values`: an absent body means "leave it alone" here exactly as
+                // it does in `update()`, and reconciling against one that was never submitted
+                // would detach every image in the post
+                $this->media->syncInlineAttachments($content->id, $data['markdown'] ?? null);
                 return $content;
             });
             $this->applyStatus($content, $form->values(), $type);

@@ -78,6 +78,10 @@ class MediaService {
 
     /**
      * How many pieces of content use this item, so a delete can say what it affects
+     *
+     * **Counts hidden attachments too.** An image inside an article body breaks the page exactly
+     * as thoroughly as a listed one when the file goes away, so "is anybody using this" is not
+     * the same question as "what does the public list show".
      */
     public function usageCount(int $mediaId): int {
         $attachments = (int)$this->db->fetchOne(
@@ -357,7 +361,10 @@ class MediaService {
 
     // --- Attachments ---
 
-    public function attach(int $contentId, int $mediaId, int $position = 0): void {
+    /**
+     * @param bool $hidden Attached, but not for the public list - an image inside the body
+     */
+    public function attach(int $contentId, int $mediaId, int $position = 0, bool $hidden = false): void {
         if ($this->isAttached($contentId, $mediaId)) {
             return;
         }
@@ -365,6 +372,7 @@ class MediaService {
         $attachment->content_id = $contentId;
         $attachment->media_id = $mediaId;
         $attachment->position = $position;
+        $attachment->hidden = $hidden;
         $this->em->save($attachment);
         $this->events->emit(self::EVENT_ATTACHED, [$contentId, $mediaId]);
     }
@@ -401,6 +409,127 @@ class MediaService {
      */
     public function attachmentsOf(int $contentId): array {
         return $this->queryExecutor->findAll($this->queries->create('content_attachments', ['content_id' => $contentId]));
+    }
+
+    /**
+     * Everything attached, including what the public list leaves out
+     *
+     * @return array The media rows, inline images and all
+     */
+    public function allAttachmentsOf(int $contentId): array {
+        return $this->queryExecutor->findAll(
+            $this->queries->create('content_attachments', ['content_id' => $contentId, 'with_hidden' => true])
+        );
+    }
+
+    /**
+     * Makes the hidden attachments match the images the text actually references
+     *
+     * An image in the body is attached so that "is this file still used" has a true answer and
+     * so the link is recorded - but attaching at *upload* time cannot work: a new post has no id
+     * until it is saved, and it would never notice the image being deleted from the text again.
+     * So the text is the truth here, exactly as it is for everything else in the content model,
+     * and pasting a URL by hand behaves the same as using the picker - there is no hidden state
+     * that only the dialog knows how to produce.
+     *
+     * **Visible attachments are never touched.** Somebody added those deliberately, to be listed;
+     * the article text is not their owner and must not remove them for going unmentioned.
+     *
+     * @param string|null $markdown Null when the save did not carry a body - then nothing is
+     *                              reconciled, because "absent" means "leave it alone" here just
+     *                              as it does in `ContentService::update()`. Reconciling against
+     *                              a body that was never submitted would detach every image.
+     */
+    public function syncInlineAttachments(int $contentId, ?string $markdown): void {
+        if ($markdown === null) {
+            return;
+        }
+        $wanted = $this->referencedMediaIds($markdown);
+        $current = $this->hiddenAttachmentIds($contentId);
+        foreach (array_diff($wanted, $current) as $mediaId) {
+            $this->attach($contentId, (int)$mediaId, 0, true);
+        }
+        foreach (array_diff($current, $wanted) as $mediaId) {
+            $this->detach($contentId, (int)$mediaId);
+        }
+    }
+
+    /**
+     * The library items a piece of markdown points at
+     *
+     * Matched on the **path** rather than the whole URL: `app.base_url` may be a full URL today
+     * and a different host tomorrow, and a stored document must not stop resolving because the
+     * site moved - the same reasoning as `siteAsset()` in `AbstractController`. So this finds
+     * `/uploads/2026/08/photo-a1b2c3.jpg` whether the author wrote it bare or with a host on the
+     * front, and ignores an image on somebody else's server, which is not ours to attach.
+     *
+     * Raw `<img src>` counts as well as `![](...)`. The renderer strips HTML, so it will not
+     * appear on the page - but it is still a reference, and a file that is referenced should not
+     * be reported as unused.
+     *
+     * @return int[]
+     */
+    public function referencedMediaIds(string $markdown): array {
+        $base = preg_quote($this->storage->baseUrl(), '#');
+        if (!preg_match_all('#'.$base.'/([\w./-]+\.\w+)#i', $markdown, $matches)) {
+            return [];
+        }
+        $paths = [];
+        foreach (array_unique($matches[1]) as $path) {
+            $paths[$this->sourcePath($path)] = true;
+        }
+        return $this->mediaIdsByPaths(array_keys($paths));
+    }
+
+    /**
+     * The stored file behind a derivative URL
+     *
+     * `photo-a1b2c3-medium.jpg` is a generated size of `photo-a1b2c3.jpg`, and only the original
+     * is a row in the library. A preset name is stripped only when it is one this installation
+     * actually has, so a file somebody genuinely named `notes-draft.txt` is left alone.
+     */
+    protected function sourcePath(string $path): string {
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+        if ($extension === '') {
+            return $path;
+        }
+        $withoutExtension = substr($path, 0, -(strlen($extension) + 1));
+        foreach (array_keys($this->images->presets()) as $preset) {
+            $suffix = '-'.$preset;
+            if (str_ends_with($withoutExtension, $suffix)) {
+                return substr($withoutExtension, 0, -strlen($suffix)).'.'.$extension;
+            }
+        }
+        return $path;
+    }
+
+    /**
+     * @param string[] $paths
+     * @return int[]
+     */
+    protected function mediaIdsByPaths(array $paths): array {
+        if (empty($paths)) {
+            return [];
+        }
+        [$in, $params] = $this->db->getInConditionAndParams($paths, 'path');
+        $rows = $this->db->fetchColumn(
+            'select `id` from '.$this->em->safeTableName(Media::class)
+                .' where `path` in ('.$in.') and `deleted_at` is null',
+            $params
+        );
+        return array_map('intval', $rows);
+    }
+
+    /**
+     * @return int[] The media ids attached to this content as inline images
+     */
+    protected function hiddenAttachmentIds(int $contentId): array {
+        $rows = $this->db->fetchColumn(
+            'select `media_id` from '.$this->em->safeTableName(ContentAttachment::class)
+                .' where `content_id` = :id and `hidden` = :hidden',
+            [':id' => $contentId, ':hidden' => true]
+        );
+        return array_map('intval', $rows);
     }
 
     /**

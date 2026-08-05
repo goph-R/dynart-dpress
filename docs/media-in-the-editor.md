@@ -1,6 +1,7 @@
 # Media in the editor
 
-**Status: design, not built.** Target: dpress 0.15.0.
+**Status: steps 1 and 2 are built** (micro-entities 0.7.0, dpress 0.15.0). Steps 3 and 4 — the
+JSON upload endpoint and the toolbar button — are still design.
 
 The goal, in one sentence: **while writing a post you can insert a picture without leaving the
 page** — pick one from the library or upload a new one in a dialog, and the URL lands in the
@@ -253,10 +254,11 @@ The upload endpoint itself wants the integration suite that Phase 6 still owes.
 
 Each step leaves the admin working, and the first two are worth shipping even if the rest slips.
 
-1. `QueryExecutor::addColumn()` upstream, released as micro-entities 0.7.0.
-2. `ContentAttachment.hidden`, migration `0008`, the query filter, `syncInlineAttachments()`
-   wired into save. **At this point pasting an image URL by hand already does the right thing**,
-   with no JavaScript involved at all.
+1. ~~`QueryExecutor::addColumn()` upstream~~ — **done**, micro-entities 0.7.0, as
+   `addColumnWithAudit()` so the mirror cannot be forgotten.
+2. ~~`ContentAttachment.hidden`, migration `0008`, the query filter, `syncInlineAttachments()`
+   wired into save.~~ — **done**, dpress 0.15.0. Pasting an image URL by hand now does the right
+   thing, with no JavaScript involved at all.
 3. `POST /admin/media/upload/json`, and the upload pane in the existing picker dialog. The
    picker is reachable from the media field today, so this is testable before touching the
    editor at all.
