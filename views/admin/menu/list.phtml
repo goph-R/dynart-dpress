@@ -12,5 +12,5 @@
         <p class="warning">The active theme declares no menu places, so a menu has nowhere to render.</p>
     <?php endif ?>
 
-    <?= $this->fetch('dpress:admin/list', ['list_id' => $list_id, 'list_config' => $list_config]) ?>
+    <?= $this->fetch('dpress_admin:list', ['list_id' => $list_id, 'list_config' => $list_config]) ?>
 <?php $this->endBlock() ?>

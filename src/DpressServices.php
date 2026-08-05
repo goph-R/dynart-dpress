@@ -233,6 +233,8 @@ class DpressServices {
      */
     public static function registerViews(ViewInterface $view, TranslationInterface $translation): void {
         $view->addFolder(Dpress::VIEW_NAMESPACE, Dpress::viewsPath());
+        // not themeable: a theme is for the site's pages, and the admin is not one of them
+        $view->addFolder(Dpress::ADMIN_VIEW_NAMESPACE, Dpress::viewsPath().'/admin', false);
         $translation->add(Dpress::TRANSLATION_NAMESPACE, Dpress::translationsPath());
         // replaces the framework's folder for its own namespace, so the built in form messages
         // read like something meant for a visitor rather than a developer

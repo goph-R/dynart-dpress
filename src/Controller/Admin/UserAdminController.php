@@ -50,7 +50,7 @@ class UserAdminController extends AbstractAdminController {
         $this->requirePermission(Permissions::USER_VIEW);
         $config = $this->listConfig();
         $config['firstPage'] = $this->page($this->firstPageContext($config, self::SORTABLE, ['search', 'status']));
-        return $this->admin('dpress:admin/user/list', [
+        return $this->admin('dpress_admin:user/list', [
             'title'      => 'Users',
             'can_create' => $this->can(Permissions::USER_CREATE),
             'new_url'    => $this->router->url('/admin/users/new'),
@@ -233,7 +233,7 @@ class UserAdminController extends AbstractAdminController {
     }
 
     protected function editor($form, ?User $user): string {
-        return $this->admin('dpress:admin/user/edit', [
+        return $this->admin('dpress_admin:user/edit', [
             'title'    => $user === null ? 'New user' : 'Edit user',
             'form'     => $form,
             'user'     => $user,

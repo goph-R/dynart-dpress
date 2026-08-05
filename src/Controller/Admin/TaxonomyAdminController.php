@@ -61,7 +61,7 @@ class TaxonomyAdminController extends AbstractAdminController {
                 'Delete this category? The posts in it keep their other categories.'),
         ];
         $config['firstPage'] = $this->categoryPage($this->firstPageContext($config, self::CATEGORY_SORTABLE, ['search']));
-        return $this->admin('dpress:admin/taxonomy/categories', [
+        return $this->admin('dpress_admin:taxonomy/categories', [
             'title'      => 'Categories',
             'can_create' => $this->can(Permissions::CATEGORY_CREATE),
             'new_url'    => $this->router->url('/admin/categories/new'),
@@ -137,7 +137,7 @@ class TaxonomyAdminController extends AbstractAdminController {
     }
 
     protected function categoryEditor($form, $category): string {
-        return $this->admin('dpress:admin/taxonomy/edit', [
+        return $this->admin('dpress_admin:taxonomy/edit', [
             'title'    => $category === null ? 'New category' : 'Edit category',
             'form'     => $form,
             'narrow'   => true,
@@ -196,7 +196,7 @@ class TaxonomyAdminController extends AbstractAdminController {
                 'Delete this tag? It is removed from every post that carries it.'),
         ];
         $config['firstPage'] = $this->tagPage($this->firstPageContext($config, self::TAG_SORTABLE, ['search']));
-        return $this->admin('dpress:admin/taxonomy/tags', [
+        return $this->admin('dpress_admin:taxonomy/tags', [
             'title'      => 'Tags',
             'can_create' => $this->can(Permissions::TAG_CREATE),
             'new_url'    => $this->router->url('/admin/tags/new'),
@@ -265,7 +265,7 @@ class TaxonomyAdminController extends AbstractAdminController {
     }
 
     protected function tagEditor($form, $tag): string {
-        return $this->admin('dpress:admin/taxonomy/edit', [
+        return $this->admin('dpress_admin:taxonomy/edit', [
             'title'    => $tag === null ? 'New tag' : 'Edit tag',
             'form'     => $form,
             'narrow'   => true,

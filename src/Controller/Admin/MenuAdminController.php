@@ -53,7 +53,7 @@ class MenuAdminController extends AbstractAdminController {
     #[Route('GET', '/admin/menus')]
     public function index(): string {
         $this->requirePermission(Permissions::MENU_VIEW);
-        return $this->admin('dpress:admin/menu/list', [
+        return $this->admin('dpress_admin:menu/list', [
             'title'      => 'Menus',
             'can_edit'   => $this->can(Permissions::MENU_UPDATE),
             'new_url'    => $this->router->url('/admin/menus/new'),
@@ -164,7 +164,7 @@ class MenuAdminController extends AbstractAdminController {
     }
 
     protected function menuEditor($form, ?Menu $menu): string {
-        return $this->admin('dpress:admin/menu/edit', [
+        return $this->admin('dpress_admin:menu/edit', [
             'title'    => $menu === null ? 'New menu' : 'Edit menu',
             'form'     => $form,
             'menu'     => $menu,
@@ -186,13 +186,18 @@ class MenuAdminController extends AbstractAdminController {
     public function items(string $id): string {
         $this->requirePermission(Permissions::MENU_VIEW);
         $menu = $this->found($this->menus->findMenu((int)$id));
-        return $this->admin('dpress:admin/menu/items', [
+        return $this->admin('dpress_admin:menu/items', [
             'title'    => $menu->name,
             'menu'     => $menu,
             'items'    => $this->itemRows($menu),
             'can_edit' => $this->can(Permissions::MENU_UPDATE),
             'new_url'  => $this->router->url('/admin/menus/items/'.$menu->id.'/new'),
             'back_url' => $this->router->url('/admin/menus'),
+            // this screen is a plain table rather than a dynamic list, so its two icons come in
+            // the same way a list's do - from the controller, rather than the template reaching
+            // for them itself
+            'edit_icon'   => $this->icon('edit'),
+            'delete_icon' => $this->icon('delete'),
         ]);
     }
 
@@ -293,7 +298,7 @@ class MenuAdminController extends AbstractAdminController {
     }
 
     protected function itemEditor(Menu $menu, $form, ?MenuItem $item): string {
-        return $this->admin('dpress:admin/menu/item-edit', [
+        return $this->admin('dpress_admin:menu/item-edit', [
             'title'    => $item === null ? 'New menu item' : 'Edit menu item',
             'form'     => $form,
             'menu'     => $menu,

@@ -47,7 +47,7 @@ class DashboardController extends AbstractAdminController {
 
     #[Route('GET', '/admin')]
     public function index(): string {
-        return $this->admin('dpress:admin/dashboard', [
+        return $this->admin('dpress_admin:dashboard', [
             'title' => 'Dashboard',
             'counts' => $this->counts(),
             'recent' => $this->can(Permissions::CONTENT_HISTORY) ? $this->history->recent(10) : [],

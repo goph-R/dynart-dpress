@@ -86,7 +86,7 @@ class ContentAdminController extends AbstractAdminController {
         $context = $this->firstPageContext($config, self::SORTABLE, ['search', 'status']);
         $context['type'] = $type;
         $config['firstPage'] = $this->page($context);
-        return $this->admin('dpress:admin/content/list', [
+        return $this->admin('dpress_admin:content/list', [
             'title'  => $isPage ? 'Pages' : 'Posts',
             'type'   => $type,
             'new_url' => $this->router->url('/admin/content/'.$type.'/new'),
@@ -297,7 +297,7 @@ class ContentAdminController extends AbstractAdminController {
 
     protected function editor(string $type, $form, ?Content $content): string {
         $isPage = $type === Content::TYPE_PAGE;
-        return $this->admin('dpress:admin/content/edit', [
+        return $this->admin('dpress_admin:content/edit', [
             'attachments' => $this->attachmentPanel($type, $content),
             'can_attach'  => $this->can(Permissions::MEDIA_VIEW),
             'title'   => ($content === null ? 'New ' : 'Edit ').($isPage ? 'page' : 'post'),
@@ -614,7 +614,7 @@ class ContentAdminController extends AbstractAdminController {
         $this->requirePermission(Permissions::CONTENT_HISTORY);
         $content = $this->found($this->content->findById((int)$id));
         $this->assertType($content, $type);
-        return $this->admin('dpress:admin/content/history', [
+        return $this->admin('dpress_admin:content/history', [
             'title'     => 'History',
             'type'      => $type,
             'content'   => $content,

@@ -72,7 +72,7 @@ class SettingsAdminController extends AbstractAdminController {
                 $form->addError($e->getMessage());
             }
         }
-        return $this->admin('dpress:admin/settings', [
+        return $this->admin('dpress_admin:settings', [
             'title'     => 'Settings',
             'form'      => $form,
             'narrow'    => true,

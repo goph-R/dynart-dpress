@@ -53,7 +53,7 @@ class MediaAdminController extends AbstractAdminController {
         $this->requirePermission(Permissions::MEDIA_VIEW);
         $config = $this->listConfig();
         $config['firstPage'] = $this->page($this->withDeleted($this->firstPageContext($config, self::SORTABLE, ['search', 'category'])));
-        return $this->admin('dpress:admin/media/list', [
+        return $this->admin('dpress_admin:media/list', [
             'title'       => 'Media',
             'can_upload'  => $this->can(Permissions::MEDIA_CREATE),
             'upload_url'  => $this->router->url('/admin/media/upload'),
@@ -152,7 +152,7 @@ class MediaAdminController extends AbstractAdminController {
                 $form->addError($e->getMessage());
             }
         }
-        return $this->admin('dpress:admin/media/upload', [
+        return $this->admin('dpress_admin:media/upload', [
             'title'  => 'Upload',
             'form'   => $form,
             'narrow' => true,
@@ -214,7 +214,7 @@ class MediaAdminController extends AbstractAdminController {
             $form->handle(fn($form) => $this->media->update($media, $form->values()));
             $this->done('/admin/media', 'Saved.');
         }
-        return $this->admin('dpress:admin/media/edit', [
+        return $this->admin('dpress_admin:media/edit', [
             'title'  => 'Edit media',
             'form'   => $form,
             'media'  => $media,

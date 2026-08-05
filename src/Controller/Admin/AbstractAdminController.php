@@ -10,6 +10,7 @@ use Dynart\Micro\Router;
 use Dynart\Micro\RouterInterface;
 use Dynart\Micro\ViewInterface;
 use Dynart\Dpress\Controller\AbstractController;
+use Dynart\Dpress\Dpress;
 use Dynart\Dpress\Form\AdminForms;
 use Dynart\Dpress\Form\DpressForm;
 use Dynart\Dpress\Form\FormFactory;
@@ -30,7 +31,7 @@ use Dynart\Dpress\Security\Permissions;
 #[Authorize]
 abstract class AbstractAdminController extends AbstractController {
 
-    const LAYOUT = 'dpress:admin/layout';
+    const LAYOUT = 'dpress_admin:layout';
 
     /**
      * The layout of a partial request: the `<main>` element on its own, no chrome around it
@@ -38,7 +39,7 @@ abstract class AbstractAdminController extends AbstractController {
      * The full layout fetches the same file, so what a partial answers with is by construction
      * what a whole page would have contained - there is no second definition to drift.
      */
-    const LAYOUT_PARTIAL = 'dpress:admin/main';
+    const LAYOUT_PARTIAL = 'dpress_admin:main';
 
     /** The query parameter that asks for the fragment instead of the page */
     const PARTIAL = 'ajax';
@@ -245,8 +246,11 @@ abstract class AbstractAdminController extends AbstractController {
     /**
      * The inline SVG of an icon, by name
      *
-     * `views/admin/icon-<name>.svg.phtml`, the same convention as the media category icons, and
-     * inline rather than an `<img>` so the icon takes the colour of the link or button it sits
+     * `icons/<name>.svg` in the package - a plain file, not a template. It holds no PHP, so
+     * calling it one bought exactly one thing: a theme could replace it. That is the opposite of
+     * what is wanted here, and the admin's views now say so themselves.
+     *
+     * Inline rather than an `<img>` so the icon takes the colour of the link or button it sits
      * in - muted in a row, inverted in the current navigation item, red on a delete hover.
      *
      * An icon this admin does not have falls back to a generic mark rather than a gap, so a
@@ -259,11 +263,11 @@ abstract class AbstractAdminController extends AbstractController {
      */
     protected function icon(string $name): string {
         if (!isset($this->icons[$name])) {
-            $path = 'dpress:admin/icon-'.$name.'.svg';
-            if (!$this->view->exists($path)) {
-                $path = 'dpress:admin/icon-section.svg';
+            $path = Dpress::iconsPath().'/'.$name.'.svg';
+            if (!is_file($path)) {
+                $path = Dpress::iconsPath().'/section.svg';
             }
-            $this->icons[$name] = trim($this->view->fetch($path));
+            $this->icons[$name] = trim((string)@file_get_contents($path));
         }
         return $this->icons[$name];
     }

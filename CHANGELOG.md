@@ -5,6 +5,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.18.0] &ndash; 2026-08-05
+
+The admin is not a theme's to change.
+
+### Changed
+- **Admin templates moved to their own view namespace, `dpress_admin:`, registered as not themeable.** A theme overriding one template used to reach *every* template there is — including `admin/layout`, which is what the way in is rendered with. A theme restyling the front end is the whole point of themes; a theme replacing the admin's layout is somebody locked out of their own site. The front end is unchanged and as themeable as ever.
+- **The admin icons are plain `.svg` files** in `icons/`, read from disk rather than rendered as templates. They contain no PHP, so calling them templates bought exactly one thing: a theme could replace them.
+
+### Notes
+Outside `views/` because they are not templates, and outside `assets/` because nothing serves them over HTTP — they are inlined so the drawing takes the colour of whatever it sits in. `AbstractAdminController::icon()` keeps its per-request memoisation and its fallback to `section.svg`, so a section or row action a plugin adds is still never invisible for want of a drawing.
+
+The menu items screen took its two icons by fetching them itself; they come from the controller now, which is how every list already gets its icons.
+
+Two tests guard the lock: one that no admin file reaches a template through the themeable namespace — a single `dpress:admin/...` left behind would still resolve, and would silently be themeable again — and one that no icon is a template. Verified against the running site with a theme that tried to replace both layouts: the front end was hijacked, the admin was not.
+
+Needs micro 0.19.0.
+
+---
+
 ## [0.17.1] &ndash; 2026-08-05
 
 ### Fixed

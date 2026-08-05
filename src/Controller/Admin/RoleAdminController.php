@@ -51,7 +51,7 @@ class RoleAdminController extends AbstractAdminController {
     #[Route('GET', '/admin/roles')]
     public function index(): string {
         $this->requirePermission(Permissions::ROLE_VIEW);
-        return $this->admin('dpress:admin/role/list', [
+        return $this->admin('dpress_admin:role/list', [
             'title'      => 'Roles',
             'can_create' => $this->can(Permissions::ROLE_CREATE),
             'new_url'    => $this->router->url('/admin/roles/new'),
@@ -174,7 +174,7 @@ class RoleAdminController extends AbstractAdminController {
     }
 
     protected function editor($form, ?Role $role): string {
-        return $this->admin('dpress:admin/role/edit', [
+        return $this->admin('dpress_admin:role/edit', [
             'title'    => $role === null ? 'New role' : 'Edit role',
             'form'     => $form,
             'role'     => $role,
