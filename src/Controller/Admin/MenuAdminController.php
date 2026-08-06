@@ -67,7 +67,8 @@ class MenuAdminController extends AbstractAdminController {
                     'place' => ['label' => 'Place', 'sortable' => false],
                     'items' => ['label' => 'Items', 'align' => 'right', 'sortable' => false],
                 ],
-                'rowActions' => $this->menuRowActions(),
+                'rowActions'   => $this->menuRowActions(),
+                'groupActions' => $this->menuGroupActions(),
                 // as with the roles: every menu there is fits on one page, so the page brings it
                 'firstPage' => $this->page(),
             ],
@@ -97,22 +98,30 @@ class MenuAdminController extends AbstractAdminController {
         return $this->rows($rows, count($rows));
     }
 
+    /**
+     * Rename is the only one left, and it is here because the name cell is already spoken for
+     *
+     * A menu's items are what there is to edit about it, so the name opens those - which leaves
+     * renaming with no cell to hang off. Every other list gets that for free from its name
+     * column; this one has to keep a button.
+     */
     protected function menuRowActions(): array {
         if (!$this->can(Permissions::MENU_UPDATE)) {
             return [];
         }
         return [
-            // "Edit" rather than "Items", because a menu's items are what there is to edit about
-            // it - and every other list's first action is Edit. Renaming it is the smaller thing,
-            // and gets the text cursor rather than a second pencil.
-            ['type' => 'edit', 'title' => 'Edit', 'icon' => $this->icon('edit'),
-             'link' => $this->router->url('/admin/menus/items/')],
             ['type' => 'rename', 'title' => 'Rename', 'icon' => $this->icon('rename'),
              'link' => $this->router->url('/admin/menus/edit/')],
-            ['type' => 'delete', 'title' => 'Delete', 'icon' => $this->icon('delete'),
-             'post' => $this->router->url('/admin/menus/delete/'),
-             'confirm' => 'Delete this menu and all of its items?'],
         ];
+    }
+
+    protected function menuGroupActions(): array {
+        if (!$this->can(Permissions::MENU_UPDATE)) {
+            return [];
+        }
+        return [['type' => 'delete', 'label' => 'Delete selected',
+                 'post' => $this->router->url('/admin/menus/delete-selected'),
+                 'confirm' => 'Delete the selected menus and all of their items?']];
     }
 
     // --- menus ---
@@ -152,6 +161,22 @@ class MenuAdminController extends AbstractAdminController {
             $this->done('/admin/menus', 'Saved.');
         }
         return $this->menuEditor($form, $menu);
+    }
+
+    #[Route('POST', '/admin/menus/delete-selected')]
+    public function deleteMany(): string {
+        $this->requirePermission(Permissions::MENU_UPDATE);
+        $this->requireAction();
+        $notice = $this->deleteSelected(function (int $id) {
+            $menu = $this->menus->findMenu($id);
+            if ($menu === null) {
+                return false;
+            }
+            $this->menus->deleteMenu($menu);
+            return true;
+        });
+        $this->done('/admin/menus', $notice);
+        return '';
     }
 
     #[Route('POST', '/admin/menus/delete/?')]

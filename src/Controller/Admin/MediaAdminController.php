@@ -101,38 +101,43 @@ class MediaAdminController extends AbstractAdminController {
             'url'            => $this->mediaView->rowUrl($media),
             'thumbnail_url'  => $this->mediaView->rowUrl($media, 'thumb'),
             'thumbnail_html' => $this->mediaView->rowTag($media),
-            'edit_url'       => $this->router->url('/admin/media/edit/'.$media['id']),
+            'edit_url'       => $this->can(Permissions::MEDIA_UPDATE)
+                ? $this->router->url('/admin/media/edit/'.$media['id']) : '',
         ];
     }
 
     protected function listConfig(): array {
         $rowActions = [];
-        if ($this->can(Permissions::MEDIA_UPDATE)) {
-            $rowActions[] = ['type' => 'edit', 'title' => 'Edit', 'icon' => $this->icon('edit'),
-                             'link' => $this->router->url('/admin/media/edit/')];
-        }
+        $groupActions = [];
         if ($this->can(Permissions::MEDIA_DELETE)) {
-            $rowActions[] = ['type' => 'delete', 'title' => 'Delete', 'icon' => $this->icon('delete'),
-                             'post' => $this->router->url('/admin/media/delete/'),
-                             'confirm' => 'Delete this item? The file stays on disk until it is purged.',
-                             'visibleWhen' => ['deleted' => false]];
+            // Restore stays a row action. It is the one thing here that is not a bulk operation:
+            // it only exists on a deleted row, and finding those is the work - once you have,
+            // there is one to put back.
             $rowActions[] = ['type' => 'restore', 'title' => 'Restore', 'icon' => $this->icon('restore'),
                              'post' => $this->router->url('/admin/media/restore/'),
                              'visibleWhen' => ['deleted' => true]];
+            $groupActions[] = ['type' => 'delete', 'label' => 'Delete selected',
+                               'post' => $this->router->url('/admin/media/delete-selected'),
+                               'confirm' => 'Delete the selected items? The files stay on disk until they are purged.'];
         }
         return [
             'endpoint' => $this->router->url('/admin/media/list'),
             'orderBy'  => 'created_at',
             'orderDir' => 'desc',
             'columns'  => [
-                'thumbnail_html' => ['label' => '', 'view' => 'html', 'sortable' => false, 'width' => '54px'],
-                'file_name'  => ['label' => 'File', 'view' => 'link', 'options' => ['hrefProperty' => 'url']],
+                // the name opens the item's own page, as it does in every other list; the
+                // picture opens the file, which is the thing this list is otherwise the only
+                // one-click way to reach
+                'thumbnail_html' => ['label' => '', 'view' => 'htmlLink', 'sortable' => false, 'width' => '54px',
+                                     'options' => ['hrefProperty' => 'url']],
+                'file_name'  => ['label' => 'File', 'view' => 'link', 'options' => ['hrefProperty' => 'edit_url']],
                 'title'      => ['label' => 'Title'],
                 'category'   => ['label' => 'Kind'],
                 'size'       => ['label' => 'Size', 'view' => 'bytes', 'align' => 'right'],
                 'created_at' => ['label' => 'Uploaded', 'view' => 'dateTime'],
             ],
-            'rowActions' => $rowActions,
+            'rowActions'   => $rowActions,
+            'groupActions' => $groupActions,
         ];
     }
 
@@ -224,6 +229,22 @@ class MediaAdminController extends AbstractAdminController {
             'usage'   => $this->media->usageCount($media->id),
             'back_url' => $this->router->url('/admin/media'),
         ]);
+    }
+
+    #[Route('POST', '/admin/media/delete-selected')]
+    public function deleteMany(): string {
+        $this->requirePermission(Permissions::MEDIA_DELETE);
+        $this->requireAction();
+        $notice = $this->deleteSelected(function (int $id) {
+            $media = $this->media->findById($id);
+            if ($media === null || $media->isDeleted()) {
+                return false; // already gone from the library, and `purge` is what removes bytes
+            }
+            $this->media->delete($media);
+            return true;
+        });
+        $this->done('/admin/media', $notice);
+        return '';
     }
 
     #[Route('POST', '/admin/media/delete/?')]

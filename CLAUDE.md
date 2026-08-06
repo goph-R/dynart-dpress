@@ -192,7 +192,11 @@ Everything behind `/admin`. **A screen is two actions**: one that renders the pa
 
 **A list screen is one request, not two.** The page seeds `firstPage` into that configuration — the same rows the endpoint would answer — so the table arrives filled and the endpoint is only asked again when a sort, a filter or a page changes. `firstPageContext()` takes the sort from the configuration the browser is about to be primed with, and anything actually in the URL still wins; a seed ordered differently from what the list thinks it is showing would rearrange itself on the first click.
 
-**A column view escapes by default.** `DynamicListColumnView.text` escapes, `html` does not, and the opt out is spelled out at the call site. A post title is whatever somebody typed.
+**A column view escapes by default.** `DynamicListColumnView.text` escapes, `html` does not, and the opt out is spelled out at the call site. A post title is whatever somebody typed. `link` escapes its text and its href; `htmlLink` is the pair of it for markup the server built, and escapes only the href.
+
+**A list is for finding things; the editor is for changing them.** There are no per-row Edit or Delete buttons: **the name cell is the link to the editor**, and deleting is selection plus one group action. So `edit_url` is only sent when the person may actually edit — it is the only way in, and the column falls back to plain text without it. Anything left as a row action is something a group cannot express: History, media's Restore (it exists only on a deleted row), and the menus' Rename (whose name cell already opens the items).
+
+**A group action is many things, and some will be refused.** `deleteSelected()` tries each on its own, so one refusal does not abandon the rest, and reports what happened — `2 deleted. Your own account was left alone.` The callback answers `true`, `false` for nothing-to-do, or the sentence to show; a service that refuses by throwing needs no special handling. **`false` is not `true`**: counting a row somebody else already deleted would report more deletions than happened. Group routes are `/delete-selected`, a separate path, because `/delete/?` and `/delete` are two routes and a bulk POST to the first is a 404 *after* the confirm said yes.
 
 **The filter form is the list's state.** Sort, direction, offset and page size live in it as hidden inputs next to whatever the server rendered, so one serialize produces the whole request and a plugin adding a filter field needs to tell the list nothing.
 

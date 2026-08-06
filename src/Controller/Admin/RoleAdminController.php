@@ -65,7 +65,8 @@ class RoleAdminController extends AbstractAdminController {
                     'permissions' => ['label' => 'Permissions', 'sortable' => false],
                     'users'       => ['label' => 'Users', 'align' => 'right', 'sortable' => false],
                 ],
-                'rowActions' => $this->rowActions(),
+                'rowActions'   => [],
+                'groupActions' => $this->groupActions(),
                 // there are as many roles as somebody made: one page, no paging, and the screen
                 // may as well arrive with it rather than send the browser back for it
                 'firstPage' => $this->page(),
@@ -91,26 +92,22 @@ class RoleAdminController extends AbstractAdminController {
                 'users'       => $this->users->countByRole($role['name']),
                 'removable'   => (bool)$role['removable'] && !$isAdmin,
                 'editable'    => !$isAdmin,
-                'edit_url'    => $this->router->url('/admin/roles/edit/'.$role['id']),
+                // no link on the administrator role: it is not editable, and the column falls
+                // back to plain text rather than offering a door that does not open
+                'edit_url'    => $isAdmin || !$this->can(Permissions::ROLE_UPDATE)
+                    ? '' : $this->router->url('/admin/roles/edit/'.$role['id']),
             ];
         }
         return $this->rows($rows, count($rows));
     }
 
-    protected function rowActions(): array {
-        $actions = [];
-        if ($this->can(Permissions::ROLE_UPDATE)) {
-            $actions[] = ['type' => 'edit', 'title' => 'Edit', 'icon' => $this->icon('edit'),
-                          'link' => $this->router->url('/admin/roles/edit/'),
-                          'visibleWhen' => ['editable' => true]];
+    protected function groupActions(): array {
+        if (!$this->can(Permissions::ROLE_DELETE)) {
+            return [];
         }
-        if ($this->can(Permissions::ROLE_DELETE)) {
-            $actions[] = ['type' => 'delete', 'title' => 'Delete', 'icon' => $this->icon('delete'),
-                          'post' => $this->router->url('/admin/roles/delete/'),
-                          'confirm' => 'Delete this role? Everybody holding it loses what it granted.',
-                          'visibleWhen' => ['removable' => true]];
-        }
-        return $actions;
+        return [['type' => 'delete', 'label' => 'Delete selected',
+                 'post' => $this->router->url('/admin/roles/delete-selected'),
+                 'confirm' => 'Delete the selected roles? Everybody holding one loses what it granted.']];
     }
 
     #[Route('GET', '/admin/roles/new')]
@@ -158,6 +155,24 @@ class RoleAdminController extends AbstractAdminController {
             $this->done('/admin/roles', 'Saved.');
         }
         return $this->editor($form, $role);
+    }
+
+    #[Route('POST', '/admin/roles/delete-selected')]
+    public function deleteMany(): string {
+        $this->requirePermission(Permissions::ROLE_DELETE);
+        $this->requireAction();
+        $notice = $this->deleteSelected(function (int $id) {
+            $role = $this->roles->findById($id);
+            if ($role === null) {
+                return false;
+            }
+            // `delete()` refuses the ones the system needs and says which - the selection is a
+            // rectangle somebody dragged, and it will contain those
+            $this->roles->delete($role);
+            return true;
+        });
+        $this->done('/admin/roles', $notice);
+        return '';
     }
 
     #[Route('POST', '/admin/roles/delete/?')]

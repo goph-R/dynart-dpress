@@ -179,6 +179,29 @@ const tests = {
         assert.strictEqual(view({}, 'missing'), '');
     },
 
+    /**
+     * `link` escapes its text, which is right for a name and wrong for a thumbnail. This is the
+     * pair of them: markup through, href still escaped - the href is the half that comes from a
+     * file name somebody uploaded.
+     */
+    'the htmlLink view wraps markup in a link without escaping it'() {
+        const view = global.DynamicListColumnView.htmlLink;
+        const item = {cell: '<img src="/u/a.jpg">', url: '/u/a.jpg'};
+        assert.strictEqual(
+            view(item, 'cell', {hrefProperty: 'url'}),
+            '<a href="/u/a.jpg"><img src="/u/a.jpg"></a>'
+        );
+    },
+
+    'the htmlLink view escapes the href and survives having none'() {
+        const view = global.DynamicListColumnView.htmlLink;
+        const nasty = view({cell: '<img>', url: '/u/a".jpg'}, 'cell', {hrefProperty: 'url'});
+        assert.ok(!nasty.includes('href="/u/a".jpg"'), 'a quote in the URL broke out of the attribute');
+        assert.ok(nasty.includes('&quot;'));
+        // no link to give: the markup still has to arrive, or the row loses its picture
+        assert.strictEqual(view({cell: '<img>'}, 'cell', {hrefProperty: 'url'}), '<img>');
+    },
+
     'it pages by the total, not by the rows it was given'() {
         const it = build({columnViews: COLUMNS, pageSize: 2}, TWO_ROWS);
         const labels = it.paging().children.map(b => b.textContent);
@@ -307,6 +330,29 @@ const tests = {
         assert.deepStrictEqual(it.list.selection(), ['1'], 'the selection was lost on refresh');
         it.list.clearSelection();
         assert.deepStrictEqual(it.list.selection(), []);
+    },
+
+    /**
+     * The group action is how things are deleted now, so it has to get the selection
+     *
+     * The row delete buttons are gone: selecting and pressing this is the only way, which makes
+     * "the button did nothing" and "the button deleted the wrong rows" both worse than they were.
+     */
+    'a group action is handed the selected ids and is dead without them'() {
+        let given = null;
+        const remove = {label: 'Delete selected', action(ids) { given = ids; }};
+        const it = build({columnViews: COLUMNS, groupActions: [remove]}, TWO_ROWS);
+
+        assert.strictEqual(remove.button.disabled, true, 'it was live with nothing selected');
+        remove.button.dispatch('click');
+        assert.strictEqual(given, null, 'it ran on an empty selection');
+
+        const checkbox = it.tbody().children[1].children[0].children[0];
+        checkbox.checked = true;
+        checkbox.dispatch('change');
+        assert.strictEqual(remove.button.disabled, false);
+        remove.button.dispatch('click');
+        assert.deepStrictEqual(given, ['2'], 'it was given something other than what was ticked');
     }
 };
 

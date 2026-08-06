@@ -57,8 +57,9 @@ class TaxonomyAdminController extends AbstractAdminController {
                 'parent'    => ['label' => 'Parent', 'sortable' => false],
                 'position'  => ['label' => 'Position', 'align' => 'right'],
             ],
-            'rowActions' => $this->rowActions('categories', Permissions::CATEGORY_UPDATE, Permissions::CATEGORY_DELETE,
-                'Delete this category? The posts in it keep their other categories.'),
+            'rowActions'   => [],
+            'groupActions' => $this->groupActions('categories', Permissions::CATEGORY_DELETE,
+                'Delete the selected categories? The posts in them keep their other categories.'),
         ];
         $config['firstPage'] = $this->categoryPage($this->firstPageContext($config, self::CATEGORY_SORTABLE, ['search']));
         return $this->admin('dpress_admin:taxonomy/categories', [
@@ -90,7 +91,8 @@ class TaxonomyAdminController extends AbstractAdminController {
                 'slug'     => $category['slug'],
                 'position' => (int)$category['position'],
                 'parent'   => $category['parent_id'] === null ? '' : ($names[(int)$category['parent_id']] ?? '?'),
-                'edit_url' => $this->router->url('/admin/categories/edit/'.$category['id']),
+                'edit_url' => $this->can(Permissions::CATEGORY_UPDATE)
+                    ? $this->router->url('/admin/categories/edit/'.$category['id']) : '',
             ];
         }
         return $this->rows($rows, $this->taxonomy->countCategories($context));
@@ -125,6 +127,22 @@ class TaxonomyAdminController extends AbstractAdminController {
             $this->done('/admin/categories', 'Saved.');
         }
         return $this->categoryEditor($form, $category);
+    }
+
+    #[Route('POST', '/admin/categories/delete-selected')]
+    public function deleteCategories(): string {
+        $this->requirePermission(Permissions::CATEGORY_DELETE);
+        $this->requireAction();
+        $notice = $this->deleteSelected(function (int $id) {
+            $category = $this->taxonomy->findCategory($id);
+            if ($category === null) {
+                return false;
+            }
+            $this->taxonomy->deleteCategory($category); // re-parents its children, as ever
+            return true;
+        });
+        $this->done('/admin/categories', $notice);
+        return '';
     }
 
     #[Route('POST', '/admin/categories/delete/?')]
@@ -192,8 +210,9 @@ class TaxonomyAdminController extends AbstractAdminController {
                 'name' => ['label' => 'Name', 'view' => 'link', 'options' => ['hrefProperty' => 'edit_url']],
                 'slug' => ['label' => 'Slug'],
             ],
-            'rowActions' => $this->rowActions('tags', Permissions::TAG_UPDATE, Permissions::TAG_DELETE,
-                'Delete this tag? It is removed from every post that carries it.'),
+            'rowActions'   => [],
+            'groupActions' => $this->groupActions('tags', Permissions::TAG_DELETE,
+                'Delete the selected tags? They are removed from every post that carries them.'),
         ];
         $config['firstPage'] = $this->tagPage($this->firstPageContext($config, self::TAG_SORTABLE, ['search']));
         return $this->admin('dpress_admin:taxonomy/tags', [
@@ -222,7 +241,8 @@ class TaxonomyAdminController extends AbstractAdminController {
                 'id'       => (int)$tag['id'],
                 'name'     => $tag['name'],
                 'slug'     => $tag['slug'],
-                'edit_url' => $this->router->url('/admin/tags/edit/'.$tag['id']),
+                'edit_url' => $this->can(Permissions::TAG_UPDATE)
+                    ? $this->router->url('/admin/tags/edit/'.$tag['id']) : '',
             ];
         }
         return $this->rows($rows, $this->taxonomy->countTags($context));
@@ -255,6 +275,22 @@ class TaxonomyAdminController extends AbstractAdminController {
         return $this->tagEditor($form, $tag);
     }
 
+    #[Route('POST', '/admin/tags/delete-selected')]
+    public function deleteTags(): string {
+        $this->requirePermission(Permissions::TAG_DELETE);
+        $this->requireAction();
+        $notice = $this->deleteSelected(function (int $id) {
+            $tag = $this->taxonomy->findTag($id);
+            if ($tag === null) {
+                return false;
+            }
+            $this->taxonomy->deleteTag($tag);
+            return true;
+        });
+        $this->done('/admin/tags', $notice);
+        return '';
+    }
+
     #[Route('POST', '/admin/tags/delete/?')]
     public function deleteTag(string $id): string {
         $this->requirePermission(Permissions::TAG_DELETE);
@@ -276,17 +312,12 @@ class TaxonomyAdminController extends AbstractAdminController {
     /**
      * The edit and delete actions both lists share
      */
-    protected function rowActions(string $segment, string $update, string $delete, string $confirm): array {
-        $actions = [];
-        if ($this->can($update)) {
-            $actions[] = ['type' => 'edit', 'title' => 'Edit', 'icon' => $this->icon('edit'),
-                          'link' => $this->router->url('/admin/'.$segment.'/edit/')];
+    protected function groupActions(string $segment, string $delete, string $confirm): array {
+        if (!$this->can($delete)) {
+            return [];
         }
-        if ($this->can($delete)) {
-            $actions[] = ['type' => 'delete', 'title' => 'Delete', 'icon' => $this->icon('delete'),
-                          'post' => $this->router->url('/admin/'.$segment.'/delete/'),
-                          'confirm' => $confirm];
-        }
-        return $actions;
+        return [['type' => 'delete', 'label' => 'Delete selected',
+                 'post' => $this->router->url('/admin/'.$segment.'/delete-selected'),
+                 'confirm' => $confirm]];
     }
 }

@@ -5,6 +5,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.20.0] &ndash; 2026-08-06
+
+The list is for finding things. The editor is for changing them.
+
+### Added
+- **"Delete selected" on every list**, with the checkbox column the list has always been able to draw. Each row is tried on its own, so **one refusal does not abandon the rest**, and the page says what happened: `2 deleted. Your own account was left alone.` The same reason twice is one sentence. A row somebody else deleted in the meantime is not counted — reporting more deletions than happened is how a count stops being worth reading.
+- `AbstractAdminController::deleteSelected()`, which every list's endpoint goes through. The rules stay with the controller that owns them: the callback answers `true`, `false` for nothing-to-do, or the sentence to show. Anything it throws is read as the third, so `UserService`'s last-administrator guard and `RoleService`'s protected roles need no special handling.
+- A `htmlLink` column view, the counterpart of `link` for markup the server built — `link` escapes its text, which is right for a name and wrong for a thumbnail.
+
+### Changed
+- **The per-row Edit and Delete buttons are gone from every list.** The name cell was already a link to the editor in most of them; the rest were made to match. Deleting is selection plus one button.
+- **Publish and Unpublish are gone from the content list too.** Status belongs to the editor's own control, which is where it can be seen next to what it applies to. The `/publish/` and `/unpublish/` endpoints stay — they are a reasonable thing for a script to POST to.
+- **The media list's File name opens the item, not the file.** It is the only list where the name led somewhere else. The thumbnail is now the link to the file, so nothing became harder to reach.
+- **`edit_url` is only sent when the person may edit.** It used to travel with every row while the button next to it was permission-checked, so the link was the loose one — and it is now the only way in. The column falls back to plain text without it. The administrator role, which is not editable, gets no link either.
+- The menus list keeps its **Rename** button. Its name cell opens the items, which is what there is to edit about a menu, and that leaves renaming with no cell of its own.
+
+### Notes
+Media keeps **Restore** as a row action. It is the one thing here that is not a bulk operation: it only exists on a deleted row, and finding those is the work.
+
+Group routes are `/delete-selected` rather than the single route with no id, because `/delete/?` and `/delete` are two different routes and a bulk POST arriving at the first would be a 404 after the confirm dialog said yes. `AdminTest` gained a test that all seven exist, and the "state-changing routes must be POST" test was fixed — its pattern matched `/delete/` and quietly skipped every one of the new ones.
+
+Verified against the running site with a throwaway administrator account, since these are all POSTs behind a session: every list's configuration read back from the rendered page, a mixed selection of a real row and a missing one reporting `1 deleted.`, the self-delete guard, and the protected `admin` role surviving with its reason shown. The account and the test rows were removed afterwards.
+
+---
+
 ## [0.19.0] &ndash; 2026-08-06
 
 A document says what it points at, not where that is today.

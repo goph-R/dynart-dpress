@@ -71,7 +71,8 @@ class UserAdminController extends AbstractAdminController {
                 'status' => ['label' => 'Status', 'view' => 'badge'],
                 'created_at' => ['label' => 'Joined', 'view' => 'date'],
             ],
-            'rowActions' => $this->rowActions(),
+            'rowActions'   => [],
+            'groupActions' => $this->groupActions(),
         ];
     }
 
@@ -94,24 +95,20 @@ class UserAdminController extends AbstractAdminController {
                 'status'     => $user['status'],
                 'created_at' => $user['created_at'],
                 'roles'      => $this->users->roleNames((int)$user['id']),
-                'edit_url'   => $this->router->url('/admin/users/edit/'.$user['id']),
+                'edit_url'   => $this->can(Permissions::USER_UPDATE)
+                    ? $this->router->url('/admin/users/edit/'.$user['id']) : '',
             ];
         }
         return $this->rows($rows, $this->users->countAll($context));
     }
 
-    protected function rowActions(): array {
-        $actions = [];
-        if ($this->can(Permissions::USER_UPDATE)) {
-            $actions[] = ['type' => 'edit', 'title' => 'Edit', 'icon' => $this->icon('edit'),
-                          'link' => $this->router->url('/admin/users/edit/')];
+    protected function groupActions(): array {
+        if (!$this->can(Permissions::USER_DELETE)) {
+            return [];
         }
-        if ($this->can(Permissions::USER_DELETE)) {
-            $actions[] = ['type' => 'delete', 'title' => 'Delete', 'icon' => $this->icon('delete'),
-                          'post' => $this->router->url('/admin/users/delete/'),
-                          'confirm' => 'Delete this account? Their posts stay, with the author gone.'];
-        }
-        return $actions;
+        return [['type' => 'delete', 'label' => 'Delete selected',
+                 'post' => $this->router->url('/admin/users/delete-selected'),
+                 'confirm' => 'Delete the selected accounts? Their posts stay, with the author gone.']];
     }
 
     #[Route('GET', '/admin/users/new')]
@@ -212,6 +209,32 @@ class UserAdminController extends AbstractAdminController {
         }
         $known = array_column($this->roles->findAll(), 'name');
         return array_values(array_intersect(array_map('strval', (array)($values['roles'] ?? [])), $known));
+    }
+
+    /**
+     * Deletes what the list has selected
+     *
+     * Two of these are refused rather than done, and both matter more in bulk than one at a
+     * time: selecting a page of accounts and pressing the button is exactly how somebody would
+     * delete themselves, or the last administrator, without ever meaning to.
+     */
+    #[Route('POST', '/admin/users/delete-selected')]
+    public function deleteMany(): string {
+        $this->requirePermission(Permissions::USER_DELETE);
+        $this->requireAction();
+        $notice = $this->deleteSelected(function (int $id) {
+            $user = $this->users->findById($id);
+            if ($user === null) {
+                return false;
+            }
+            if ($user->id === (int)$this->currentUser()->id()) {
+                return 'Your own account was left alone.';
+            }
+            $this->users->delete($user); // throws for the last administrator, and says why
+            return true;
+        });
+        $this->done('/admin/users', $notice);
+        return '';
     }
 
     #[Route('POST', '/admin/users/delete/?')]

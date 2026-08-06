@@ -138,7 +138,11 @@ class ContentAdminController extends AbstractAdminController {
             'published_at' => $content['published_at'],
             'created_at'   => $content['created_at'],
             'updated_at'   => $content['updated_at'],
-            'edit_url'     => $this->router->url('/admin/content/'.$type.'/edit/'.$content['id']),
+            // the way in, and the only one: the title cell is the link. Left out for somebody who
+            // may not edit, and the column falls back to plain text - a link to a page that is
+            // going to refuse them is worse than no link.
+            'edit_url'     => $this->can(Permissions::forContent($type, 'update'))
+                ? $this->router->url('/admin/content/'.$type.'/edit/'.$content['id']) : '',
         ];
     }
 
@@ -147,35 +151,18 @@ class ContentAdminController extends AbstractAdminController {
      */
     protected function listConfig(string $type): array {
         $rowActions = [];
-        if ($this->can(Permissions::forContent($type, 'update'))) {
-            $rowActions[] = [
-                'type' => 'edit', 'title' => 'Edit', 'icon' => $this->icon('edit'),
-                'link' => $this->router->url('/admin/content/'.$type.'/edit/'),
-            ];
-        }
-        if ($this->can(Permissions::forContent($type, 'publish'))) {
-            $rowActions[] = [
-                'type' => 'publish', 'title' => 'Publish', 'icon' => $this->icon('publish'),
-                'post' => $this->router->url('/admin/content/'.$type.'/publish/'),
-                'visibleWhen' => ['status' => Content::STATUS_DRAFT],
-            ];
-            $rowActions[] = [
-                'type' => 'unpublish', 'title' => 'Move back to draft', 'icon' => $this->icon('unpublish'),
-                'post' => $this->router->url('/admin/content/'.$type.'/unpublish/'),
-                'visibleWhen' => ['status' => Content::STATUS_PUBLISHED],
-            ];
-        }
         if ($this->can(Permissions::CONTENT_HISTORY)) {
             $rowActions[] = [
                 'type' => 'history', 'title' => 'History', 'icon' => $this->icon('history'),
                 'link' => $this->router->url('/admin/content/'.$type.'/history/'),
             ];
         }
+        $groupActions = [];
         if ($this->can(Permissions::forContent($type, 'delete'))) {
-            $rowActions[] = [
-                'type' => 'delete', 'title' => 'Delete', 'icon' => $this->icon('delete'),
-                'post' => $this->router->url('/admin/content/'.$type.'/delete/'),
-                'confirm' => 'Delete this permanently?',
+            $groupActions[] = [
+                'type' => 'delete', 'label' => 'Delete selected',
+                'post' => $this->router->url('/admin/content/'.$type.'/delete-selected'),
+                'confirm' => 'Delete the selected items permanently?',
             ];
         }
         return [
@@ -191,7 +178,8 @@ class ContentAdminController extends AbstractAdminController {
                 'published_at' => ['label' => 'Published', 'view' => 'dateTime'],
                 'updated_at'   => ['label' => 'Changed', 'view' => 'dateTime'],
             ],
-            'rowActions' => $rowActions,
+            'rowActions'   => $rowActions,
+            'groupActions' => $groupActions,
         ];
     }
 
@@ -576,7 +564,32 @@ class ContentAdminController extends AbstractAdminController {
         return $content;
     }
 
-    // --- the row actions ---
+    // --- the list actions ---
+
+    /**
+     * The list's own way of removing things
+     *
+     * A separate path rather than the same one with no id: `/delete/?` and `/delete` are two
+     * routes, and a bulk delete arriving at the single one with an empty segment would be a 404
+     * at best. The single route stays - it is what a plugin or a script would use.
+     */
+    #[Route('POST', '/admin/content/?/delete-selected')]
+    public function deleteMany(string $type): string {
+        $this->enter($type, 'delete');
+        $this->requireAction();
+        $notice = $this->deleteSelected(function (int $id) use ($type) {
+            $content = $this->content->findById($id);
+            // the type check is not pedantry: the ids arrive in a request, and this route holds
+            // the `post` permission, not the `page` one
+            if ($content === null || $content->type !== $type) {
+                return false;
+            }
+            $this->content->delete($content);
+            return true;
+        });
+        $this->done('/admin/content/'.$type, $notice);
+        return '';
+    }
 
     #[Route('POST', '/admin/content/?/publish/?')]
     public function publish(string $type, string $id): string {

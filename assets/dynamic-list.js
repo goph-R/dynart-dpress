@@ -88,6 +88,24 @@
             return '<a href="' + escapeHtml(href) + '">' + escapeHtml(item[property]) + '</a>';
         },
 
+        /**
+         * The same, around markup the server built - a thumbnail that opens the file
+         *
+         * `link` escapes its text, which is right for a name and wrong for an `<img>`. The href
+         * is escaped either way: it is the part that could carry a quote out of a filename.
+         */
+        htmlLink: function (item, property, options) {
+            options = options || {};
+            var href = options.hrefProperty
+                ? item[options.hrefProperty]
+                : (options.link || '') + item[options.idProperty || 'id'];
+            var content = item[property] === null || item[property] === undefined ? '' : String(item[property]);
+            if (!href) {
+                return content;
+            }
+            return '<a href="' + escapeHtml(href) + '">' + content + '</a>';
+        },
+
         dateTime: function (item, property) {
             var value = item[property];
             if (!value) {
