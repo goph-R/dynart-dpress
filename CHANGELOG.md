@@ -5,6 +5,33 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.19.0] &ndash; 2026-08-06
+
+A document says what it points at, not where that is today.
+
+### Added
+- **Internal references in markdown: `media#12`, `post#42`, `page#5`, `category#21`, `tag#7`.** Written in a link or an image destination, they become the finished URL when the markdown is rendered. The stored document never mentions a hostname or a slug, so moving a site from a test domain to a real one is a change to `app.base_url` plus `dpress content:rerender`, and no stored markdown changes at all. `post`, `page` and `content` are one lookup — ids are unique across both types and the entity decides the shape of its own URL, so `post#5` naming a page still resolves. A trailing `#anchor` or `?query` is carried over.
+- **`MarkdownRenderer::EVENT_ENVIRONMENT`.** The CommonMark environment is offered to subscribers before the converter is sealed, which is how the CMS reaches the renderer without the renderer knowing the CMS exists. It is also where a plugin would add tables.
+- **The attachments panel shows the reference** in a Reference column, so it can be read off the row and typed by hand.
+- **`TaxonomyService::categoryPath()` / `tagPath()`**, so `/category/<slug>` has one home rather than being spelled out wherever it was needed. `MenuService` uses them.
+- `docs/internal-links.md`.
+
+### Changed
+- **The insert button writes the reference, not the URL.** Both writers — the toolbar's 🖼 button and the attachment row's insert action — go through `Dpress.insertMedia()`, which now produces `![alt](media#12)`. Documents written before this still hold absolute URLs and go on working as ordinary links; nothing converts them, because that would be rewriting everybody's documents to fix a problem they may not have.
+- **A rename re-renders what links to it.** `ContentService::update()` notices when a slug or a `parent_id` moved and re-renders every document whose markdown mentions that id. A page moves more than itself, so its descendants count as moved too. The candidate query is a `like`, which also matches `post#421` — re-rendering something that did not need it produces the same bytes, and no amount of SQL is going to parse markdown.
+- `MarkdownRenderer` builds its converter from an `Environment` rather than the `CommonMarkConverter` shorthand. Same two options, same output; the existing "raw HTML is stripped" and "`javascript:` is refused" tests are what proves it.
+
+### Notes
+A reference whose target is gone **unwraps the node, keeping its children**: `[the old post](post#42)` becomes the words, `![Screenshot](media#12)` becomes the alt text. One operation covers both, because an image's alt text *is* its children. The alternative leaves `media#12` in a `src`, which is a broken image on a published page — the visitor pays for the editor's deleted file.
+
+The rewrite works on the parsed document, not on the rendered HTML. A URL is a field of a node there and unwrapping is two calls; on a string both are regular expressions over markup, and the second would have to match a whole `<a>` with whatever is nested inside it.
+
+`LinkTargets` keeps no answers, and that is load-bearing. It memoised them at first and was wrong inside one request: a rename re-renders its referrers in the same request as the rename, and every one of those renders was handed the URL from *before* the slug changed — the rename appeared to do nothing. Found against the running site, not in a test. The dedup that is safe, one picture twice in one document, sits in `InternalLinks`, which knows where a document ends. `LinkTargetsTest::testAnswersAreNeverKept` fails if the cache comes back.
+
+Verified against the running dev site: the same markdown rendered under two different `app.base_url` values, a post renaming propagating into a referrer's cached HTML, and a page rename reaching a post that links to that page's *child*. No migration.
+
+---
+
 ## [0.18.0] &ndash; 2026-08-05
 
 The admin is not a theme's to change.

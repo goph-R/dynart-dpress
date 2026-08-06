@@ -56,7 +56,21 @@ const tests = {
     'an image is inserted as an image'() {
         const textarea = field('');
         window.Dpress.insertMedia(IMAGE, textarea);
-        assert.strictEqual(textarea.value, '![A sunset](/uploads/2026/08/sunset-a1b2c3.jpg)');
+        assert.strictEqual(textarea.value, '![A sunset](media#1)');
+    },
+
+    /**
+     * The row carries a finished URL and it is deliberately not used
+     *
+     * A document names what it points at, and the server works out where that is when it renders.
+     * Writing the URL instead would put this site's hostname inside somebody's markdown, and
+     * moving from a test domain to a real one would mean rewriting every post that has a picture.
+     */
+    'the destination is the reference, never the URL the row also carries'() {
+        const textarea = field('');
+        window.Dpress.insertMedia(IMAGE, textarea);
+        assert.ok(!textarea.value.includes(IMAGE.url), 'the URL was written into the document');
+        assert.ok(textarea.value.includes('media#' + IMAGE.id));
     },
 
     /**
@@ -66,7 +80,7 @@ const tests = {
     'anything that is not an image is inserted as a link'() {
         const textarea = field('');
         window.Dpress.insertMedia(DOCUMENT, textarea);
-        assert.strictEqual(textarea.value, '[notes.txt](/uploads/2026/08/notes-d4e5f6.txt)');
+        assert.strictEqual(textarea.value, '[notes.txt](media#2)');
     },
 
     /**
@@ -75,12 +89,12 @@ const tests = {
      */
     'the alt text is the items own, falling back to what there is'() {
         const withTitle = field('');
-        window.Dpress.insertMedia({category: 'image', title: 'Just a title', file_name: 'x.jpg', url: '/u/x.jpg'}, withTitle);
+        window.Dpress.insertMedia({id: 3, category: 'image', title: 'Just a title', file_name: 'x.jpg'}, withTitle);
         assert.ok(withTitle.value.startsWith('![Just a title]'));
 
         const withNeither = field('');
-        window.Dpress.insertMedia({category: 'image', file_name: 'x.jpg', url: '/u/x.jpg'}, withNeither);
-        assert.strictEqual(withNeither.value, '![x.jpg](/u/x.jpg)');
+        window.Dpress.insertMedia({id: 3, category: 'image', file_name: 'x.jpg'}, withNeither);
+        assert.strictEqual(withNeither.value, '![x.jpg](media#3)');
     },
 
     /**
@@ -89,14 +103,14 @@ const tests = {
      */
     'a bracket in the alt text is escaped'() {
         const textarea = field('');
-        window.Dpress.insertMedia({category: 'image', alt: 'A [very] odd name', file_name: 'x.jpg', url: '/u/x.jpg'}, textarea);
-        assert.strictEqual(textarea.value, '![A \\[very\\] odd name](/u/x.jpg)');
+        window.Dpress.insertMedia({id: 4, category: 'image', alt: 'A [very] odd name', file_name: 'x.jpg'}, textarea);
+        assert.strictEqual(textarea.value, '![A \\[very\\] odd name](media#4)');
     },
 
     'it lands at the cursor, not at the end'() {
         const textarea = field('before after', 7, 7);
         window.Dpress.insertMedia(IMAGE, textarea);
-        assert.strictEqual(textarea.value, 'before ![A sunset](/uploads/2026/08/sunset-a1b2c3.jpg)after');
+        assert.strictEqual(textarea.value, 'before ![A sunset](media#1)after');
     },
 
     /**
@@ -110,7 +124,7 @@ const tests = {
     'a selection survives the insert'() {
         const textarea = field('keep THIS keep', 5, 9);
         window.Dpress.insertMedia(IMAGE, textarea);
-        assert.strictEqual(textarea.value, 'keep ![A sunset](/uploads/2026/08/sunset-a1b2c3.jpg)THIS keep');
+        assert.strictEqual(textarea.value, 'keep ![A sunset](media#1)THIS keep');
     },
 
     /**

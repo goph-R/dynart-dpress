@@ -191,6 +191,8 @@ class ContentService {
      * Applies changed fields and re-renders when the markdown moved
      */
     public function update(Content $content, array $data): Content {
+        // what this content's own URL is made of, before anything touches it
+        $wasAt = [$content->slug, $content->parent_id];
         if (array_key_exists('title', $data)) {
             $content->title = trim($data['title']);
         }
@@ -215,8 +217,97 @@ class ContentService {
         $content->updated_at = $this->now();
         $this->emitBoth($content, self::EVENT_BEFORE_UPDATE, 'before_update');
         $this->em->save($content);
+        if ($wasAt !== [$content->slug, $content->parent_id]) {
+            $this->rerenderReferrers($content);
+        }
         $this->emitBoth($content, self::EVENT_UPDATED, 'updated');
         return $content;
+    }
+
+    /**
+     * Re-renders whatever links here, after this moved
+     *
+     * An internal reference is resolved when the markdown is rendered, so the URL sits in
+     * somebody else's `body_html` from the last time *they* were saved. Renaming a post leaves
+     * every link to it pointing at the old address until something renders them again, and
+     * "everything silently broke and no message said so" is not a thing to leave lying around.
+     *
+     * A page moves more than itself: its slug and its parent are both parts of the path, and
+     * every page beneath it wears that path as a prefix.
+     */
+    public function rerenderReferrers(Content $content): void {
+        $moved = [$content->id];
+        if ($content->isPage()) {
+            $moved = array_merge($moved, $this->descendantIds($content->id));
+        }
+        foreach ($this->referrerIds($moved) as $id) {
+            if ($id === $content->id) {
+                continue; // it was rendered a moment ago, with its new slug already in place
+            }
+            $referrer = $this->findById($id);
+            if ($referrer === null) {
+                continue;
+            }
+            $this->renderInto($referrer);
+            $this->em->save($referrer);
+        }
+    }
+
+    /**
+     * Everything whose markdown might mention one of these ids
+     *
+     * A **candidate** list, deliberately: `like '%post#42%'` also matches `post#421`, and no
+     * amount of SQL is going to parse markdown. Re-rendering something that did not need it
+     * costs a render and produces the same bytes, so the loose end is the cheap one to leave.
+     *
+     * @return int[]
+     */
+    protected function referrerIds(array $ids): array {
+        $conditions = [];
+        $params = [];
+        foreach ($ids as $index => $id) {
+            foreach (['content', 'post', 'page'] as $kind) {
+                $name = ':ref'.$index.$kind;
+                $conditions[] = '`markdown` like '.$name;
+                $params[$name] = '%'.$kind.'#'.$id.'%';
+            }
+        }
+        if (!$conditions) {
+            return [];
+        }
+        $found = $this->db->fetchColumn(
+            'select `id` from '.$this->em->safeTableName(Content::class).' where '.join(' or ', $conditions),
+            $params
+        );
+        return array_map('intval', $found);
+    }
+
+    /**
+     * The ids of everything under a page, however deep
+     *
+     * By level rather than by recursion into a query per row: the pages of a site are a small
+     * set, and a tree three deep should not be three hundred queries.
+     *
+     * @return int[]
+     */
+    protected function descendantIds(int $parentId): array {
+        $found = [];
+        $level = [$parentId];
+        while ($level) {
+            $children = [];
+            foreach ($level as $id) {
+                foreach ($this->findChildren($id) as $child) {
+                    $childId = (int)$child['id'];
+                    if (in_array($childId, $found, true)) {
+                        continue; // a cycle cannot be saved, but it must not hang this either
+                    }
+                    $found[] = $childId;
+                    $children[] = $childId;
+                }
+            }
+            $level = $children;
+        }
+        return $found;
     }
 
     public function publish(Content $content, ?string $publishedAt = null): void {

@@ -3,6 +3,7 @@
 namespace Dynart\Dpress;
 
 use Dynart\Micro\ConfigInterface;
+use Dynart\Micro\EventServiceInterface;
 use Dynart\Micro\JwtAuth;
 use Dynart\Micro\JwtAuthInterface;
 use Dynart\Micro\Micro;
@@ -28,6 +29,9 @@ use Dynart\Micro\Entities\QueryExecutor;
 use Dynart\Dpress\Cli\SchemaCommands;
 use Dynart\Dpress\Cli\SystemCommands;
 use Dynart\Dpress\Cli\UserCommands;
+use Dynart\Dpress\Content\InternalLinks;
+use Dynart\Dpress\Content\LinkTargetResolverInterface;
+use Dynart\Dpress\Content\LinkTargets;
 use Dynart\Dpress\Content\MarkdownRenderer;
 use Dynart\Dpress\Content\Slugger;
 use Dynart\Dpress\Entity\AuthAttempt;
@@ -190,6 +194,8 @@ class DpressServices {
         Micro::add(UserService::class);
         Micro::add(AuthService::class);
         Micro::add(MarkdownRenderer::class);
+        Micro::add(LinkTargetResolverInterface::class, LinkTargets::class);
+        Micro::add(InternalLinks::class);
         Micro::add(Slugger::class);
         Micro::add(ContentService::class);
         Micro::add(ContentHistoryService::class);
@@ -211,6 +217,22 @@ class DpressServices {
         Micro::add(MediaCommands::class);
         Micro::add(TaxonomyCommands::class);
         Micro::add(ThemeCommands::class);
+        self::registerContentEvents();
+    }
+
+    /**
+     * What listens to what
+     *
+     * A Micro callable rather than a closure, and that is the whole point: `EventService` runs it
+     * through the container **when the event fires**, so `InternalLinks` and the four services
+     * behind it are built only when something actually renders markdown. On a page view that is
+     * never - the HTML was written at save time - and the renderer stays a class that knows
+     * nothing about media, posts or categories.
+     */
+    public static function registerContentEvents(): void {
+        Micro::get(EventServiceInterface::class)->subscribe(
+            MarkdownRenderer::EVENT_ENVIRONMENT, [InternalLinks::class, 'onEnvironment']
+        );
     }
 
     /**

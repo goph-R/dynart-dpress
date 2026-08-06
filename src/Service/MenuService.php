@@ -211,11 +211,11 @@ class MenuService {
 
             case MenuItem::TARGET_CATEGORY:
                 $category = $targetId === null ? null : $this->taxonomy->findCategory($targetId);
-                return $category === null ? null : $this->router->url('/category/'.$category->slug);
+                return $category === null ? null : $this->router->url($this->taxonomy->categoryPath($category));
 
             case MenuItem::TARGET_TAG:
                 $tag = $targetId === null ? null : $this->taxonomy->findTag($targetId);
-                return $tag === null ? null : $this->router->url('/tag/'.$tag->slug);
+                return $tag === null ? null : $this->router->url($this->taxonomy->tagPath($tag));
         }
         return null;
     }

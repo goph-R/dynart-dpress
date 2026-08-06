@@ -3,8 +3,10 @@
 namespace Dynart\Dpress\Content;
 
 use Dynart\Micro\EventServiceInterface;
-use League\CommonMark\CommonMarkConverter;
 use League\CommonMark\ConverterInterface;
+use League\CommonMark\Environment\Environment;
+use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
+use League\CommonMark\MarkdownConverter;
 
 /**
  * Turns the stored markdown into HTML, and splits the lead from the body
@@ -16,6 +18,18 @@ class MarkdownRenderer {
 
     const EVENT_BEFORE_RENDER = 'markdown:before_render';
     const EVENT_RENDERED = 'markdown:rendered';
+
+    /**
+     * The converter is being built - a subscriber may add extensions to the environment
+     *
+     * Emitted once, lazily, and only when something actually renders markdown, which on a page
+     * view is never: the HTML is written at save time. It carries the `Environment` before the
+     * converter is made from it, because CommonMark seals an environment on first use.
+     *
+     * This is how the CMS reaches the renderer without the renderer knowing the CMS exists -
+     * `InternalLinks` resolves `media#12` here, and nothing in this class knows what a media is.
+     */
+    const EVENT_ENVIRONMENT = 'markdown:environment';
 
     /** The separator, on a line of its own */
     const SEPARATOR = '---';
@@ -92,12 +106,17 @@ class MarkdownRenderer {
 
     public function converter(): ConverterInterface {
         if ($this->converter === null) {
-            $this->converter = new CommonMarkConverter([
+            $environment = new Environment([
                 // the markdown is written by editors, not visitors, but a compromised account
                 // should still not be able to inject a script into every page
                 'html_input' => 'strip',
                 'allow_unsafe_links' => false,
             ]);
+            // plain CommonMark, the same as the shorthand converter this replaced. An
+            // environment rather than that shorthand only so a subscriber can reach it.
+            $environment->addExtension(new CommonMarkCoreExtension());
+            $this->events->emit(self::EVENT_ENVIRONMENT, [$environment]);
+            $this->converter = new MarkdownConverter($environment);
         }
         return $this->converter;
     }

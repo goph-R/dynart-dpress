@@ -468,6 +468,10 @@
      * the picture is *for*.
      *
      * A `]` in that text would end the label early and leave the rest loose in the paragraph.
+     *
+     * The destination is `media#<id>`, not the URL the row also carries. A document says *what*
+     * it points at and the server works out where that is when it renders, so moving the site
+     * from a test domain to a real one leaves every stored document exactly as it was.
      */
     Dpress.insertMedia = function (item, textarea) {
         textarea = textarea || document.querySelector('textarea.markdown-editor');
@@ -475,7 +479,7 @@
             return;
         }
         var label = String(item.alt || item.title || item.file_name || '').replace(/([\[\]])/g, '\\$1');
-        var markdown = (item.category === 'image' ? '!' : '') + '[' + label + '](' + item.url + ')';
+        var markdown = (item.category === 'image' ? '!' : '') + '[' + label + '](media#' + item.id + ')';
         replaceSelection(textarea, markdown, '', false);
     };
 

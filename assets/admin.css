@@ -250,6 +250,8 @@ button.link { background: none; border: 0; color: var(--muted); cursor: pointer;
 .panel.attachments .page-head { margin-bottom: 12px; }
 .panel.attachments h2 { font-size: 16px; margin: 0; }
 .panel.attachments .form-description { margin: 0 0 14px; }
+/* the reference is something to copy into a document, so it is shown as what it is: code */
+.panel.attachments td[data-property="ref"] { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
 /* the toolbar's odd one out: it attaches a file rather than marking up text, so it sits apart */
 .markdown-toolbar .markdown-insert { margin-left: auto; }
 .markdown-toolbar .markdown-insert[disabled] { opacity: .45; cursor: not-allowed; }

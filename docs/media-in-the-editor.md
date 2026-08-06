@@ -52,11 +52,16 @@ So the whole editor-side change is: **one more button on the existing toolbar.**
 knows how to put text at the cursor. The new button opens `Dpress.pickMedia()` and inserts what
 comes back:
 
-- an image → `![alt](url)`
-- anything else → `[file name](url)`, because the library holds documents too and a PDF is a
-  link, not a picture
+- an image → `![alt](media#<id>)`
+- anything else → `[file name](media#<id>)`, because the library holds documents too and a PDF is
+  a link, not a picture
 
 `]` in the alt text has to be escaped, or the link breaks.
+
+> **The destination changed in 0.19.0.** It used to be the finished URL, which put this site's
+> hostname inside every document that had a picture in it. It is now a reference, resolved when
+> the markdown is rendered — see [internal-links.md](internal-links.md). Everything else on this
+> page still holds.
 
 ---
 

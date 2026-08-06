@@ -261,6 +261,10 @@ class ContentAdminController extends AbstractAdminController {
                 'texts'     => ['noResults' => 'Nothing attached yet.'],
                 'columns'   => [
                     'thumbnail_html' => ['label' => '', 'view' => 'html', 'sortable' => false, 'width' => '52px'],
+                    // what to type to put this file in the text. The insert button writes it for
+                    // you, but the reference is the thing the document actually contains, and
+                    // somebody editing markdown by hand should be able to read it off the row.
+                    'ref'            => ['label' => 'Reference', 'sortable' => false, 'width' => '90px'],
                     'file_name'      => ['label' => 'File'],
                     'alt'            => ['label' => 'Alt text'],
                     'visibility'     => ['label' => 'On the page', 'view' => 'badge', 'options' => [
@@ -501,6 +505,7 @@ class ContentAdminController extends AbstractAdminController {
         foreach ($this->media->allAttachmentsOf($content->id) as $media) {
             $rows[] = [
                 'id'             => (int)$media['id'],
+                'ref'            => 'media#'.(int)$media['id'],
                 'file_name'      => $media['file_name'],
                 'title'          => (string)($media['title'] ?? ''),
                 'alt'            => (string)($media['alt'] ?? ''),

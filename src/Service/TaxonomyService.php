@@ -116,6 +116,17 @@ class TaxonomyService {
         $this->events->emit(self::EVENT_CATEGORY_DELETED, [$category]);
     }
 
+    /**
+     * The public path of a category, for `Router::url()` to finish
+     *
+     * A path rather than a URL, like `ContentService::publicPath()`, because only the router
+     * knows how this installation writes them - with rewriting off it is a query parameter, and
+     * anything joining the pieces itself would produce a link that goes nowhere.
+     */
+    public function categoryPath(Category $category): string {
+        return '/category/'.$category->slug;
+    }
+
     // --- Tags ---
 
     public function findTag(int $id): ?Tag {
@@ -179,6 +190,11 @@ class TaxonomyService {
         }
         $this->em->deleteById(Tag::class, $tag->id);
         $this->events->emit(self::EVENT_TAG_DELETED, [$tag]);
+    }
+
+    /** @see categoryPath() */
+    public function tagPath(Tag $tag): string {
+        return '/tag/'.$tag->slug;
     }
 
     // --- Assignments ---
