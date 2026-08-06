@@ -4,6 +4,7 @@ namespace Dynart\Dpress;
 
 use Dynart\Micro\ConfigInterface;
 use Dynart\Micro\EventServiceInterface;
+use Dynart\Micro\FormWidgets;
 use Dynart\Micro\JwtAuth;
 use Dynart\Micro\JwtAuthInterface;
 use Dynart\Micro\Micro;
@@ -253,6 +254,26 @@ class DpressServices {
      * Both live inside the package rather than under the site root, so a theme can override any
      * of them through the view's usual lookup.
      */
+    /**
+     * The field types the CMS adds to the framework's seven
+     *
+     * Registered through exactly the call a plugin uses. A mechanism the core does not eat is a
+     * mechanism nobody has tested - and this one has to work for somebody else's code, because
+     * that is the whole point of it.
+     */
+    const WIDGETS = [
+        'markdown'    => Dpress::VIEW_NAMESPACE.':widget/markdown',
+        'media'       => Dpress::VIEW_NAMESPACE.':widget/media',
+        'checkboxes'  => Dpress::VIEW_NAMESPACE.':widget/checkboxes',
+        'permissions' => Dpress::VIEW_NAMESPACE.':widget/permissions',
+    ];
+
+    public static function registerWidgets(FormWidgets $widgets): void {
+        foreach (self::WIDGETS as $type => $view) {
+            $widgets->add($type, $view);
+        }
+    }
+
     public static function registerViews(ViewInterface $view, TranslationInterface $translation): void {
         $view->addFolder(Dpress::VIEW_NAMESPACE, Dpress::viewsPath());
         // not themeable: a theme is for the site's pages, and the admin is not one of them

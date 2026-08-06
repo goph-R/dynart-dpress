@@ -1,0 +1,11 @@
+<?php
+/**
+ * The markdown field: a textarea with a toolbar, deliberately not an editor
+ *
+ * The toolbar is built by `admin.js` around any `textarea.markdown-editor`, so the class is not
+ * decoration - it is the binding. `attributes` is where the content builder puts
+ * `data-attach-hidden`, which is what makes the toolbar grow its attach button.
+ */
+$id = $form->idByNameAndField($name, $field);
+?>
+<textarea id="<?= $id ?>" name="<?= $form->inputName($name) ?>" class="markdown-editor" rows="18"<?= esc_attrs($field['attributes'] ?? []) ?>><?= $form->value($name, true) ?></textarea>

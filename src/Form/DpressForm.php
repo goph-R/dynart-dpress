@@ -14,12 +14,10 @@ use Dynart\Micro\Form;
  */
 class DpressForm extends Form {
 
-    /**
-     * The CMS renders its own inputs, so it can offer field types the framework has never heard
-     * of - a markdown editor, a media picker, a grouped permission list. Anything it does not
-     * recognise falls through to the framework's partial, so nothing has to be duplicated.
-     */
-    const VIEW_INPUT = 'dpress:form-input';
+    // The CMS field types - markdown, media, checkboxes, permissions - are registered with
+    // `FormWidgets` in `DpressServices::registerWidgets()`, the same call a plugin uses. This
+    // class used to point `VIEW_INPUT` at a template holding all four, which worked exactly once:
+    // the override was spent, and nothing after the CMS could add a fifth. See micro 0.20.0.
 
     protected ?EventServiceInterface $events = null;
     protected array $context = [];

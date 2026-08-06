@@ -5,6 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.21.0] &ndash; 2026-08-06
+
+### Changed
+- **The CMS field types are registered, not branched.** `markdown`, `media`, `checkboxes` and `permissions` now go through micro 0.20.0's `FormWidgets`, one template each under `views/widget/`, registered by `DpressServices::registerWidgets()` — which is exactly the call a plugin will use. `DpressForm::VIEW_INPUT` and `views/form-input.phtml` are deleted.
+
+### Notes
+That constant was a mechanism with room for **exactly one** contributor. The framework offered a single override for "the template that renders a field", the CMS spent it, and after that nothing could add a fifth field type without forking the CMS's own template and re-implementing all four branches. The registry has room for everybody, and the core now registers its types the same way a plugin does — a mechanism the core does not eat is a mechanism nobody notices breaking.
+
+Verified against the running site: every widget renders on eight admin screens plus the two public forms, and nothing anywhere reports an unregistered type.
+
+**Needs micro 0.20.0.**
+
+---
+
 ## [0.20.1] &ndash; 2026-08-06
 
 ### Added

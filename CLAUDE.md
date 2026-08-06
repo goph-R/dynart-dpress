@@ -67,6 +67,8 @@ Commands must return `int` (or `string`) — `CliApp::process()` passes the retu
 
 `FormFactory` (write path) and `QueryFactory` (read path) are what make the CMS extensible, and the rule for both is the same: **nothing builds a `Form` or a `Query` with `new`.** A hand-built one is invisible to plugins forever. For forms this extends into the templates — render with `$form->fetch()`, never hand-written `<input>` tags, or a plugin-added field will not appear.
 
+**A field *type* is a registration too.** `markdown`, `media`, `checkboxes` and `permissions` are added to micro's `FormWidgets` by `DpressServices::registerWidgets()`, one template each in `views/widget/`. That is the same call a plugin uses, deliberately: the CMS used to point `DpressForm::VIEW_INPUT` at one template holding all four, which worked exactly once — the framework's single override was spent, and nothing after the CMS could add a fifth type. Register new types; never reintroduce a template that branches on `type`.
+
 Both emit a **scoped and a generic** event. `EventService` matches names exactly with no wildcard support, so a generic-only event would wake every subscriber on every form and every query; the generic one exists for the genuinely cross-cutting cases (a captcha on all forms, access scoping on all queries).
 
 | | Form | Query |

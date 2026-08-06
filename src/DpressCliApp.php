@@ -7,6 +7,7 @@ use Dynart\Micro\CliOutput;
 use Dynart\Micro\CliOutputInterface;
 use Dynart\Micro\ConfigInterface;
 use Dynart\Micro\LoggerInterface;
+use Dynart\Micro\FormWidgets;
 use Dynart\Micro\Micro;
 use Dynart\Micro\TranslationInterface;
 use Dynart\Micro\ViewInterface;
@@ -274,6 +275,7 @@ class DpressCliApp extends CliApp {
             Micro::get(ViewInterface::class),
             Micro::get(TranslationInterface::class)
         );
+        DpressServices::registerWidgets(Micro::get(FormWidgets::class));
         // there is no attribute processor in a CLI run, so the entities are registered by hand
         DpressServices::registerEntities(Micro::get(EntityManager::class));
         DpressServices::addMigrations(Micro::get(Migrations::class));

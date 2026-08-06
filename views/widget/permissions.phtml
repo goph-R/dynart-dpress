@@ -1,0 +1,25 @@
+<?php
+/**
+ * The permission checkboxes of a role, grouped by their prefix
+ *
+ * `groups` rather than `options`, because the grouping is the whole point: a flat list of forty
+ * strings is unreadable, and the prefix is what a permission is *about*. Shown as `<code>`,
+ * because the string is the API - a plugin registers `myplugin.do_thing` and it appears here.
+ */
+$inputName = $form->inputName($name);
+$selected = array_map('strval', (array)($form->values()[$name] ?? []));
+?>
+<div class="permission-groups">
+    <?php foreach (($field['groups'] ?? []) as $group => $permissions): ?>
+        <fieldset>
+            <legend><?= esc_html(ucfirst($group)) ?></legend>
+            <?php foreach ($permissions as $permission): ?>
+                <label>
+                    <input type="checkbox" name="<?= $inputName ?>[]" value="<?= esc_attr($permission) ?>"
+                        <?= in_array($permission, $selected) ? ' checked' : '' ?>>
+                    <code><?= esc_html($permission) ?></code>
+                </label>
+            <?php endforeach ?>
+        </fieldset>
+    <?php endforeach ?>
+</div>

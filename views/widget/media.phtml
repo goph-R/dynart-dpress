@@ -1,0 +1,22 @@
+<?php
+/**
+ * A media id, chosen through the picker rather than typed
+ *
+ * The value is the id; everything visible is built around it by `admin.js`, which finds the field
+ * by `data-media-field` and the pieces inside it by their own data attributes.
+ */
+$id = $form->idByNameAndField($name, $field);
+$value = (string)$form->value($name);
+?>
+<div class="media-field" data-media-field>
+    <input type="hidden" id="<?= $id ?>" name="<?= $form->inputName($name) ?>" value="<?= esc_attr($value) ?>" data-media-input>
+    <?php // The preview is the field's own, not a view variable: a form may hold more than one
+          // media field - a featured image and a thumbnail - and one variable cannot be the
+          // preview of both. It is markup the builder rendered; the picker replaces it with its
+          // own when somebody chooses a different file. ?>
+    <div class="media-field-preview" data-media-preview>
+        <?php if ($value !== '' && !empty($field['preview'])): ?><?= $field['preview'] ?><?php endif ?>
+    </div>
+    <button type="button" class="button small" data-media-pick>Choose…</button>
+    <button type="button" class="button small" data-media-clear<?= $value === '' ? ' hidden' : '' ?>>Remove</button>
+</div>

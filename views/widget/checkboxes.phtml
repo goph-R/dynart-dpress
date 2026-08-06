@@ -1,0 +1,20 @@
+<?php
+/**
+ * Many of a list, posted as `name[]`
+ *
+ * The value is an array, so it is read from `values()` rather than through `value()`, which casts
+ * to a string. "None yet" rather than an empty box: a list with nothing in it looks broken.
+ */
+$inputName = $form->inputName($name);
+$selected = array_map('strval', (array)($form->values()[$name] ?? []));
+?>
+<div class="checkbox-list">
+    <?php foreach (($field['options'] ?? []) as $optionValue => $optionLabel): ?>
+        <label>
+            <input type="checkbox" name="<?= $inputName ?>[]" value="<?= esc_attr($optionValue) ?>"
+                <?= in_array((string)$optionValue, $selected) ? ' checked' : '' ?>>
+            <?= esc_html($optionLabel) ?>
+        </label>
+    <?php endforeach ?>
+    <?php if (empty($field['options'])): ?><p class="form-description">None yet.</p><?php endif ?>
+</div>
