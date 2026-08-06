@@ -27,7 +27,7 @@ use Dynart\Dpress\Service\MediaService;
  */
 class MediaAdminController extends AbstractAdminController {
 
-    const SORTABLE = ['file_name', 'title', 'category', 'size', 'created_at'];
+    const SORTABLE = ['id', 'file_name', 'title', 'category', 'size', 'created_at'];
 
     public function __construct(
         ViewInterface $view,
@@ -125,6 +125,7 @@ class MediaAdminController extends AbstractAdminController {
             'orderBy'  => 'created_at',
             'orderDir' => 'desc',
             'columns'  => [
+                'id' => ['label' => '#', 'align' => 'right', 'width' => '1%'],
                 // the name opens the item's own page, as it does in every other list; the
                 // picture opens the file, which is the thing this list is otherwise the only
                 // one-click way to reach

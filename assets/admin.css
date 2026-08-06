@@ -208,6 +208,9 @@ button.link { background: none; border: 0; color: var(--muted); cursor: pointer;
 .dynamic-list .empty, .dynamic-list .no { color: var(--muted); }
 .dynamic-list .yes { color: var(--ok); }
 .dynamic-list .checkbox-column, .dynamic-list .actions-column { width: 1%; white-space: nowrap; }
+/* the id column: `width: 1%` only shrinks a cell that will not wrap. Muted, because it is there
+   to be read off when writing a `post#42` by hand, not to be the first thing on the row. */
+.dynamic-list td[data-property="id"] { white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
 .dynamic-list .actions-column { text-align: right; }
 .dynamic-list td img { max-height: 36px; border-radius: var(--radius); display: block; }
 .dynamic-list td svg { width: 22px; height: 22px; color: var(--muted); display: block; }

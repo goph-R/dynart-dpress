@@ -25,7 +25,7 @@ use Dynart\Dpress\Service\UserService;
  */
 class UserAdminController extends AbstractAdminController {
 
-    const SORTABLE = ['name', 'email', 'status', 'created_at'];
+    const SORTABLE = ['id', 'name', 'email', 'status', 'created_at'];
 
     public function __construct(
         ViewInterface $view,
@@ -65,6 +65,7 @@ class UserAdminController extends AbstractAdminController {
             'endpoint' => $this->router->url('/admin/users/list'),
             'orderBy'  => 'name',
             'columns'  => [
+                'id'     => ['label' => '#', 'align' => 'right', 'width' => '1%'],
                 'name'   => ['label' => 'Name', 'view' => 'link', 'options' => ['hrefProperty' => 'edit_url']],
                 'email'  => ['label' => 'Email'],
                 'roles'  => ['label' => 'Roles', 'view' => 'list', 'sortable' => false],

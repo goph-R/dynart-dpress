@@ -23,8 +23,8 @@ use Dynart\Dpress\Service\TaxonomyService;
  */
 class TaxonomyAdminController extends AbstractAdminController {
 
-    const CATEGORY_SORTABLE = ['name', 'slug', 'position'];
-    const TAG_SORTABLE = ['name', 'slug'];
+    const CATEGORY_SORTABLE = ['id', 'name', 'slug', 'position'];
+    const TAG_SORTABLE = ['id', 'name', 'slug'];
 
     public function __construct(
         ViewInterface $view,
@@ -52,6 +52,7 @@ class TaxonomyAdminController extends AbstractAdminController {
             'endpoint' => $this->router->url('/admin/categories/list'),
             'orderBy'  => 'name',
             'columns'  => [
+                'id'        => ['label' => '#', 'align' => 'right', 'width' => '1%'],
                 'name'      => ['label' => 'Name', 'view' => 'link', 'options' => ['hrefProperty' => 'edit_url']],
                 'slug'      => ['label' => 'Slug'],
                 'parent'    => ['label' => 'Parent', 'sortable' => false],
@@ -207,6 +208,7 @@ class TaxonomyAdminController extends AbstractAdminController {
             'endpoint' => $this->router->url('/admin/tags/list'),
             'orderBy'  => 'name',
             'columns'  => [
+                'id'   => ['label' => '#', 'align' => 'right', 'width' => '1%'],
                 'name' => ['label' => 'Name', 'view' => 'link', 'options' => ['hrefProperty' => 'edit_url']],
                 'slug' => ['label' => 'Slug'],
             ],

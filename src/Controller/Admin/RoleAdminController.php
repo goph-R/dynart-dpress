@@ -60,6 +60,8 @@ class RoleAdminController extends AbstractAdminController {
                 'endpoint' => $this->router->url('/admin/roles/list'),
                 'orderBy'  => 'name',
                 'columns'  => [
+                    // not sortable: this list answers from `page()`, which takes no sort at all
+                    'id'          => ['label' => '#', 'align' => 'right', 'width' => '1%', 'sortable' => false],
                     'label'       => ['label' => 'Role', 'view' => 'link', 'options' => ['hrefProperty' => 'edit_url']],
                     'name'        => ['label' => 'Name'],
                     'permissions' => ['label' => 'Permissions', 'sortable' => false],

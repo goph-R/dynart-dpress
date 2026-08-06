@@ -63,6 +63,8 @@ class MenuAdminController extends AbstractAdminController {
                 'endpoint' => $this->router->url('/admin/menus/list'),
                 'orderBy'  => 'name',
                 'columns'  => [
+                    // not sortable, for the same reason as the roles: `page()` takes no sort
+                    'id'    => ['label' => '#', 'align' => 'right', 'width' => '1%', 'sortable' => false],
                     'name'  => ['label' => 'Menu', 'view' => 'link', 'options' => ['hrefProperty' => 'items_url']],
                     'place' => ['label' => 'Place', 'sortable' => false],
                     'items' => ['label' => 'Items', 'align' => 'right', 'sortable' => false],

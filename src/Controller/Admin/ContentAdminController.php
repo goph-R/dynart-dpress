@@ -31,7 +31,7 @@ use Dynart\Dpress\Service\UserService;
 class ContentAdminController extends AbstractAdminController {
 
     /** What a list may be ordered by. Anything else is dropped rather than put into the SQL. */
-    const SORTABLE = ['title', 'slug', 'status', 'published_at', 'created_at', 'updated_at'];
+    const SORTABLE = ['id', 'title', 'slug', 'status', 'published_at', 'created_at', 'updated_at'];
 
     public function __construct(
         ViewInterface $view,
@@ -170,6 +170,9 @@ class ContentAdminController extends AbstractAdminController {
             'orderBy'  => $type === Content::TYPE_PAGE ? 'title' : 'published_at',
             'orderDir' => $type === Content::TYPE_PAGE ? 'asc' : 'desc',
             'columns'  => [
+                // the id, because it is what a reference in somebody's markdown is made of:
+                // `post#42` is written by hand as often as it is inserted by a button
+                'id'     => ['label' => '#', 'align' => 'right', 'width' => '1%'],
                 'title'  => ['label' => 'Title', 'view' => 'link', 'options' => ['hrefProperty' => 'edit_url']],
                 'slug'   => ['label' => 'Slug'],
                 'status' => ['label' => 'Status', 'view' => 'badge', 'options' => [

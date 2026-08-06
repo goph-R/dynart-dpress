@@ -5,6 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.20.1] &ndash; 2026-08-06
+
+### Added
+- **A `#` column on every admin list**, showing the row's id. It is what a reference in somebody's markdown is made of — `post#42` and `media#12` are written by hand as often as they are inserted by a button, and until now the only place to read an id off was the URL of the edit page.
+
+### Notes
+Sortable where the list actually sorts: `id` was added to the five sort whitelists, and `AdminTest::assertSortableAgainst` checks each of those names is a real column of the entity. The roles and the menus lists answer from a `page()` that takes no sort at all, so the column is declared unsortable there rather than given a header that does nothing.
+
+None of the list queries join, so an unqualified `order by id` is unambiguous — worth checking, because `tag_cloud` does join and both of its tables have an `id`.
+
+Verified against the running site: the column present and first on all eight lists, and sorting by it both ways on the five that sort.
+
+---
+
 ## [0.20.0] &ndash; 2026-08-06
 
 The list is for finding things. The editor is for changing them.
