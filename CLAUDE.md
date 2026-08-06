@@ -273,7 +273,11 @@ The send signature is `send($name, $email, $subject, $template, $variables)`. `c
 
 **`install` is idempotent**: it applies whatever is pending rather than refusing when the migration history table exists. A migration that fails part way leaves exactly that state, and refusing would strand the site with no way forward.
 
-`Revision` (from the entities library) is created by `Migration\CreateRevisionTable`. Because it is a library entity, the application's namespace scan does not reach it, so the migration calls `EntityManager::registerEntity()` explicitly.
+**The schema is one migration, `CreateSchema`.** It was eight until 0.22.0, squashed because dpress is pre-1.0 and no installation holds data anybody minds losing — which also means **every database has to be dropped and recreated** when the schema changes. **After 1.0 this stops** and migrations become append-only.
+
+One ordered list, `CreateSchema::TABLES`, and one call each: whether a table gets an `_aud` mirror is the entity's own answer, since `createTableWithAudit()` builds one only where the class is `#[Auditable]`. The order is the foreign keys' — `Revision` first, because every mirror points at it. Tests guard both halves of what the squash gave up: that every registered entity has a table, and that no child table is built before what it points at.
+
+`Revision` comes from the entities library, so the application's namespace scan does not reach it and `CreateSchema` calls `EntityManager::registerEntity()` for it explicitly.
 
 ## Conventions
 

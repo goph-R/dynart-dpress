@@ -65,14 +65,7 @@ use Dynart\Dpress\Security\AuthCookies;
 use Dynart\Dpress\Mail\LogMailer;
 use Dynart\Dpress\Mail\MailerInterface;
 use Dynart\Dpress\Mail\NativeMailer;
-use Dynart\Dpress\Migration\AddHiddenToContentAttachment;
-use Dynart\Dpress\Migration\CreateAuthAttemptTable;
-use Dynart\Dpress\Migration\CreateContentTables;
-use Dynart\Dpress\Migration\CreateMediaTables;
-use Dynart\Dpress\Migration\CreateMenuAndSettingTables;
-use Dynart\Dpress\Migration\CreateTaxonomyTables;
-use Dynart\Dpress\Migration\CreateIdentityTables;
-use Dynart\Dpress\Migration\CreateRevisionTable;
+use Dynart\Dpress\Migration\CreateSchema;
 use Dynart\Dpress\Query\CoreQueries;
 use Dynart\Dpress\Query\ListRequest;
 use Dynart\Dpress\Query\QueryFactory;
@@ -106,19 +99,13 @@ use Dynart\Dpress\Service\UserService;
 class DpressServices {
 
     /**
-     * The core migrations, in the order they were introduced
+     * The core migrations
      *
-     * The runner sorts by version anyway, so a plugin can add its own and they interleave.
+     * One, until 1.0: the schema was squashed while no installation held anything anybody minds
+     * losing. The runner sorts by version anyway, so a plugin adds its own and they interleave.
      */
     const MIGRATIONS = [
-        CreateRevisionTable::class,
-        CreateIdentityTables::class,
-        CreateMediaTables::class,
-        CreateContentTables::class,
-        CreateTaxonomyTables::class,
-        CreateMenuAndSettingTables::class,
-        CreateAuthAttemptTable::class,
-        AddHiddenToContentAttachment::class,
+        CreateSchema::class,
     ];
 
     /** The entities the CMS provides, registered explicitly rather than by a namespace scan */

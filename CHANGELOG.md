@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.22.0] &ndash; 2026-08-06
+
+The schema is one migration again.
+
+### Changed
+- **The eight migrations are squashed into `CreateSchema`** (`0001_create_schema`). Eight files describing a schema nobody had ever applied incrementally were eight files to read to find out what a table looks like, and the `alter` that added `ContentAttachment.hidden` is now just a column on the entity. One ordered list of tables, one call each — whether a table gets an audit mirror is the entity's own answer, because `createTableWithAudit()` builds one only where the class is `#[Auditable]`.
+
+### Notes
+**Every existing database has to be dropped and recreated.** That is deliberate and it is a pre-1.0 licence: dpress is on no public domain holding data anybody minds losing. **After 1.0 this stops** and migrations become append-only.
+
+Verified by installing the squashed schema into a scratch database and diffing it against the real one: byte-identical except that `hidden` now sits where the entity declares it rather than appended at the end, which is cosmetic in SQL. The seeded roles and the editor's 23 permissions are identical too. The dev database was then rebuilt on it, with its content dumped and restored — 6 posts and pages, 6 media, 4 users, 3 menu items, 6 attachments, 82 revisions, all matching the dump row for row.
+
+Three new tests guard what the squash gave up. While the schema was eight files, each one listed the group it created and the pairing was obvious from the file you were editing; in one list an entity can be registered, work, and only turn out to have no table on somebody else's fresh install. So: every registered entity has a table, nothing has a table that is not a registered entity, `Revision` is built first because every `_aud` mirror points at it, and no child table is built before what it points at.
+
+---
+
 ## [0.21.0] &ndash; 2026-08-06
 
 ### Changed
