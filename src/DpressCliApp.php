@@ -18,10 +18,12 @@ use Dynart\Dpress\Cli\ContentCommands;
 use Dynart\Dpress\Cli\MailCommands;
 use Dynart\Dpress\Cli\MediaCommands;
 use Dynart\Dpress\Cli\TaxonomyCommands;
+use Dynart\Dpress\Cli\PluginCommands;
 use Dynart\Dpress\Cli\ThemeCommands;
 use Dynart\Dpress\Cli\SchemaCommands;
 use Dynart\Dpress\Cli\SystemCommands;
 use Dynart\Dpress\Cli\UserCommands;
+use Dynart\Dpress\Plugin\PluginService;
 use Dynart\Dpress\Query\CoreQueries;
 use Dynart\Dpress\Query\QueryFactory;
 
@@ -175,6 +177,23 @@ class DpressCliApp extends CliApp {
             'description' => 'List the categories and the tags',
             'needsConfig' => true,
         ],
+        'plugin:list' => [
+            'callable' => [PluginCommands::class, 'listPlugins'],
+            'description' => 'List the installed plugins and what went wrong with any of them',
+            'needsConfig' => true,
+        ],
+        'plugin:enable' => [
+            'callable' => [PluginCommands::class, 'enable'],
+            'description' => 'Turn a plugin on',
+            'params' => ['name'],
+            'needsConfig' => true,
+        ],
+        'plugin:disable' => [
+            'callable' => [PluginCommands::class, 'disable'],
+            'description' => 'Turn a plugin off',
+            'params' => ['name'],
+            'needsConfig' => true,
+        ],
         'theme:list' => [
             'callable' => [ThemeCommands::class, 'listThemes'],
             'description' => 'List the installed themes',
@@ -253,6 +272,9 @@ class DpressCliApp extends CliApp {
         DpressServices::register();
         DpressServices::registerMailer(Micro::get(ConfigInterface::class));
         $this->addCommands();
+        // the same point as the web app's, and it has to happen on this path too: a plugin's
+        // tables are built by `dpress upgrade`, which never runs a web request
+        Micro::get(PluginService::class)->load();
         $this->initServices();
     }
 

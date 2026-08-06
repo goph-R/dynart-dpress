@@ -73,6 +73,15 @@ class Permissions {
     /** Switching the theme changes how every page of the site looks */
     const THEME_SWITCH = 'theme.switch';
 
+    /**
+     * Turning a plugin on runs somebody else's code on every request
+     *
+     * There is no separate `view`: seeing the list of what is installed and being able to
+     * change it are the same screen, and anybody who should not do the second has no
+     * reason for the first.
+     */
+    const PLUGIN_MANAGE = 'plugin.manage';
+
     /** The permissions the CMS defines, in [permission => group] format */
     const CORE = [
         self::USER_VIEW      => 'user',
@@ -113,6 +122,7 @@ class Permissions {
         self::MENU_VIEW       => 'menu',
         self::MENU_UPDATE     => 'menu',
         self::THEME_VIEW      => 'theme',
+        self::PLUGIN_MANAGE  => 'plugin',
         self::THEME_SWITCH    => 'theme',
     ];
 

@@ -276,6 +276,34 @@ The comparison is the point, so it should be one nobody can wave away:
   the same host, median of 30 requests" is a result. "3× faster" is marketing.
 
 The honest framing: dpress is not faster because of a clever trick, it is faster because it does
-less. No plugin API to boot, no options table to load, no block parser, no theme customiser, and
-the markdown is rendered once at save time rather than on every view. If a measurement ever shows
-otherwise, the measurement is right and this document is wrong.
+less. No options table to load, no block parser, no theme customiser, and the markdown is rendered
+once at save time rather than on every view. If a measurement ever shows otherwise, the
+measurement is right and this document is wrong.
+
+### The plugin system, measured
+
+This document used to say "no plugin API to boot" in that list. **That stopped being true in
+0.23.0**, so it was measured rather than quietly deleted.
+
+Serving `/post/<slug>` over HTTP, 60 requests a run, three rounds alternating to cancel drift:
+
+| | per request |
+|---|---|
+| no plugins enabled | 65–67 ms |
+| one plugin enabled | 67 ms |
+
+So one plugin costs about **1 ms**, and none costs nothing measurable. (These are higher than the
+in-process figures elsewhere in this document because they include curl and the HTTP round trip;
+what matters here is the difference between the rows, not the rows.)
+
+Two things keep it that way, and both are load-bearing rather than incidental:
+
+- **The enabled list is read from settings that were already being read** for the theme, so
+  discovering that there are no plugins costs one array lookup.
+- **A subscription is a Micro callable, not a closure.** The event service resolves it through the
+  container *when the event fires*, so an enabled plugin that hooks the content form costs one
+  array entry on a page view and builds nothing. The example plugin does exactly this — its
+  service and controller exist only on the screens that use them.
+
+A plugin that does work on every request will of course cost what that work costs. The claim is
+only that **the mechanism** is free, not that what somebody hangs off it is.

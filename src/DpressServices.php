@@ -55,6 +55,7 @@ use Dynart\Dpress\Entity\UserToken;
 use Dynart\Dpress\Cli\ContentCommands;
 use Dynart\Dpress\Cli\MediaCommands;
 use Dynart\Dpress\Cli\TaxonomyCommands;
+use Dynart\Dpress\Cli\PluginCommands;
 use Dynart\Dpress\Cli\ThemeCommands;
 use Dynart\Dpress\Cli\MailCommands;
 use Dynart\Dpress\Form\AdminForms;
@@ -66,6 +67,7 @@ use Dynart\Dpress\Mail\LogMailer;
 use Dynart\Dpress\Mail\MailerInterface;
 use Dynart\Dpress\Mail\NativeMailer;
 use Dynart\Dpress\Migration\CreateSchema;
+use Dynart\Dpress\Plugin\PluginService;
 use Dynart\Dpress\Query\CoreQueries;
 use Dynart\Dpress\Query\ListRequest;
 use Dynart\Dpress\Query\QueryFactory;
@@ -196,6 +198,7 @@ class DpressServices {
         Micro::add(TaxonomyService::class);
         Micro::add(SettingService::class);
         Micro::add(ThemeService::class);
+        Micro::add(PluginService::class);
         Micro::add(MenuService::class);
         Micro::add(SchemaCommands::class);
         Micro::add(SystemCommands::class);
@@ -205,6 +208,7 @@ class DpressServices {
         Micro::add(MediaCommands::class);
         Micro::add(TaxonomyCommands::class);
         Micro::add(ThemeCommands::class);
+        Micro::add(PluginCommands::class);
         self::registerContentEvents();
     }
 

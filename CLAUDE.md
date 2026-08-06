@@ -178,6 +178,18 @@ The uploads `.htaccess` still sends a strict CSP for `.svg`. That is the second 
 
 **Menus are not audited, settings are** (plan §4.4). A menu editor rewrites the tree wholesale, so its history would be churn.
 
+### Plugins
+
+A folder under `plugins/` with a `plugin.ini` naming a namespace and a class — the theme rule plus the machinery a theme never needs, an autoloader and an entry class. Which are enabled is a **setting**, so it is switchable at runtime and audited. See [docs/plugins.md](docs/plugins.md).
+
+**Most of this was already open**: the two factories' events, `Migrations::add()`, `EntityManager::registerEntity()`, `Permissions::add()`, `FormWidgets::add()`. What 0.23.0 added is a loader, a place in boot to call it from, and a way to serve a plugin's own assets.
+
+**Where it loads is forced from both sides.** After `DpressServices::register()`, because reading the enabled list needs the database — so a plugin cannot replace `Database`, `EntityManager` or `SettingService`. Before `initServices()`, because `Micro::get()` caches singletons forever — so it *can* replace `ContentService` and the rest with a subclass. And before `runMiddlewares()`, which is the one look `AttributeProcessor` takes at the container; a controller registered later has no routes and says nothing about it. **Both apps load plugins** — a plugin registered only on the web path is invisible to `dpress upgrade`.
+
+**`PluginService::load()` never throws.** Enabling lives in the database and the screen that disables a plugin is in the admin, so a plugin that fataled on the way up would take away the only way to turn it off. A failure is caught, recorded on the `Plugin`, and shown as *Failed* on `/admin/plugins`. One breaking does not stop the next. **A failed plugin registers no controllers** — the loader adds those only after `register()` returns, because a live public URL running the code of a plugin that just declared itself broken is the one leftover that is dangerous rather than untidy. `dpress.plugins_off = 1` is the escape hatch for anything subtler.
+
+**Subscribe with a Micro callable, never a closure.** The event service resolves it through the container when the event fires, so an enabled plugin that hooks the content form builds nothing on a page view. That is what keeps the mechanism free: measured at ~1 ms for one enabled plugin and nothing measurable for none.
+
 ### The admin
 
 Everything behind `/admin`. **A screen is two actions**: one that renders the page — the filter form, the buttons, the editor, all of which the server decides — and, where there is a list, one that answers with JSON. The rows are what the browser asks for again on every sort, filter and page change.

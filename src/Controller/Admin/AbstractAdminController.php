@@ -3,6 +3,7 @@
 namespace Dynart\Dpress\Controller\Admin;
 
 use Dynart\Micro\Attribute\Authorize;
+use Dynart\Micro\Micro;
 use Dynart\Micro\ConfigInterface;
 use Dynart\Micro\JwtAuthInterface;
 use Dynart\Micro\RequestInterface;
@@ -15,6 +16,7 @@ use Dynart\Dpress\DpressException;
 use Dynart\Dpress\Form\AdminForms;
 use Dynart\Dpress\Form\DpressForm;
 use Dynart\Dpress\Form\FormFactory;
+use Dynart\Dpress\Plugin\PluginService;
 use Dynart\Dpress\Query\ListRequest;
 use Dynart\Dpress\Security\Permissions;
 
@@ -95,6 +97,11 @@ abstract class AbstractAdminController extends AbstractController {
         // The endpoint checks the permission too - this only keeps a useless control off screen.
         $this->view->set('media_upload_url', $this->can(Permissions::MEDIA_CREATE)
             ? $this->router->url('/admin/media/upload/json') : '');
+        // a plugin's stylesheet and script go in the layout rather than in its widget's own
+        // template: a screen reached by a partial navigation is inserted HTML, and inserted HTML
+        // does not run its scripts. The layout is only rendered on a real page load, which is
+        // exactly when they need to arrive.
+        $this->view->set('admin_assets', $this->pluginAssets());
         $this->view->set('notice', $this->notice());
         $this->view->set('action_form', $this->actionForm());
         // `title` and `narrow` are the two screen variables the chrome reads, and the layout
@@ -104,6 +111,28 @@ abstract class AbstractAdminController extends AbstractController {
         $this->view->set('narrow', !empty($variables['narrow']));
         $this->view->set('page_title', ((string)($variables['title'] ?? '') ?: 'Admin').' – '.($this->siteName() ?: 'dpress'));
         return $this->view->fetch($template, $variables);
+    }
+
+    /**
+     * The plugin stylesheets and scripts an admin page loads
+     *
+     * @return array [['url' => ..., 'type' => 'js'|'css'], ...]
+     */
+    protected function pluginAssets(): array {
+        $result = [];
+        foreach (Micro::get(PluginService::class)->loaded() as $plugin) {
+            foreach ($plugin->instance->assets() as $file) {
+                $extension = strtolower(pathinfo((string)$file, PATHINFO_EXTENSION));
+                if ($extension !== 'js' && $extension !== 'css') {
+                    continue;
+                }
+                $result[] = [
+                    'url'  => AssetController::pluginUrl($plugin->name, (string)$file, $plugin->version()),
+                    'type' => $extension,
+                ];
+            }
+        }
+        return $result;
     }
 
     /**
@@ -353,6 +382,7 @@ abstract class AbstractAdminController extends AbstractController {
             ['key' => 'menus',     'label' => 'Menus',     'icon' => 'menus',     'route' => '/admin/menus', 'permission' => Permissions::MENU_VIEW],
             ['key' => 'users',     'label' => 'Users',     'icon' => 'users',     'route' => '/admin/users', 'permission' => Permissions::USER_VIEW],
             ['key' => 'roles',     'label' => 'Roles',     'icon' => 'roles',     'route' => '/admin/roles', 'permission' => Permissions::ROLE_VIEW],
+            ['key' => 'plugins',   'label' => 'Plugins',   'icon' => 'plugins',   'route' => '/admin/plugins', 'permission' => Permissions::PLUGIN_MANAGE],
             ['key' => 'settings',  'label' => 'Settings',  'icon' => 'settings',  'route' => '/admin/settings', 'permission' => Permissions::SETTING_VIEW],
         ];
         $result = [];

@@ -26,6 +26,14 @@ class Setting extends Entity {
     /** The theme the site renders with */
     const THEME = 'theme';
 
+    /**
+     * The enabled plugins, comma separated
+     *
+     * A list rather than a set, because the order is subscription order - it decides who
+     * goes first when two plugins add a field to the same form. Enabling appends.
+     */
+    const PLUGINS = 'plugins';
+
     const SITE_NAME = 'site_name';
     const SITE_DESCRIPTION = 'site_description';
 

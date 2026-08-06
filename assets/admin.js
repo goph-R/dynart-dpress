@@ -887,6 +887,26 @@
         return base !== '' && (path === base || path.indexOf(base + '/') === 0);
     }
 
+    /**
+     * Binders a plugin has added
+     *
+     * A plugin shipping a field type usually ships behaviour for it, and every binder here runs
+     * on load *and* after each partial navigation - which is the part that is easy to get wrong
+     * on your own, because an admin screen arrives without a page load and a listener bound to
+     * `DOMContentLoaded` never fires again.
+     *
+     * Guard against binding twice, the way the built in ones do: `if (el.dataset.myBound) return;`
+     * `Dpress.init(root)` is called with the swapped element, but a binder that queries the whole
+     * document will still see what it bound last time.
+     */
+    var extraInits = [];
+
+    Dpress.addInit = function (fn) {
+        if (typeof fn === 'function') {
+            extraInits.push(fn);
+        }
+    };
+
     Dpress.init = function (root) {
         root = root || document;
         initConfirms(root);
@@ -894,6 +914,14 @@
         initMediaFields(root);
         initLists(root);
         initAttachments(root);
+        extraInits.forEach(function (fn) {
+            // one plugin throwing must not stop the next one binding, nor the admin working
+            try {
+                fn(root);
+            } catch (error) {
+                console.error('dpress: a plugin initialiser failed', error);
+            }
+        });
     };
 
     document.addEventListener('DOMContentLoaded', function () {

@@ -20,6 +20,7 @@ use Dynart\Dpress\Controller\Admin\ContentAdminController;
 use Dynart\Dpress\Controller\Admin\DashboardController;
 use Dynart\Dpress\Controller\Admin\MediaAdminController;
 use Dynart\Dpress\Controller\Admin\MenuAdminController;
+use Dynart\Dpress\Controller\Admin\PluginAdminController;
 use Dynart\Dpress\Controller\Admin\RoleAdminController;
 use Dynart\Dpress\Controller\Admin\SettingsAdminController;
 use Dynart\Dpress\Controller\Admin\TaxonomyAdminController;
@@ -34,6 +35,7 @@ use Dynart\Dpress\Form\AdminForms;
 use Dynart\Dpress\Form\CoreForms;
 use Dynart\Dpress\Form\FormFactory;
 use Dynart\Dpress\Middleware\TokenRefresher;
+use Dynart\Dpress\Plugin\PluginService;
 use Dynart\Dpress\Query\CoreQueries;
 use Dynart\Dpress\Query\QueryFactory;
 use Dynart\Dpress\Service\AuthService;
@@ -69,6 +71,7 @@ class DpressWebApp extends WebApp {
         UserAdminController::class,
         RoleAdminController::class,
         SettingsAdminController::class,
+        PluginAdminController::class,
         PageController::class,
     ];
 
@@ -103,7 +106,25 @@ class DpressWebApp extends WebApp {
         DpressServices::registerWeb();
         DpressServices::registerMailer(Micro::get(ConfigInterface::class));
         $this->registerControllers();
+        $this->loadPlugins();
         $this->initServices();
+    }
+
+    /**
+     * Where the plugins go in, and it is the only place they fit
+     *
+     * Both ends are forced. **After** `register()`, because the enabled list is a setting and
+     * reading it needs the database - so a plugin cannot replace `Database`, `EntityManager` or
+     * `SettingService`, which are already built by then. **Before** `initServices()`, because
+     * `Micro::get()` caches singletons forever, so once the CMS has resolved `ContentService`
+     * nothing can put anything in front of it.
+     *
+     * And before `runMiddlewares()`, which the framework does after `init()` returns: that is
+     * when `AttributeProcessor` takes its one look at the container, so a controller registered
+     * any later has no routes and says nothing about it.
+     */
+    protected function loadPlugins(): void {
+        Micro::get(PluginService::class)->load();
     }
 
     /**

@@ -7,6 +7,7 @@ use Dynart\Micro\Attribute\Route;
 use Dynart\Micro\Micro;
 use Dynart\Micro\ResponseInterface;
 use Dynart\Dpress\Controller\AbstractController;
+use Dynart\Dpress\Plugin\PluginService;
 
 /**
  * Serves the admin's own JavaScript and CSS out of the package
@@ -52,11 +53,68 @@ class AssetController extends AbstractController {
         if (!is_file($path)) {
             $this->app()->sendError(404);
         }
+        $this->sendFile($path, self::ASSETS[$name]);
+        return '';
+    }
+
+    /** What a plugin is allowed to serve, by extension */
+    const PLUGIN_TYPES = [
+        'js'  => 'application/javascript; charset=utf-8',
+        'css' => 'text/css; charset=utf-8',
+        'svg' => 'image/svg+xml',
+    ];
+
+    /**
+     * The URL of a file inside a plugin's `assets/` folder
+     */
+    public static function pluginUrl(string $plugin, string $file, string $version = ''): string {
+        $router = Micro::get(\Dynart\Micro\RouterInterface::class);
+        return $router->url('/admin/assets/plugin/'.$plugin.'/'.$file, ['v' => $version ?: \Dynart\Dpress\Dpress::VERSION]);
+    }
+
+    /**
+     * A plugin's own stylesheet or script
+     *
+     * A field type usually comes with behaviour, and a plugin has nowhere to put it otherwise -
+     * `ASSETS` above is a fixed list of files this package ships.
+     *
+     * Two things keep this from being a way to read the disk. The name is matched against
+     * `[A-Za-z0-9._-]+` with no slashes and no dots in sequence, so it cannot climb out of the
+     * folder; and the plugin has to be one the loader **actually loaded**, so a folder somebody
+     * dropped in but never enabled serves nothing.
+     */
+    #[AllowAnonymous]
+    #[Route('GET', '/admin/assets/plugin/?/?')]
+    public function pluginAsset(string $plugin, string $file): string {
+        $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+        if (!preg_match('/^[A-Za-z0-9_-]+$/', $plugin)
+            || !preg_match('/^[A-Za-z0-9_-]+\.[A-Za-z0-9]+$/', $file)
+            || !isset(self::PLUGIN_TYPES[$extension])) {
+            $this->app()->sendError(404);
+        }
+        $loaded = null;
+        foreach (Micro::get(PluginService::class)->loaded() as $candidate) {
+            if ($candidate->name === $plugin) {
+                $loaded = $candidate;
+                break;
+            }
+        }
+        if ($loaded === null) {
+            $this->app()->sendError(404);
+        }
+        $path = $loaded->path.'/assets/'.$file;
+        if (!is_file($path)) {
+            $this->app()->sendError(404);
+        }
+        $this->sendFile($path, self::PLUGIN_TYPES[$extension]);
+        return '';
+    }
+
+    protected function sendFile(string $path, string $contentType): void {
         $response = Micro::get(ResponseInterface::class);
-        $response->setHeader('Content-Type', self::ASSETS[$name]);
+        $response->setHeader('Content-Type', $contentType);
         $response->setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         $response->send((string)file_get_contents($path));
         $this->app()->finish();
-        return '';
     }
 }

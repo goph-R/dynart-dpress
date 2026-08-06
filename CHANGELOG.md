@@ -5,6 +5,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.23.0] &ndash; 2026-08-06
+
+Plugins.
+
+### Added
+- **A plugin is a folder under `plugins/` with a `plugin.ini` in it** — the theme rule, plus the two things a theme never needs: a namespace to autoload and a class to build. `AbstractPlugin` gives a no-op default to every contribution, so one that adds a single field type is four lines. See [docs/plugins.md](docs/plugins.md).
+- **A plugin may contribute** services, controllers (routes come from their attributes by themselves), entities, migrations, form widgets, view folders, admin assets and permissions — plus `register()` for events and the two factories.
+- **`/admin/plugins`**, behind `plugin.manage`, with Enable/Disable as group actions. Plus `plugin:list`, `plugin:enable`, `plugin:disable`.
+- **`Dpress.addInit(fn)`**, so a plugin's widget can bind behaviour and have it run again after a partial navigation, and `/admin/assets/plugin/<name>/<file>` to serve its `.js` and `.css` — from its own folder, only while it is loaded, and only for a name with no slashes in it.
+- `plugins/reading-time/` in the development app: an example exercising every extension point at once, which is what the whole thing is tested against.
+
+### Notes
+**Where the loader sits is forced from both ends.** After `DpressServices::register()`, because reading the enabled list needs the database, so a plugin cannot replace `Database` or `SettingService`. Before `initServices()`, because `Micro::get()` caches singletons forever, so it *can* replace `ContentService` with a subclass. And before `runMiddlewares()`, which is the single look `AttributeProcessor` takes at the container.
+
+**Nothing in the loader throws.** Enabling is a setting and the screen that disables a plugin is in the admin, so a plugin that fataled on the way up would take away the only way to turn it off. Failures are caught and shown as *Failed* with their message; one breaking does not stop the next; an enabled plugin that is gone from disk is *Missing*; a database with no `setting` table yet simply has no plugins, so `dpress install` runs. `dpress.plugins_off = 1` boots with none of them.
+
+**A failed plugin registers no controllers.** Found by testing it: the first version registered them before `register()` ran, so a plugin that threw left its routes live — a public URL running the code of a plugin that had just declared itself broken. They now go in only after `register()` returns. The container cannot unregister anything, so its widgets and permissions do remain; those are untidy rather than dangerous, and its entity and migration remaining is what keeps its table from being dropped out from under its data.
+
+Measured, because `docs/performance.md` claimed "no plugin API to boot" as a reason dpress is fast and that stopped being true: **one enabled plugin costs about 1 ms, none costs nothing measurable.** The document now says so with the numbers.
+
+**Needs micro 0.20.0.**
+
+---
+
 ## [0.22.0] &ndash; 2026-08-06
 
 The schema is one migration again.

@@ -28,6 +28,15 @@ use Dynart\Dpress\Controller\Admin\AssetController;
           // when `Dpress.init()` goes looking for the lists and the fields to bind ?>
     <script src="<?= esc_attr(AssetController::url('dynamic-list.js')) ?>" defer></script>
     <script src="<?= esc_attr(AssetController::url('admin.js')) ?>" defer></script>
+    <?php // A plugin's own files, after the admin's, so `Dpress.addInit` exists by the time one
+          // calls it. Deferred like the others, which also keeps them in this order. ?>
+    <?php foreach (($admin_assets ?? []) as $asset): ?>
+        <?php if ($asset['type'] === 'css'): ?>
+            <link rel="stylesheet" href="<?= esc_attr($asset['url']) ?>">
+        <?php else: ?>
+            <script src="<?= esc_attr($asset['url']) ?>" defer></script>
+        <?php endif ?>
+    <?php endforeach ?>
 </head>
 <body class="admin" data-media-endpoint="<?= esc_attr(route_url('/admin/media/list')) ?>"
       data-media-upload="<?= esc_attr($media_upload_url ?? '') ?>"

@@ -1,0 +1,23 @@
+<?php $this->useLayout($admin_layout) ?>
+<?php $this->startBlock('content') ?>
+    <div class="page-head">
+        <h1>Plugins</h1>
+    </div>
+
+    <p class="form-description">
+        A plugin is a folder with a <code>plugin.ini</code> in it, under <code><?= esc_html($path) ?></code>.
+        Dropping one in installs it; enabling it is what runs its code.
+        <strong>A plugin that fails to load is skipped rather than taking the site down</strong> &ndash;
+        it shows as <em>Failed</em> here, with the reason, so it can be switched off from this page.
+        One that brings tables of its own needs <code>dpress upgrade</code> after being enabled.
+    </p>
+
+    <?php if (!empty($off)): ?>
+        <p class="form-error">
+            <code><?= esc_html($off_key) ?></code> is set in the configuration, so <strong>none of
+            these are loaded</strong> whatever this page says is enabled.
+        </p>
+    <?php endif ?>
+
+    <?= $this->fetch('dpress_admin:list', ['list_id' => $list_id, 'list_config' => $list_config]) ?>
+<?php $this->endBlock() ?>
