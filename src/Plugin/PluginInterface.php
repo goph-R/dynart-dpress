@@ -48,6 +48,15 @@ interface PluginInterface {
     /** Field types, as `type => view path`, for `FormWidgets` */
     public function widgets(): array;
 
+    /**
+     * Shortcodes, as `name => handler` or `name => [handler, kind]`
+     *
+     * The handler is a Micro callable, `[MyShortcode::class, 'render']`, so nothing is built until
+     * a page containing one is rendered. `kind` is `Shortcodes::BLOCK` or `INLINE` and decides
+     * whether it may sit inside a paragraph - see `ShortcodeRenderer::onDocumentParsed()`.
+     */
+    public function shortcodes(): array;
+
     /** Permissions, as `permission => group`. They appear in the role editor by themselves. */
     public function permissions(): array;
 

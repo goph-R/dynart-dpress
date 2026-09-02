@@ -29,6 +29,7 @@ abstract class AbstractPlugin implements PluginInterface {
     public function widgets(): array {
         return [];
     }
+    public function shortcodes(): array { return []; }
 
     public function permissions(): array {
         return [];

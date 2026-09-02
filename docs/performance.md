@@ -255,6 +255,16 @@ And two things that are already right, which is worth recording so nobody "optim
 - **Settings are one query**, not one per setting.
 - **Markdown is never parsed on a page view.** `lead_html` / `body_html` are rendered at save
   time, so a request is a select and a template — no CommonMark, no cache to invalidate.
+- **Shortcodes are the one exception, and they were bought deliberately** (0.32.0). A `{{ … }}`
+  runs when the page is rendered rather than when the post is saved, because a gallery's contents
+  change without the posts embedding it being touched, and re-rendering everything that mentions
+  one is a losing game. What is stored is a marker; `Shortcodes::expand()` swaps markers for
+  output over the finished page.
+
+  The markdown is still parsed once, at save. What moved is only the shortcodes, and it is
+  pay-per-use: **35.3 ms for a page with none against 36.4 ms for a page with one**, measured
+  here. A site that uses no shortcodes pays for a single `str_contains` over a string already in
+  memory, which is why that guard is the first line of `expand()` rather than a nicety.
 
 ---
 

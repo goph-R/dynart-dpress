@@ -5,6 +5,7 @@ namespace Dynart\Dpress;
 use Dynart\Micro\ConfigInterface;
 use Dynart\Micro\LoggerInterface;
 use Dynart\Micro\FormWidgets;
+use Dynart\Dpress\Content\Shortcodes;
 use Dynart\Micro\Micro;
 use Dynart\Micro\TranslationInterface;
 use Dynart\Micro\ViewInterface;
@@ -140,6 +141,7 @@ class DpressWebApp extends WebApp {
         $view = Micro::get(ViewInterface::class);
         DpressServices::registerViews($view, Micro::get(TranslationInterface::class));
         DpressServices::registerWidgets(Micro::get(FormWidgets::class));
+        DpressServices::registerShortcodes(Micro::get(Shortcodes::class));
         $this->applyTheme($view);
 
         DpressServices::registerEntities(Micro::get(EntityManager::class));

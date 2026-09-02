@@ -5,6 +5,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.32.0] &ndash; 2026-09-02
+
+Shortcodes.
+
+### Added
+- **`{{ name(arguments) }}` in a document**, resolved to whatever a registered handler returns. `{{ video('media#10') }}` ships; everything else comes from a plugin, through `PluginInterface::shortcodes()`. See [docs/shortcodes.md](docs/shortcodes.md).
+- A small grammar: positional and named arguments, quoted strings, integers, floats, `true`, `false`, `null`. No nesting, no expressions — an evaluator running over text an author typed is a different thing to be responsible for than a lookup table.
+- `BLOCK` and `INLINE`. A block shortcode alone in a paragraph replaces the paragraph, because a `<figure>` inside a `<p>` is invalid and a browser rearranges it rather than ignoring it.
+
+### Notes
+**A shortcode can be written about.** `` `{{ video('media#10') }}` `` renders those characters, and so does a fenced block — which falls out of `{{` being claimed by a **CommonMark inline parser** rather than by a regular expression over the markdown. A regex cannot tell a shortcode from one being quoted, and a CMS whose own documentation cannot be written in it has a bad idea in it. `\{\{` escapes too, with nothing of ours: `{` is ASCII punctuation.
+
+**A shortcode runs on the page, not at save, and it is the one place that rule is broken on purpose.** A gallery's contents change without the posts embedding it being touched, and re-rendering everything that mentions one is the referrer-chasing that works for a rename and loses for a gallery. So `body_html` holds a **marker** carrying the call, and `Shortcodes::expand()` swaps markers for output in `AbstractController::render()` — over the finished page, once, because content HTML reaches a template from five places and a theme may render any of them.
+
+The markdown is still parsed once, at save. What moved is only the shortcodes, and it is pay-per-use: **35.3 ms for a page with none against 36.4 ms for a page with one**, measured on the development site. A site using none pays for a `str_contains` over a string already in memory, which is why that guard is the first line of `expand()`. `docs/performance.md` says so with the numbers.
+
+**The marker cannot be forged.** `html_input => 'strip'` means raw HTML never survives from a document into `body_html`, so only the parser writes one. The payload is base64 because an argument containing `-->` would end the comment early and spill the rest of the post onto the page.
+
+An unknown name at **save** leaves the author's text exactly as typed, so a document can be written before the plugin providing its shortcode is installed. An unknown name at **view** — the plugin switched off this morning — leaves an HTML comment and a logged warning, which is what `FormWidgets` does for an unregistered field type. A revision shows the marker rather than the output, which is right: history should show what the author wrote.
+
+**No theme shortcodes.** A theme is data and templates; a shortcode is code. A theme that wants one ships a companion plugin.
+
+---
+
 ## [0.31.4] &ndash; 2026-09-02
 
 ### Fixed

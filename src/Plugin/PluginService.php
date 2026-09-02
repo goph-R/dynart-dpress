@@ -10,6 +10,7 @@ use Dynart\Micro\Micro;
 use Dynart\Micro\ViewInterface;
 use Dynart\Micro\Entities\EntityManager;
 use Dynart\Micro\Entities\Migrations;
+use Dynart\Dpress\Content\Shortcodes;
 use Dynart\Dpress\DpressException;
 use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Security\Permissions;
@@ -298,6 +299,12 @@ class PluginService {
         }
         foreach ($plugin->widgets() as $type => $view) {
             Micro::get(FormWidgets::class)->add($type, $view);
+        }
+        foreach ($plugin->shortcodes() as $name => $declared) {
+            // `name => handler` or `name => [handler, kind]`, so the common case stays one line
+            [$handler, $kind] = is_array($declared) && isset($declared[1])
+                ? $declared : [$declared, Shortcodes::INLINE];
+            Micro::get(Shortcodes::class)->add($name, $handler, $kind);
         }
         foreach ($plugin->entities() as $className) {
             Micro::get(EntityManager::class)->registerEntity($className);

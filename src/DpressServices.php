@@ -34,6 +34,9 @@ use Dynart\Dpress\Content\InternalLinks;
 use Dynart\Dpress\Content\LinkTargetResolverInterface;
 use Dynart\Dpress\Content\LinkTargets;
 use Dynart\Dpress\Content\MarkdownRenderer;
+use Dynart\Dpress\Content\Shortcode\VideoShortcode;
+use Dynart\Dpress\Content\ShortcodeRenderer;
+use Dynart\Dpress\Content\Shortcodes;
 use Dynart\Dpress\Content\Slugger;
 use Dynart\Dpress\Content\TreeOrder;
 use Dynart\Dpress\Entity\AuthAttempt;
@@ -187,6 +190,9 @@ class DpressServices {
         Micro::add(MarkdownRenderer::class);
         Micro::add(LinkTargetResolverInterface::class, LinkTargets::class);
         Micro::add(InternalLinks::class);
+        Micro::add(Shortcodes::class);
+        Micro::add(ShortcodeRenderer::class);
+        Micro::add(VideoShortcode::class);
         Micro::add(Slugger::class);
         Micro::add(TreeOrder::class);
         Micro::add(ContentService::class);
@@ -224,9 +230,9 @@ class DpressServices {
      * nothing about media, posts or categories.
      */
     public static function registerContentEvents(): void {
-        Micro::get(EventServiceInterface::class)->subscribe(
-            MarkdownRenderer::EVENT_ENVIRONMENT, [InternalLinks::class, 'onEnvironment']
-        );
+        $events = Micro::get(EventServiceInterface::class);
+        $events->subscribe(MarkdownRenderer::EVENT_ENVIRONMENT, [InternalLinks::class, 'onEnvironment']);
+        $events->subscribe(MarkdownRenderer::EVENT_ENVIRONMENT, [ShortcodeRenderer::class, 'onEnvironment']);
     }
 
     /**
@@ -260,6 +266,22 @@ class DpressServices {
         'checkboxes'  => Dpress::VIEW_NAMESPACE.':widget/checkboxes',
         'permissions' => Dpress::VIEW_NAMESPACE.':widget/permissions',
     ];
+
+    /**
+     * The shortcodes the CMS provides
+     *
+     * Registered through exactly the call a plugin uses, for the reason the widgets are: a
+     * mechanism the core does not eat is a mechanism nobody has tested.
+     */
+    const SHORTCODES = [
+        'video' => [[VideoShortcode::class, 'render'], Shortcodes::BLOCK],
+    ];
+
+    public static function registerShortcodes(Shortcodes $shortcodes): void {
+        foreach (self::SHORTCODES as $name => [$handler, $kind]) {
+            $shortcodes->add($name, $handler, $kind);
+        }
+    }
 
     public static function registerWidgets(FormWidgets $widgets): void {
         foreach (self::WIDGETS as $type => $view) {

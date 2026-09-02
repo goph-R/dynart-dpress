@@ -10,6 +10,7 @@ use Dynart\Micro\RouterInterface;
 use Dynart\Micro\ViewInterface;
 use Dynart\Micro\WebApp;
 use Dynart\Dpress\Security\DpressUser;
+use Dynart\Dpress\Content\Shortcodes;
 use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Media\MediaView;
 use Dynart\Dpress\Service\MediaService;
@@ -124,6 +125,17 @@ abstract class AbstractController {
 
     /**
      * Renders a template with the variables every page needs
+     *
+     * **Shortcodes are expanded over the finished page**, not over `body_html` on the way to a
+     * template. Content HTML reaches a template from five places - a post, a page, and three
+     * listings - and a theme may render any of them from a template of its own. Expanding at each
+     * source is five chances to forget and one more for every theme; expanding here is one call
+     * that nothing can miss.
+     *
+     * A marker is an HTML comment and can only have come from the markdown renderer, because raw
+     * HTML never survives a document. So there is nothing else in a page this can match.
+     *
+     * A page with no shortcode in it pays for one `str_contains` - see `Shortcodes`.
      */
     protected function render(string $template, array $variables = []): string {
         $this->view->set('current_user', $this->currentUser());
@@ -132,7 +144,7 @@ abstract class AbstractController {
         $this->view->set('site_icon', $this->siteIcon());
         $this->view->set('registration_open', $this->registrationOpen());
         $this->view->set('main_menu', $this->menu('main'));
-        return $this->view->fetch($template, $variables);
+        return Micro::get(Shortcodes::class)->expand($this->view->fetch($template, $variables));
     }
 
     /**
