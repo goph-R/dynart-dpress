@@ -5,6 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.33.0] &ndash; 2026-09-02
+
+### Added
+- **`{{ video(…) }}` takes a YouTube or Vimeo link.** `watch?v=`, `youtu.be/`, `/embed/` and `m.youtube.com` for YouTube; `vimeo.com/<id>` and `player.vimeo.com/video/<id>` for Vimeo. A `?t=90` on a share link survives as the player's `start`, because a timestamp is the one thing somebody took care over.
+- The player is served from **`youtube-nocookie.com`**, which is the same player and stores nothing until somebody presses play. A CMS puts embeds on other people's sites for other people's visitors; where both work identically, the quieter one is the default.
+- One `<iframe>` and no wrapper: `aspect-ratio: 16 / 9` lives in the stylesheet, so a theme can restyle it without unpicking a padding trick.
+
+### Notes
+**The host is matched at its end, not searched for.** `notyoutube.com` and `youtube.com.example.net` are not YouTube, and a `str_contains` would embed both — there is a test, and I checked it fails against the naive version.
+
+A library reference and a direct video file still become a `<video>`; anything else still leaves a comment saying so rather than handing a `<video>` element a watch page that fails silently.
+
+---
+
 ## [0.32.1] &ndash; 2026-09-02
 
 ### Fixed

@@ -1,6 +1,6 @@
 # Shortcodes
 
-**Status: built** (dpress 0.32.0).
+**Status: built** (dpress 0.32.0, embeds in 0.33.0).
 
 ```
 {{ video('media#10') }}
@@ -139,9 +139,24 @@ gives for a field type nobody registered.
 {{ video('media#10') }}
 ```
 
-A library reference becomes a `<video>` with the file's URL and its alt text as the label. A
-direct link to a video file becomes the same. **A YouTube or Vimeo link is not handled yet** and
-says so in a comment rather than handing a `<video>` element a watch page, which fails silently.
+One shortcode for every kind of video, dispatching on what it was handed:
+
+| given | rendered |
+|---|---|
+| `media#10` | a `<video>` with the file's URL and its alt text as the label |
+| a link to a video file (`.mp4`, `.webm`, `.ogv`, `.mov`, `.m4v`) | the same |
+| a YouTube link — `watch?v=`, `youtu.be/`, `/embed/`, `m.youtube.com` | the player, from **`youtube-nocookie.com`** |
+| a Vimeo link — `vimeo.com/<id>` or `player.vimeo.com/video/<id>` | the player |
+| anything else | a comment saying so |
+
+`?t=90` on a share link survives as the player's `start`, because a timestamp is the one thing
+somebody took care over.
+
+**The no-cookie domain** serves the same player and stores nothing until somebody presses play.
+Both work identically, so the quieter one is what goes on other people's sites.
+
+**The host is matched at its end, not searched for.** `notyoutube.com` and
+`youtube.com.example.net` are not YouTube, and a `str_contains` would embed both.
 
 It refuses politely: `media#2` naming an image says so, and a file that has been deleted says
 that instead of rendering a player that plays nothing.
