@@ -51,10 +51,11 @@
         .meta { color: #71717a; font-size: 13px; margin: 0 0 10px; }
         .meta a { color: #71717a; }
         /* Nothing an author puts in a document may be wider than the column it is in. A photo
-           straight off a phone is four thousand pixels across, and without this it decides how
-           wide the page is. `height: auto` keeps the shape; `max-width` rather than `width` so a
-           small image stays its own size instead of being blown up to fill. */
-        img { max-width: 100%; height: auto; }
+           straight off a phone is four thousand pixels across, and a video is 1920 whatever the
+           column is; without this either of them decides how wide the page is. `height: auto`
+           keeps the shape, and `max-width` rather than `width` so a small one stays its own size
+           instead of being blown up to fill. */
+        img, video { max-width: 100%; height: auto; }
         .featured img { border-radius: 8px; }
         .tags { margin-top: 20px; }
         .tag { display: inline-block; background: #f4f4f5; border-radius: 999px; padding: 3px 11px;

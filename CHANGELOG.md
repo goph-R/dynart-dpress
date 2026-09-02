@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.32.1] &ndash; 2026-09-02
+
+### Fixed
+- **A video is constrained to its column, the same as an image.** `img, video { max-width: 100%; height: auto }` in the built-in templates and in the example theme — a video is 1920 wide whatever the column is, so without it the `video` shortcode decided how wide the page was.
+
+---
+
 ## [0.32.0] &ndash; 2026-09-02
 
 Shortcodes.
