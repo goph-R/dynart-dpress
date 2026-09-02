@@ -12,8 +12,10 @@ use Dynart\Dpress\DpressException;
 use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Form\AdminForms;
 use Dynart\Dpress\Form\FormFactory;
+use Dynart\Dpress\Media\MediaView;
 use Dynart\Dpress\Query\ListRequest;
 use Dynart\Dpress\Security\Permissions;
+use Dynart\Dpress\Service\MediaService;
 use Dynart\Dpress\Service\SettingService;
 use Dynart\Dpress\Theme\ThemeService;
 
@@ -31,8 +33,8 @@ class SettingsAdminController extends AbstractAdminController {
     const FIELDS = [
         Setting::SITE_NAME => 'string',
         Setting::SITE_DESCRIPTION => 'string',
-        Setting::SITE_LOGO => 'string',
-        Setting::SITE_ICON => 'string',
+        Setting::SITE_LOGO => 'media',
+        Setting::SITE_ICON => 'media',
         Setting::REGISTRATION_OPEN => 'bool',
         Setting::POSTS_PER_PAGE => 'int',
     ];
@@ -47,6 +49,8 @@ class SettingsAdminController extends AbstractAdminController {
         ListRequest $list,
         protected SettingService $settings,
         protected ThemeService $themes,
+        protected MediaService $media,
+        protected MediaView $mediaView,
     ) {
         parent::__construct($view, $router, $request, $config, $jwtAuth, $forms, $list);
     }
@@ -63,10 +67,10 @@ class SettingsAdminController extends AbstractAdminController {
         $form = $this->forms->create(AdminForms::SETTINGS, [
             'themes' => $this->themeOptions(),
             'values' => $values,
-            // resolved here rather than in the template, because turning a stored path into a URL
-            // is `siteAsset()`'s job and a widget has no business knowing about `app.base_url`
-            'site_logo_preview' => $this->siteAsset((string)($values[Setting::SITE_LOGO] ?? '')),
-            'site_icon_preview' => $this->siteAsset((string)($values[Setting::SITE_ICON] ?? '')),
+            // the thumbnail the field shows for what is already chosen, rendered here because a
+            // template has no business asking a service what a media id looks like
+            'site_logo_preview' => $this->mediaPreview((int)($values[Setting::SITE_LOGO] ?? 0)),
+            'site_icon_preview' => $this->mediaPreview((int)($values[Setting::SITE_ICON] ?? 0)),
         ]);
         if ($form->process()) {
             $this->requirePermission(Permissions::SETTING_UPDATE);
@@ -101,6 +105,9 @@ class SettingsAdminController extends AbstractAdminController {
             $this->settings->set($name, match ($type) {
                 'bool' => $values[$name] ? '1' : '0',
                 'int'  => (string)(int)$values[$name],
+                // nothing chosen is stored as nothing rather than as `0`, so "no logo" reads the
+                // same in the database as it does on the screen
+                'media' => (int)$values[$name] > 0 ? (string)(int)$values[$name] : '',
                 default => trim((string)$values[$name]),
             });
         }
@@ -119,11 +126,28 @@ class SettingsAdminController extends AbstractAdminController {
             $values[$name] = match ($type) {
                 'bool' => $this->settings->getBool($name) ? '1' : '',
                 'int'  => (string)$this->settings->getInt($name),
+                // '' rather than '0', or the field would offer a Remove button for a file nobody
+                // has chosen
+                'media' => $this->settings->getInt($name) > 0 ? (string)$this->settings->getInt($name) : '',
                 default => (string)$this->settings->get($name, ''),
             };
         }
         $values['theme'] = $this->themes->active();
         return $values;
+    }
+
+    /**
+     * The thumbnail the field shows for what is already chosen
+     *
+     * Empty when nothing is, and empty when what was chosen has since been deleted - the same
+     * question `AbstractController::brandingAsset()` asks when it renders the header.
+     */
+    protected function mediaPreview(int $id): string {
+        if ($id <= 0) {
+            return '';
+        }
+        $media = $this->media->findById($id);
+        return $media === null || $media->isDeleted() ? '' : $this->mediaView->tag($media, 'thumb');
     }
 
     /**

@@ -255,9 +255,6 @@ class DpressServices {
     const WIDGETS = [
         'markdown'    => Dpress::VIEW_NAMESPACE.':widget/markdown',
         'media'       => Dpress::VIEW_NAMESPACE.':widget/media',
-        // `media` holds an id, `asset` holds a path. Chrome - a logo, a favicon - is named by
-        // path so it does not depend on the library; see `Setting::SITE_LOGO`.
-        'asset'       => Dpress::VIEW_NAMESPACE.':widget/asset',
         'checkboxes'  => Dpress::VIEW_NAMESPACE.':widget/checkboxes',
         'permissions' => Dpress::VIEW_NAMESPACE.':widget/permissions',
     ];

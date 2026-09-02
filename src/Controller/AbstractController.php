@@ -11,6 +11,8 @@ use Dynart\Micro\ViewInterface;
 use Dynart\Micro\WebApp;
 use Dynart\Dpress\Security\DpressUser;
 use Dynart\Dpress\Entity\Setting;
+use Dynart\Dpress\Media\MediaView;
+use Dynart\Dpress\Service\MediaService;
 use Dynart\Dpress\Service\MenuService;
 use Dynart\Dpress\Service\SettingService;
 
@@ -68,14 +70,38 @@ abstract class AbstractController {
      * The logo shown instead of the site's name, as a URL, or '' when there is none
      */
     protected function siteLogo(): string {
-        return $this->siteAsset((string)Micro::get(SettingService::class)->get(Setting::SITE_LOGO, ''));
+        return $this->brandingAsset(Setting::SITE_LOGO, Setting::CONFIG_DEFAULT_LOGO);
     }
 
     /**
      * The icon in the browser's tab, as a URL, or '' when there is none
      */
     protected function siteIcon(): string {
-        return $this->siteAsset((string)Micro::get(SettingService::class)->get(Setting::SITE_ICON, ''));
+        return $this->brandingAsset(Setting::SITE_ICON, Setting::CONFIG_DEFAULT_ICON);
+    }
+
+    /**
+     * A chosen library item, or the configured default when there is not one
+     *
+     * **The fallback is what makes choosing from the library safe.** A logo is chrome: it renders
+     * on pages with no content on them, before anything has been uploaded, and somebody deleting
+     * a file has to not be able to take the header down. Missing, deleted, purged and never-set
+     * all arrive here the same way and leave by the same door.
+     *
+     * Soft-deleted counts as gone. An item in the library's bin is one somebody has said they do
+     * not want, and going on showing it in the header until it is purged would be the surprise.
+     */
+    protected function brandingAsset(string $setting, string $configKey): string {
+        $default = $this->siteAsset((string)$this->config->get($configKey, ''));
+        $id = (int)Micro::get(SettingService::class)->get($setting, 0);
+        if ($id <= 0) {
+            return $default;
+        }
+        $media = Micro::get(MediaService::class)->findById($id);
+        if ($media === null || $media->isDeleted()) {
+            return $default;
+        }
+        return Micro::get(MediaView::class)->url($media);
     }
 
     /**

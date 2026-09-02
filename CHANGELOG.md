@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.27.0] &ndash; 2026-09-02
+
+### Changed
+- **The site logo and the favicon are chosen from the media library.** `site_logo` and `site_icon` hold a media id and use the same picker every other media field does. This replaces the `asset` field of 0.26.0, which kept the value a path and put a Choose… button beside a text box — that answered a docblock rather than the request, and it is gone: the widget, its template, its binder, `MediaView::sitePathOf()` and the `site_path` on media rows.
+- **A fallback is what makes that safe.** `AbstractController::brandingAsset()` renders the chosen item when there is one and it is still in the library, and `dpress.default_logo` / `dpress.default_icon` when there is not. Never chosen, deleted, purged and a fresh installation all take that one branch — there is one way for this to be missing rather than four. **Soft-deleted counts as gone**: something in the bin should leave the header rather than wait for a purge.
+- The defaults are paths, resolved against `app.base_url`, and **empty in core** — dpress ships no logo and cannot know what a site keeps in its own `static` folder. The development app sets them in `dpress.ini`.
+
+### Notes
+The concern the old design protected against was real; what it needed was a fallback, not a path. Every property is still held: the header renders before anything has been uploaded, on pages with no content on them, and deleting a picture cannot take it down.
+
+An existing `site_logo` holding a path is not a media id, so it resolves to the default — which on a site whose default is that same path changes nothing visible. Anything pointing somewhere else needs choosing again.
+
+Costs two primary-key lookups per render when both are chosen: 33.8 ms against 34.4 ms with neither, so inside the noise and not worth caching.
+
+---
+
 ## [0.26.0] &ndash; 2026-09-02
 
 ### Added

@@ -470,62 +470,6 @@
     };
 
     /**
-     * The picker behind an `asset` form field - a logo, a favicon
-     *
-     * The difference from `media` is the whole reason it is a separate field: **this one holds a
-     * path, not an id.** Chrome has to render on a page with no content on it and must not go
-     * down because somebody deleted a library item, so the setting names a file rather than
-     * pointing at one - see `Setting::SITE_LOGO`. The input stays a text box you can type
-     * `/static/logo.svg` into; this is a second way to fill it.
-     *
-     * `site_path` is site-relative, so choosing a file does not write this machine's hostname
-     * into a setting that a production site will read.
-     */
-    function initAssetFields(root) {
-        root.querySelectorAll('[data-asset-field]').forEach(function (field) {
-            if (field.dataset.assetBound) {
-                return;
-            }
-            field.dataset.assetBound = '1';
-            var input = field.querySelector('[data-asset-input]');
-            var preview = field.querySelector('[data-asset-preview]');
-            var clear = field.querySelector('[data-asset-clear]');
-
-            function show(url) {
-                preview.innerHTML = '';
-                if (!url) {
-                    return;
-                }
-                var image = document.createElement('img');
-                image.src = url;
-                image.alt = '';
-                preview.appendChild(image);
-            }
-
-            field.querySelector('[data-asset-pick]').addEventListener('click', function () {
-                Dpress.pickMedia(function (item) {
-                    input.value = item.site_path || '';
-                    show(item.thumbnail_url || item.url);
-                    clear.hidden = false;
-                });
-            });
-
-            clear.addEventListener('click', function () {
-                input.value = '';
-                show('');
-                clear.hidden = true;
-            });
-
-            // typed by hand rather than picked: the preview cannot follow a path this side of the
-            // server, so it gets out of the way rather than showing the previous file
-            input.addEventListener('input', function () {
-                show('');
-                clear.hidden = input.value === '';
-            });
-        });
-    }
-
-    /**
      * The media picker behind a `media` form field
      *
      * The dialog is the media list again - the same endpoint, the same rendering - so a filter
@@ -953,7 +897,6 @@
         initConfirms(root);
         initMarkdown(root);
         initMediaFields(root);
-        initAssetFields(root);
         initLists(root);
         initAttachments(root);
         extraInits.forEach(function (fn) {
