@@ -134,9 +134,11 @@ The attachments panel under the textarea has a **Reference** column showing `med
 token can be read off the row and typed by hand. The insert button and the toolbar's 🖼 button
 both write the reference rather than the URL.
 
-Nothing else about attachments changed: attaching, hiding and detaching are still immediate
-writes, and **the author owns the attachment list** — removing an image from the text does not
-detach it, and detaching does not touch the text.
+**The toolbar's button attaches nothing** (0.24.0). A reference is all it takes to put a picture
+in an article, so the file need not hang off the post as well, and the button therefore works
+before the post has ever been saved. Attaching stayed what it always was — files listed under the
+published page — and **the author owns that list**: removing an image from the text does not
+detach anything, and detaching does not touch the text.
 
 ## 6. What was deliberately not done
 

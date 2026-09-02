@@ -1,18 +1,22 @@
 # Media in the editor
 
-**Status: built** (micro-entities 0.7.0, dpress 0.15.0 through 0.17.0), with one part of the
-design withdrawn. §3 — reconciling attachments against the markdown — was built and then
-removed: **the attachments are the author's, and nothing recalculates them.** The panel in §4
-replaces it.
+**Status: built** (micro-entities 0.7.0, dpress 0.15.0 through 0.17.0), with **two** parts of the
+design withdrawn — §2 and §3, which were the same idea twice.
+
+- §3, reconciling attachments against the markdown, was built in 0.15.0 and removed in 0.16.0:
+  **the attachments are the author's, and nothing recalculates them.**
+- §2, the `hidden` flag itself, went in 0.24.0. Inserting a picture attaches nothing at all now,
+  so there is no attachment that needs hiding.
 
 The goal, in one sentence: **while writing a post you can insert a picture without leaving the
-page** — pick one from the library or upload a new one in a dialog, and the URL lands in the
-markdown at the cursor.
+page** — pick one from the library or upload a new one in a dialog, and a reference to it lands
+in the markdown at the cursor.
 
 Three things follow from that sentence, and each is a decision rather than a mechanism:
 
-1. An image inserted into the text becomes an **attachment of that content, marked hidden**, so
-   it is not listed twice on the public page.
+1. ~~An image inserted into the text becomes an **attachment of that content, marked hidden**, so
+   it is not listed twice on the public page.~~ **Withdrawn** — it becomes a `media#<id>` in the
+   text and nothing else. See §2.
 2. Uploading has to work **inside a dialog**, so the upload endpoint has to answer JSON.
 3. The markdown field stays **exactly what it is** — a textarea with a toolbar — and gains one
    more button.
@@ -65,7 +69,27 @@ comes back:
 
 ---
 
-## 2. `ContentAttachment.hidden`
+## 2. `ContentAttachment.hidden` — *withdrawn*
+
+> **Built in 0.15.0, removed in 0.24.0.** The flag answered a question that no longer gets asked:
+> it existed because inserting a picture *attached* it, and an attached picture that is already
+> in the article should not be listed under it as well. Inserting now writes a `media#<id>` and
+> attaches nothing, so there is no such row and nothing to hide.
+>
+> What replaced it is a distinction rather than a flag. **An attachment is a file somebody
+> attached on purpose; an image in the body is a reference in the text.** Those are two different
+> things and they now live in two different places, instead of one table holding both and a
+> boolean keeping them apart. The editor's list and the public list ask the same question and get
+> the same answer, which is the whole of what §2 was buying.
+>
+> The one thing genuinely lost was `usageCount()`: with no attachment row, deleting a picture
+> that an article shows would have warned about nothing. It counts `media#<id>` in the markdown
+> instead — a `like` candidate count, on the same terms as `ContentService::referrerIds()`.
+>
+> Kept below for the record, because the "on the link, not on the media" reasoning is right and
+> will apply again to whatever the next per-use fact turns out to be.
+
+### The design that was withdrawn, for the record
 
 `views/content/single.phtml` and `page.phtml` both render an **Attachments** list from
 `MediaService::attachmentsOf()`. An image that is already visible inside the article must not be
@@ -161,22 +185,22 @@ site moved — the same reasoning as `siteAsset()` in `AbstractController`.
 
 ## 4. The attachments panel
 
-Under the markdown field, outside the editor's `<form>`, a `DynamicList` of everything attached
-to this content — hidden included, since the whole point is to be able to un-hide from it.
+Under the markdown field, outside the editor's `<form>`, a `DynamicList` of what is attached to
+this content. It appears once the post exists, because attaching needs an id to attach to; on a
+new post there is no panel rather than a panel explaining that there is nothing it can do.
 
 | Row action | Does |
 |---|---|
-| **Insert** | writes `![alt](url)` into the textarea at the cursor. Client side only |
-| **Hide** / **Show** | flips `hidden`. Two actions with `visibleWhen`, not a toggle — the same pattern as publish/unpublish |
+| **Insert** | writes `![alt](media#<id>)` into the textarea at the cursor. Client side only |
 | **Detach** | removes the link. **Leaves the text alone**, and says so in the confirmation |
 
-Plus **Add attachment**, which picks a library item and attaches it *visible*, and the toolbar's
-button, which picks one, attaches it *hidden*, and inserts it into the body.
+Plus **Add attachment**, which picks a library item and attaches it. That is the only thing that
+attaches anything.
 
-Those two differ in exactly two ways and share everything else. Hidden-and-inserted is one act
-because a picture in the article should not be listed under it as well; visible-and-not-inserted
-is the other because that is what an attachment list is for. **Neither decides anything
-afterwards.**
+The toolbar's image button is a **separate mechanism** that happens to open the same picker: it
+writes a reference into the text and touches no attachment, so it works on a post that has never
+been saved. A file can be attached, shown in the body, either, or both — **nothing decides any of
+that on the author's behalf, and nothing recalculates it afterwards.**
 
 **Everything writes at once, over `Dpress.send()`** — the same POST a row action makes, sent with
 `fetch` so the editor is never reloaded and nothing typed is lost. One write model, the same as
@@ -264,6 +288,19 @@ needs nothing from it either way.
 **Front end**
 - Nothing. `attachmentsOf()` keeps its meaning, so the themes keep working and inline images
   simply stop appearing twice.
+
+**dpress (0.24.0) — taking §2 back out again**
+- `src/Entity/ContentAttachment.php` — `hidden` gone. The column goes with it in `CreateSchema`,
+  which is a squash rather than a migration, so there is nothing to alter.
+- `src/Query/CoreQueries.php` — `contentAttachments()` has no flag and no context.
+- `src/Service/MediaService.php` — `setAttachmentHidden()` and `allAttachmentsOf()` deleted,
+  `attach()` loses its parameter, `usageCount()` counts `media#<id>` in the markdown instead.
+- `src/Controller/Admin/ContentAdminController.php` — the `attachment-visibility` route, the
+  visibility column and the two row actions are gone; `attach_url` no longer reaches the form.
+- `src/Form/AdminForms.php`, `assets/admin.js` — `data-attach-hidden="<url>"` becomes
+  `data-insert-media`, and the button stops being disabled on an unsaved post.
+- `views/admin/content/edit.phtml` — the explanatory paragraph and the empty-state text go; on a
+  new post the panel does not render at all.
 
 ---
 

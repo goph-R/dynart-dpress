@@ -33,7 +33,6 @@ class MediaService {
     const EVENT_PURGED = 'media:purged';
     const EVENT_ATTACHED = 'media:attached';
     const EVENT_DETACHED = 'media:detached';
-    const EVENT_ATTACHMENT_CHANGED = 'media:attachment_changed';
     const EVENT_DERIVATIVE_CREATED = 'media:derivative_created';
 
     const CONFIG_MAX_SIZE = 'media.max_size';
@@ -80,21 +79,29 @@ class MediaService {
     /**
      * How many pieces of content use this item, so a delete can say what it affects
      *
-     * **Counts hidden attachments too.** An image inside an article body breaks the page exactly
-     * as thoroughly as a listed one when the file goes away, so "is anybody using this" is not
-     * the same question as "what does the public list show".
+     * **Three ways to use a file, and the body text is one of them.** An image inside an article
+     * is not attached to it - it is a `media#<id>` in the markdown - and it breaks the page
+     * exactly as thoroughly as a listed download when the file goes away. Counting only the
+     * attachment rows would call the most common use of a picture "unused".
+     *
+     * A **candidate** count, on the same terms as `ContentService::referrerIds()`: `like
+     * '%media#12%'` also matches `media#123`, and no amount of SQL is going to parse markdown.
+     * The number is advisory - it warns before a purge, it never refuses one - so erring high is
+     * the harmless direction.
+     *
+     * Distinct content, not distinct mentions: a post that attaches a file *and* shows it in the
+     * body is one thing that breaks, not two.
      */
     public function usageCount(int $mediaId): int {
-        $attachments = (int)$this->db->fetchOne(
-            'select count(1) from '.$this->em->safeTableName(ContentAttachment::class).' where `media_id` = :id',
-            [':id' => $mediaId]
+        $content = $this->em->safeTableName(\Dynart\Dpress\Entity\Content::class);
+        $ids = $this->db->fetchColumn(
+            'select `content_id` from '.$this->em->safeTableName(ContentAttachment::class)
+                .' where `media_id` = :attached'
+            .' union select `id` from '.$content.' where `featured_media_id` = :featured'
+            .' union select `id` from '.$content.' where `markdown` like :mentioned',
+            [':attached' => $mediaId, ':featured' => $mediaId, ':mentioned' => '%media#'.$mediaId.'%']
         );
-        $featured = (int)$this->db->fetchOne(
-            'select count(1) from '.$this->em->safeTableName(\Dynart\Dpress\Entity\Content::class)
-                .' where `featured_media_id` = :id',
-            [':id' => $mediaId]
-        );
-        return $attachments + $featured;
+        return count($ids);
     }
 
     // --- Uploading ---
@@ -362,10 +369,7 @@ class MediaService {
 
     // --- Attachments ---
 
-    /**
-     * @param bool $hidden Attached, but not for the public list - an image inside the body
-     */
-    public function attach(int $contentId, int $mediaId, int $position = 0, bool $hidden = false): void {
+    public function attach(int $contentId, int $mediaId, int $position = 0): void {
         if ($this->isAttached($contentId, $mediaId)) {
             return;
         }
@@ -373,7 +377,6 @@ class MediaService {
         $attachment->content_id = $contentId;
         $attachment->media_id = $mediaId;
         $attachment->position = $position;
-        $attachment->hidden = $hidden;
         $this->em->save($attachment);
         $this->events->emit(self::EVENT_ATTACHED, [$contentId, $mediaId]);
     }
@@ -397,24 +400,6 @@ class MediaService {
         $this->events->emit(self::EVENT_DETACHED, [$contentId, $mediaId]);
     }
 
-    /**
-     * Shows or hides an attachment on the public page
-     *
-     * Through the entity manager rather than an `update` statement, so the change is audited
-     * like every other one - "who took that off the page" is the same kind of question as "who
-     * granted that role".
-     */
-    public function setAttachmentHidden(int $contentId, int $mediaId, bool $hidden): void {
-        // positional, in the order the primary key columns are declared: content_id, media_id
-        $attachment = $this->em->findById(ContentAttachment::class, [$contentId, $mediaId]);
-        if (!$attachment instanceof ContentAttachment) {
-            return;
-        }
-        $attachment->hidden = $hidden;
-        $this->em->save($attachment);
-        $this->events->emit(self::EVENT_ATTACHMENT_CHANGED, [$contentId, $mediaId]);
-    }
-
     public function isAttached(int $contentId, int $mediaId): bool {
         return (int)$this->db->fetchOne(
             'select count(1) from '.$this->em->safeTableName(ContentAttachment::class)
@@ -429,18 +414,6 @@ class MediaService {
     public function attachmentsOf(int $contentId): array {
         return $this->queryExecutor->findAll($this->queries->create('content_attachments', ['content_id' => $contentId]));
     }
-
-    /**
-     * Everything attached, including what the public list leaves out
-     *
-     * @return array The media rows, inline images and all
-     */
-    public function allAttachmentsOf(int $contentId): array {
-        return $this->queryExecutor->findAll(
-            $this->queries->create('content_attachments', ['content_id' => $contentId, 'with_hidden' => true])
-        );
-    }
-
 
     /**
      * Removes every attachment of a piece of content, through the entity manager

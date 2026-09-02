@@ -341,26 +341,20 @@
                 });
                 toolbar.appendChild(button);
             });
-            // The one toolbar button that is not a formatting mark: it attaches a file to this
-            // post *and* writes it into the body. Rendered only where the server said there is
-            // an attach endpoint, and inactive until the post has an id to attach to.
-            if (textarea.hasAttribute('data-attach-hidden')) {
-                var attachUrl = textarea.getAttribute('data-attach-hidden');
+            // The one toolbar button that is not a formatting mark: it picks a file from the
+            // library and writes a reference to it here. It attaches nothing and needs no post
+            // id, so it works on something that has never been saved.
+            if (textarea.hasAttribute('data-insert-media')) {
                 var insert = document.createElement('button');
                 insert.type = 'button';
                 insert.className = 'markdown-insert';
                 insert.textContent = '🖼';
-                if (attachUrl === '') {
-                    insert.disabled = true;
-                    insert.title = 'Save the post first, then you can attach files to it';
-                } else {
-                    insert.title = 'Attach a file and insert it here';
-                    insert.addEventListener('click', function () {
-                        pickAndAttach(attachUrl, true, function (item) {
-                            Dpress.insertMedia(item, textarea);
-                        });
+                insert.title = 'Insert a file from the library';
+                insert.addEventListener('click', function () {
+                    Dpress.pickMedia(function (item) {
+                        Dpress.insertMedia(item, textarea);
                     });
-                }
+                });
                 toolbar.appendChild(insert);
             }
 
@@ -411,25 +405,17 @@
     // --- attachments, in the content editor ---
 
     /**
-     * Picks a library item, attaches it, and does whatever the caller wanted afterwards
+     * Picks a library item and attaches it to this post
      *
-     * The two buttons differ in exactly two ways, so they share everything else: the toolbar's
-     * attaches **hidden** and then writes the file into the body, because a picture that is in
-     * the article should not be listed under it as well; "Add attachment" attaches visible and
-     * writes nothing, because that is what an attachment list is for.
-     *
-     * Neither decides anything afterwards. Whether a row is hidden, and whether the body still
-     * mentions it, stays the author's - nothing here recalculates it later.
+     * Attaching is all it does. The toolbar's image button is a different thing entirely - it
+     * writes a `media#<id>` into the text and touches no attachment - so the two no longer share
+     * anything, and neither of them decides what the other means. A file can be attached and
+     * shown in the body, either, or both; that stays the author's, and nothing recalculates it.
      */
-    function pickAndAttach(attachUrl, hidden, after) {
+    function pickAndAttach(attachUrl) {
         Dpress.pickMedia(function (item) {
-            Dpress.send(attachUrl, {media_id: item.id, hidden: hidden ? 1 : 0})
-                .then(function () {
-                    refreshAttachments();
-                    if (after) {
-                        after(item);
-                    }
-                })
+            Dpress.send(attachUrl, {media_id: item.id})
+                .then(refreshAttachments)
                 .catch(function (error) {
                     console.error('dpress: the file could not be attached', error);
                     global.alert('That file could not be attached. Reload the page and try again.');
@@ -448,13 +434,13 @@
      * The "Add attachment" button beside the list
      */
     function initAttachments(root) {
-        root.querySelectorAll('[data-attach-visible]').forEach(function (button) {
+        root.querySelectorAll('[data-attach]').forEach(function (button) {
             if (button.dataset.attachBound) {
                 return;
             }
             button.dataset.attachBound = '1';
             button.addEventListener('click', function () {
-                pickAndAttach(button.getAttribute('data-attach-visible'), false, null);
+                pickAndAttach(button.getAttribute('data-attach'));
             });
         });
     }

@@ -215,6 +215,17 @@ const tests = {
         assert.strictEqual(it.paging().children.length, 0);
     },
 
+    /**
+     * The attachments panel is a heading, an "Add attachment" button and this list. Empty, it
+     * has nothing to add to what the heading already said, so it says nothing rather than
+     * drawing a box around a sentence nobody needs.
+     */
+    'an empty noResults means the list says nothing at all'() {
+        const it = build({columnViews: COLUMNS, texts: {noResults: ''}}, {items: [], total: 0});
+        assert.strictEqual(it.status().textContent, '');
+        assert.strictEqual(it.status().style.display, 'none');
+    },
+
     'one page needs no pager'() {
         const it = build({columnViews: COLUMNS, pageSize: 25}, {items: TWO_ROWS.items, total: 2});
         assert.strictEqual(it.paging().children.length, 0);

@@ -545,7 +545,9 @@
                 table.style.display = 'none';
                 status.className = 'list-status no-results';
                 status.textContent = texts.noResults;
-                status.style.display = '';
+                // an empty `noResults` means say nothing at all, rather than draw an empty box:
+                // some lists sit under a heading that has already said what they are
+                status.style.display = texts.noResults === '' ? 'none' : '';
             } else {
                 table.style.display = '';
                 status.style.display = 'none';

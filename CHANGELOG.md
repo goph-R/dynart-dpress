@@ -5,6 +5,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.24.0] &ndash; 2026-09-02
+
+Attachments are files, not an index of the article.
+
+### Changed
+- **Putting a picture in the text attaches nothing.** The toolbar's 🖼 button picks a library item and writes `![alt](media#12)`, and that is the whole of it. A reference is all it takes to show a file, so the file need not also hang off the post — which means the button now works on a post that has **never been saved**, where it used to be disabled with an apology.
+- **Attachments are the files somebody attached on purpose**, listed under the published page. "Add attachment" is the only thing that attaches.
+- `MediaService::usageCount()` counts `media#<id>` in `markdown` as well as the attachment and featured rows, so deleting a picture an article shows still warns about it. A `like` candidate count on the same terms as `ContentService::referrerIds()`, and it counts **distinct content**: a post that attaches a file and shows it in the body is one thing that breaks, not two.
+- An empty `noResults` in a list configuration now renders nothing at all rather than an empty box.
+
+### Removed
+- **`ContentAttachment.hidden`**, with `MediaService::setAttachmentHidden()` and `allAttachmentsOf()`, the `with_hidden` context on `contentAttachments()`, the **On the page** column, the Hide/Show row actions and `POST /admin/content/?/attachment-visibility/?`. The flag existed because inserting a picture used to attach it and an attached picture already in the article should not be listed under it as well; with nothing attached there is nothing to hide.
+- The paragraph above the attachment list explaining all of that, and "Nothing attached yet." On a post that does not exist yet the panel does not render at all, instead of a heading and a disabled button that explain themselves away.
+
+### Notes
+**A distinction instead of a flag.** One table held two different things — files somebody attached, and images the text happens to show — and a boolean kept them apart. They are now two mechanisms that share nothing but the picker dialog, and the editor's list and the public list ask the same question and get the same answer.
+
+The one thing genuinely lost was that an inline image no longer has a row saying it is in use, which is what `usageCount()` now goes to the markdown for.
+
+**The `hidden` column goes out of `CreateSchema` rather than through a migration**, which needs the database dropped and recreated — the licence that holds until 1.0.0.
+
+---
+
 ## [0.23.0] &ndash; 2026-08-06
 
 Plugins.

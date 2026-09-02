@@ -176,29 +176,16 @@ class CoreQueries {
     /**
      * The attachments of a piece of content
      *
-     * **Hidden ones are left out unless asked for.** An image inside the article body is
-     * attached, but it is already on the page - listing it again under "Attachments" says the
-     * same thing twice. Filtering here rather than in the templates means a theme gets it right
-     * without knowing the rule exists.
-     *
-     * `with_hidden` is for the places that need the true picture rather than the published one:
-     * the admin's "where is this used", and anything deciding whether a file is safe to remove.
+     * **All of them, and there is nothing else to show.** An attachment is a file somebody
+     * attached on purpose; an image inside the body is a `media#<id>` in the markdown and was
+     * never a row in this table. So the editor's list and the public one ask the same question
+     * and get the same answer, which is why there is no flag here any more.
      */
     public function contentAttachments(array $context): Query {
         $query = new Query(Media::class);
         $query->addInnerJoin([ContentAttachment::class, 'ca'], '`ca`.`media_id` = '.$this->safeTable(Media::class).'.`id`');
         $query->addCondition('`ca`.`content_id` = :contentId', [':contentId' => $context['content_id'] ?? 0]);
         $query->addCondition('`deleted_at` is null');
-        if (empty($context['with_hidden'])) {
-            $query->addCondition('`ca`.`hidden` = :notHidden', [':notHidden' => false]);
-            return $query;
-        }
-        // Asking for the hidden ones means wanting to know *which* are hidden, so the flag comes
-        // along. Naming any field drops the default "every column of the source table", so they
-        // have to be listed again - and `hidden` is the one name both tables have, hence the
-        // explicit alias.
-        $query->addFields(array_keys($this->em->tableColumns(Media::class)));
-        $query->addFields(['hidden' => ['`ca`.`hidden`']]);
         return $query;
     }
 

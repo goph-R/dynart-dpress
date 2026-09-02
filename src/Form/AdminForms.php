@@ -60,13 +60,13 @@ class AdminForms {
         $content = $context['content'] ?? null;
         $isPage = $context['is_page'] ?? ($content !== null && $content->isPage());
 
-        // the toolbar's insert button only exists where the server put an endpoint on the field,
-        // and it is inactive while that endpoint is empty - which is what a new post has, since
-        // there is no id to attach anything to yet
+        // The toolbar's insert button exists where the server said this user may see the library.
+        // It writes a `media#<id>` reference and nothing else - no id of its own is needed, so it
+        // works on a post that has never been saved.
         $markdown = ['type' => 'markdown', 'label' => 'Content',
                      'description' => 'The first line that is only --- separates the lead from the body.'];
         if (!empty($context['can_attach'])) {
-            $markdown['attributes'] = ['data-attach-hidden' => (string)($context['attach_url'] ?? '')];
+            $markdown['attributes'] = ['data-insert-media' => '1'];
         }
         $form->addFields([
             'title'    => ['type' => 'text', 'label' => 'Title'],

@@ -249,7 +249,9 @@ class ContentAdminController extends AbstractAdminController {
                 'endpoint'  => $base.'/attachments'.$id,
                 'pageSize'  => 50,
                 'allOrderDisabled' => true,
-                'texts'     => ['noResults' => 'Nothing attached yet.'],
+                // An empty attachment list says everything it has to say by being empty, and the
+                // "Add attachment" button above it is already the invitation.
+                'texts'     => ['noResults' => ''],
                 'columns'   => [
                     'thumbnail_html' => ['label' => '', 'view' => 'html', 'sortable' => false, 'width' => '52px'],
                     // what to type to put this file in the text. The insert button writes it for
@@ -258,27 +260,11 @@ class ContentAdminController extends AbstractAdminController {
                     'ref'            => ['label' => 'Reference', 'sortable' => false, 'width' => '90px'],
                     'file_name'      => ['label' => 'File'],
                     'alt'            => ['label' => 'Alt text'],
-                    'visibility'     => ['label' => 'On the page', 'view' => 'badge', 'options' => [
-                        'labels'  => ['listed' => 'Listed', 'hidden' => 'Hidden'],
-                        'classes' => ['listed' => 'published', 'hidden' => 'draft'],
-                    ]],
                 ],
                 'rowActions' => [
                     [
                         'type' => 'insert', 'title' => 'Insert into the text', 'insert' => true,
                         'icon' => $this->icon('insert'),
-                    ],
-                    [
-                        'type' => 'unpublish', 'title' => 'Hide from the attachment list',
-                        'icon' => $this->icon('unpublish'),
-                        'ajax' => $base.'/attachment-visibility'.$id, 'params' => ['hidden' => 1],
-                        'visibleWhen' => ['hidden' => false],
-                    ],
-                    [
-                        'type' => 'publish', 'title' => 'Show in the attachment list',
-                        'icon' => $this->icon('publish'),
-                        'ajax' => $base.'/attachment-visibility'.$id, 'params' => ['hidden' => 0],
-                        'visibleWhen' => ['hidden' => true],
                     ],
                     [
                         'type' => 'delete', 'title' => 'Detach', 'icon' => $this->icon('delete'),
@@ -364,8 +350,6 @@ class ContentAdminController extends AbstractAdminController {
             // and nothing moved, which is exactly the bug this whole method exists to fix
             'can_publish' => $this->can(Permissions::forContent($type, 'publish')),
             'can_attach'  => $this->can(Permissions::MEDIA_VIEW),
-            'attach_url'  => $content !== null
-                ? $this->router->url('/admin/content/'.$type.'/attach/'.$content->id) : '',
             // the thumbnail the field shows for what is already chosen. Rendered here because a
             // template has no business asking a service what a media id looks like.
             'featured_preview' => $this->featuredPreview($content),
@@ -479,10 +463,6 @@ class ContentAdminController extends AbstractAdminController {
     /**
      * The files attached to one piece of content
      *
-     * **Everything, hidden included.** This is the editor's own list, and the whole point of it
-     * is to show what is attached and let somebody change it - a list that quietly omitted the
-     * hidden ones would be a list you cannot un-hide from.
-     *
      * The permission is the *content's*: somebody who may edit this post may say what hangs off
      * it. `media.view` is not enough and not required - the library and this list are different
      * questions.
@@ -493,7 +473,7 @@ class ContentAdminController extends AbstractAdminController {
         $content = $this->found($this->content->findById((int)$id));
         $this->assertType($content, $type);
         $rows = [];
-        foreach ($this->media->allAttachmentsOf($content->id) as $media) {
+        foreach ($this->media->attachmentsOf($content->id) as $media) {
             $rows[] = [
                 'id'             => (int)$media['id'],
                 'ref'            => 'media#'.(int)$media['id'],
@@ -501,11 +481,6 @@ class ContentAdminController extends AbstractAdminController {
                 'title'          => (string)($media['title'] ?? ''),
                 'alt'            => (string)($media['alt'] ?? ''),
                 'category'       => $media['category'],
-                // the flag the row actions branch on, and a word for the column to show. The
-                // badge view looks its label up by the value, and a JSON `false` is not a key
-                // anybody can write in a labels map.
-                'hidden'         => (bool)$media['hidden'],
-                'visibility'     => $media['hidden'] ? 'hidden' : 'listed',
                 'url'            => $this->mediaView->rowUrl($media),
                 'thumbnail_html' => $this->mediaView->rowTag($media),
             ];
@@ -516,17 +491,15 @@ class ContentAdminController extends AbstractAdminController {
     /**
      * Attaches a library item to this content
      *
-     * `hidden` comes from the caller rather than being decided here: the button above the
-     * textarea attaches hidden, because it also writes the image into the body and a picture
-     * that is in the article should not be listed under it as well. "Add attachment" attaches
-     * visible, because that is what an attachment list is for. Which one it is stays the
-     * author's to change afterwards, and nothing recalculates it behind their back.
+     * Only ever from the "Add attachment" button. Putting a picture in the text does not come
+     * through here and attaches nothing: the body carries a `media#<id>` reference, and the
+     * attachment list is the list of files, not an index of what the article shows.
      */
     #[Route('POST', '/admin/content/?/attach/?')]
     public function attach(string $type, string $id): array {
         $content = $this->attachable($type, $id);
         $media = $this->found($this->media->findById((int)$this->request->get('media_id', 0)));
-        $this->media->attach($content->id, $media->id, 0, (bool)$this->request->get('hidden', false));
+        $this->media->attach($content->id, $media->id);
         return $this->answer();
     }
 
@@ -538,25 +511,10 @@ class ContentAdminController extends AbstractAdminController {
     }
 
     /**
-     * Shows or hides an attachment on the public page
-     *
-     * A toggle rather than two actions, because it is one state with two values and the row
-     * already knows which it is in.
-     */
-    #[Route('POST', '/admin/content/?/attachment-visibility/?')]
-    public function attachmentVisibility(string $type, string $id): array {
-        $content = $this->attachable($type, $id);
-        $this->media->setAttachmentHidden(
-            $content->id, (int)$this->request->get('media_id', 0), (bool)$this->request->get('hidden', false)
-        );
-        return $this->answer();
-    }
-
-    /**
      * The content an attachment action is allowed to touch
      *
-     * Every one of these is a POST that changes something, so all three go through the same
-     * check: the update permission for this type, a valid action token, and a row that exists
+     * Attaching and detaching are both a POST that changes something, so they go through the
+     * same check: the update permission for this type, a valid action token, and a row that exists
      * and really is of the type the URL claims.
      */
     protected function attachable(string $type, string $id): Content {
