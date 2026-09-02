@@ -83,6 +83,28 @@ class AssetController extends AbstractController {
      * folder; and the plugin has to be one the loader **actually loaded**, so a folder somebody
      * dropped in but never enabled serves nothing.
      */
+    /**
+     * The syntax highlighter, on the **front end** rather than under `/admin`
+     *
+     * The only asset a visitor ever loads, and only on a page that has a code block on it - see
+     * `CodeAssets`. It lives on this controller because the serving is identical: a file with no
+     * data in it, an allowlist, and the same immutable headers.
+     *
+     * The name is matched against the files that are actually there rather than against a
+     * pattern. A `..` cannot survive `basename()`, but an allowlist does not need arguing about.
+     */
+    #[AllowAnonymous]
+    #[Route('GET', '/assets/enlighter/?')]
+    public function enlighterAsset(string $file): string {
+        $path = dirname(__DIR__, 3).'/assets/enlighter/'.basename($file);
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        if (!isset(self::PLUGIN_TYPES[$extension]) || !is_file($path)) {
+            $this->app()->sendError(404);
+        }
+        $this->sendFile($path, self::PLUGIN_TYPES[$extension]);
+        return '';
+    }
+
     #[AllowAnonymous]
     #[Route('GET', '/admin/assets/plugin/?/?')]
     public function pluginAsset(string $plugin, string $file): string {

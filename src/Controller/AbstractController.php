@@ -10,6 +10,7 @@ use Dynart\Micro\RouterInterface;
 use Dynart\Micro\ViewInterface;
 use Dynart\Micro\WebApp;
 use Dynart\Dpress\Security\DpressUser;
+use Dynart\Dpress\Content\CodeAssets;
 use Dynart\Dpress\Content\Shortcodes;
 use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Media\MediaView;
@@ -144,7 +145,28 @@ abstract class AbstractController {
         $this->view->set('site_icon', $this->siteIcon());
         $this->view->set('registration_open', $this->registrationOpen());
         $this->view->set('main_menu', $this->menu('main'));
-        return Micro::get(Shortcodes::class)->expand($this->view->fetch($template, $variables));
+        $html = Micro::get(Shortcodes::class)->expand($this->view->fetch($template, $variables));
+        return $this->withCodeAssets($html);
+    }
+
+    /**
+     * Puts the highlighter into a page that has code on it, and into no other
+     *
+     * After the page is built rather than before, because whether it has code in it is a fact
+     * about the finished HTML - a listing shows leads, a post shows a body, and a theme decides
+     * which. The alternative is a view variable every layout has to remember to print.
+     *
+     * `</head>` is where it goes; a page whose layout has none gets nothing, and gets it silently,
+     * because a front end without a `<head>` is somebody rendering a fragment on purpose.
+     */
+    protected function withCodeAssets(string $html): string {
+        $assets = Micro::get(CodeAssets::class);
+        if (!$assets->needed($html)) {
+            return $html;
+        }
+        $at = stripos($html, '</head>');
+        return $at === false ? $html : substr_replace($html, $assets->tags()."
+", $at, 0);
     }
 
     /**

@@ -64,6 +64,17 @@ class Setting extends Entity {
     const CONFIG_DEFAULT_LOGO = 'dpress.default_logo';
     const CONFIG_DEFAULT_ICON = 'dpress.default_icon';
 
+    /**
+     * Which EnlighterJS stylesheet colours the code blocks
+     *
+     * A name from `CodeAssets::THEMES`, or '' for no highlighting at all - which is a real choice,
+     * not a broken one: the code still renders, as a plain block, and the page loads no script.
+     *
+     * Nothing about a theme is stored in a document, so changing this changes every post at once
+     * and needs no re-render. That is the whole reason the highlighting is not done at save.
+     */
+    const CODE_THEME = 'code_theme';
+
     const REGISTRATION_OPEN = 'registration_open';
     const POSTS_PER_PAGE = 'posts_per_page';
 

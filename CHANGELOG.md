@@ -5,6 +5,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.34.0] &ndash; 2026-09-02
+
+Syntax highlighting.
+
+### Added
+- **` ```php ` colours the block.** Thirteen themes, chosen in Settings, with *No highlighting* among them. [EnlighterJS 3.4.0](https://enlighterjs.org) (MPL-2.0) vendored in `assets/enlighter/`, served from this site rather than a CDN — a visitor reading somebody's code sample should not be announced to a third party for it.
+- An alias table for the names people actually type: `c++`, `c#`, `js`, `py`, `yml`, `bash`, `html` and the rest. Anything not in it is passed through, so a language the highlighter learns later needs no change here.
+- `GET /assets/enlighter/?` — the only asset a visitor ever loads.
+
+### Notes
+**None of it is stored.** A block renders to `<pre data-enlighter-language="php">` and the colours happen in the browser. A server-side highlighter would write a `<span>` per token into `body_html` — markup about how a thing looks, living inside the content, which is the mistake `media#12` exists to avoid one level down. It would also mean re-rendering every post to change a theme, and again to upgrade the highlighter. As built, both change every page at once and touch no document.
+
+**A page with no code block loads nothing.** The front end ships no JavaScript, and that stays true everywhere it can — one `str_contains` decides, the same guard the shortcodes use. Without JavaScript a code block renders plain and correctly escaped, which is what it did before.
+
+**Off is the word `none`.** `SettingService::get()` reads `''` as *absent* and answers with the default, so an empty setting would mean "the default theme" rather than "no highlighting" — found while testing it. A theme name that is not one of the thirteen is treated as off rather than guessed at, because a stylesheet path is not something to build out of whatever is in a row.
+
+Posts written before this need one `dpress content:rerender` to gain the attribute. That is the only migration this feature will ever need.
+
+---
+
 ## [0.33.0] &ndash; 2026-09-02
 
 ### Added

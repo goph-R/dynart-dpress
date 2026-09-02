@@ -9,6 +9,7 @@ use Dynart\Micro\RequestInterface;
 use Dynart\Micro\RouterInterface;
 use Dynart\Micro\ViewInterface;
 use Dynart\Dpress\DpressException;
+use Dynart\Dpress\Content\CodeAssets;
 use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Form\AdminForms;
 use Dynart\Dpress\Form\FormFactory;
@@ -37,6 +38,7 @@ class SettingsAdminController extends AbstractAdminController {
         Setting::SITE_ICON => 'media',
         Setting::REGISTRATION_OPEN => 'bool',
         Setting::POSTS_PER_PAGE => 'int',
+        Setting::CODE_THEME => 'string',
     ];
 
     public function __construct(
@@ -66,6 +68,9 @@ class SettingsAdminController extends AbstractAdminController {
         $values = $this->currentValues();
         $form = $this->forms->create(AdminForms::SETTINGS, [
             'themes' => $this->themeOptions(),
+            // `none` rather than '': an empty setting is read as absent and answers with the
+            // default, so "off" has to be a word
+            'code_themes' => [CodeAssets::NONE => 'No highlighting'] + CodeAssets::THEMES,
             'values' => $values,
             // the thumbnail the field shows for what is already chosen, rendered here because a
             // template has no business asking a service what a media id looks like

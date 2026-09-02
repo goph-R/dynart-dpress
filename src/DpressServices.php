@@ -30,6 +30,8 @@ use Dynart\Micro\Entities\QueryExecutor;
 use Dynart\Dpress\Cli\SchemaCommands;
 use Dynart\Dpress\Cli\SystemCommands;
 use Dynart\Dpress\Cli\UserCommands;
+use Dynart\Dpress\Content\CodeAssets;
+use Dynart\Dpress\Content\CodeBlockRenderer;
 use Dynart\Dpress\Content\InternalLinks;
 use Dynart\Dpress\Content\LinkTargetResolverInterface;
 use Dynart\Dpress\Content\LinkTargets;
@@ -191,6 +193,8 @@ class DpressServices {
         Micro::add(LinkTargetResolverInterface::class, LinkTargets::class);
         Micro::add(InternalLinks::class);
         Micro::add(Shortcodes::class);
+        Micro::add(CodeAssets::class);
+        Micro::add(CodeBlockRenderer::class);
         Micro::add(ShortcodeRenderer::class);
         Micro::add(VideoShortcode::class);
         Micro::add(Slugger::class);
@@ -233,6 +237,7 @@ class DpressServices {
         $events = Micro::get(EventServiceInterface::class);
         $events->subscribe(MarkdownRenderer::EVENT_ENVIRONMENT, [InternalLinks::class, 'onEnvironment']);
         $events->subscribe(MarkdownRenderer::EVENT_ENVIRONMENT, [ShortcodeRenderer::class, 'onEnvironment']);
+        $events->subscribe(MarkdownRenderer::EVENT_ENVIRONMENT, [CodeBlockRenderer::class, 'onEnvironment']);
     }
 
     /**

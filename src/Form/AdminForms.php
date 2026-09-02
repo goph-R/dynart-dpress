@@ -249,6 +249,9 @@ class AdminForms {
             'registration_open' => ['type' => 'checkbox', 'label' => 'Registration', 'required' => false,
                                     'text' => 'Anybody may create an account'],
             'posts_per_page'    => ['type' => 'text', 'label' => 'Posts per page', 'required' => false],
+            'code_theme'        => ['type' => 'select', 'label' => 'Code theme', 'required' => false,
+                                    'options' => $context['code_themes'] ?? [],
+                                    'description' => 'Colours the fenced code blocks. Off loads no script at all.'],
             'theme'             => ['type' => 'select', 'label' => 'Theme', 'required' => false,
                                     'options' => $context['themes'] ?? []],
         ], false);
