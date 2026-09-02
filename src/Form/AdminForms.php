@@ -239,10 +239,14 @@ class AdminForms {
         ]);
         $form->addFields([
             'site_description'  => ['type' => 'textarea', 'label' => 'Description', 'required' => false],
-            'site_logo'         => ['type' => 'text', 'label' => 'Logo', 'required' => false,
-                                    'description' => 'Shown instead of the site name. A path like /static/logo.svg, '
-                                        .'or a full URL. The site name stays as its alt text.'],
-            'site_icon'         => ['type' => 'text', 'label' => 'Icon', 'required' => false,
+            // `asset`, not `media`: the value stays a path, so the header does not depend on a
+            // library item still existing. Choose… fills it from the library; typing still works.
+            'site_logo'         => ['type' => 'asset', 'label' => 'Logo', 'required' => false,
+                                    'preview' => (string)($context['site_logo_preview'] ?? ''),
+                                    'description' => 'Shown instead of the site name. Choose a file, or type a path '
+                                        .'like /static/logo.svg or a full URL. The site name stays as its alt text.'],
+            'site_icon'         => ['type' => 'asset', 'label' => 'Icon', 'required' => false,
+                                    'preview' => (string)($context['site_icon_preview'] ?? ''),
                                     'description' => 'The icon in the browser tab. Same idea - /favicon.png.'],
             'registration_open' => ['type' => 'checkbox', 'label' => 'Registration', 'required' => false,
                                     'text' => 'Anybody may create an account'],

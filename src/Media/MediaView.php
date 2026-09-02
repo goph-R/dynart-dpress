@@ -50,6 +50,18 @@ class MediaView {
     }
 
     /**
+     * The same file, named from the site root rather than from the internet
+     *
+     * `/uploads/2026/09/fox-6641fe.mp4`, which `AbstractController::siteAsset()` resolves against
+     * `app.base_url` when it renders. **No hostname**, for the reason every stored reference in
+     * this CMS avoids one: a site moved from a test domain to a real one must not need its
+     * settings rewritten. It is what the picker writes into a setting that names a file by path.
+     */
+    public function sitePathOf(string $relativePath): string {
+        return $this->storage->baseUrl().'/'.ltrim($relativePath, '/');
+    }
+
+    /**
      * An `<img>` for an image, or the category icon for anything else
      *
      * The alt text is the item's own, falling back to an empty one - an empty `alt` is correct

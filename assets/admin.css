@@ -173,6 +173,13 @@ button.link { background: none; border: 0; color: var(--muted); cursor: pointer;
 .media-field { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .media-field-preview img { max-height: 64px; border-radius: var(--radius); display: block; }
 
+/* the same shape, around a text input rather than a hidden one: an asset is named by path, so
+   the path is the thing to show and the picker is a convenience beside it */
+.asset-field { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.asset-field input[type=text] { flex: 1; min-width: 220px; width: auto; }
+.asset-field-preview:empty { display: none; }
+.asset-field-preview img { max-height: 32px; max-width: 120px; border-radius: var(--radius); display: block; }
+
 .markdown-toolbar { display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; }
 .markdown-toolbar button {
     background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);

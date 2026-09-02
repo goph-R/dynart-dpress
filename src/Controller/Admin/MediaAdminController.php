@@ -99,6 +99,9 @@ class MediaAdminController extends AbstractAdminController {
             'created_at'     => $media['created_at'],
             'deleted'        => $media['deleted_at'] !== null,
             'url'            => $this->mediaView->rowUrl($media),
+            // for a setting that names a file by path rather than by id - the site logo, the
+            // favicon. Site-relative, so nothing stores this machine's hostname.
+            'site_path'      => $this->mediaView->sitePathOf((string)($media['path'] ?? '')),
             'thumbnail_url'  => $this->mediaView->rowUrl($media, 'thumb'),
             'thumbnail_html' => $this->mediaView->rowTag($media),
             'edit_url'       => $this->can(Permissions::MEDIA_UPDATE)

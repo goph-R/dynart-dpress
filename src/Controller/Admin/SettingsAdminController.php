@@ -59,9 +59,14 @@ class SettingsAdminController extends AbstractAdminController {
     #[Route('POST', '/admin/settings')]
     public function index(): string {
         $this->requirePermission(Permissions::SETTING_VIEW);
+        $values = $this->currentValues();
         $form = $this->forms->create(AdminForms::SETTINGS, [
             'themes' => $this->themeOptions(),
-            'values' => $this->currentValues(),
+            'values' => $values,
+            // resolved here rather than in the template, because turning a stored path into a URL
+            // is `siteAsset()`'s job and a widget has no business knowing about `app.base_url`
+            'site_logo_preview' => $this->siteAsset((string)($values[Setting::SITE_LOGO] ?? '')),
+            'site_icon_preview' => $this->siteAsset((string)($values[Setting::SITE_ICON] ?? '')),
         ]);
         if ($form->process()) {
             $this->requirePermission(Permissions::SETTING_UPDATE);

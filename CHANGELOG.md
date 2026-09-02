@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.26.0] &ndash; 2026-09-02
+
+### Added
+- **The media picker fills the site logo and favicon.** A new `asset` field type: a text input with a **Choose…** button beside it, a preview, and a Remove. Registered through the same call a plugin uses, so it is available to one.
+- `MediaView::sitePathOf()`, and a `site_path` on every media row — the file named from the site root rather than from the internet.
+
+### Notes
+**The value is still a path, not a media id**, which is why this is its own field rather than the existing `media` one. `Setting::SITE_LOGO` documents the reason and it still holds: a logo is chrome, it renders on pages that show no content at all, it has to work before anything has been uploaded, and deleting a library item must not be able to take the header down with it. So the picker fills a text box rather than replacing it — `/static/logo.svg` is still typeable, and so is a URL on another host.
+
+What the picker writes is **site-relative** (`/uploads/2026/09/fox-6641fe.mp4`), never absolute. An absolute URL would put the machine that chose it into a setting a production site reads, which is the exact thing `media#<id>` exists to avoid everywhere else.
+
+The widget test now walks `DpressServices::WIDGETS` instead of a list written out beside it, so the next field type is covered the moment it is registered.
+
+---
+
 ## [0.25.7] &ndash; 2026-09-02
 
 ### Removed
