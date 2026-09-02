@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.35.4] &ndash; 2026-09-02
+
+### Changed
+- **A blockquote has a 4px left border in `--link`**, a quarter-black background and half an em of vertical padding. Its margin is reset with it: a browser indents a blockquote 40px on the left, which would have left the new rule floating in the gutter rather than marking the column.
+
+---
+
 ## [0.35.3] &ndash; 2026-09-02
 
 ### Changed
