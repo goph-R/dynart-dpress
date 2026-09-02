@@ -195,7 +195,6 @@ class MenuAdminController extends AbstractAdminController {
             'title'    => $menu === null ? 'New menu' : 'Edit menu',
             'form'     => $form,
             'menu'     => $menu,
-            'narrow'   => true,
             'back_url' => $this->router->url('/admin/menus'),
         ]);
     }
@@ -329,7 +328,6 @@ class MenuAdminController extends AbstractAdminController {
             'title'    => $item === null ? 'New menu item' : 'Edit menu item',
             'form'     => $form,
             'menu'     => $menu,
-            'narrow'   => true,
             'back_url' => $this->router->url('/admin/menus/items/'.$menu->id),
         ]);
     }

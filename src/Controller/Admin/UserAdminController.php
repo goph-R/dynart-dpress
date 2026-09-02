@@ -261,7 +261,6 @@ class UserAdminController extends AbstractAdminController {
             'title'    => $user === null ? 'New user' : 'Edit user',
             'form'     => $form,
             'user'     => $user,
-            'narrow'   => true,
             'back_url' => $this->router->url('/admin/users'),
         ]);
     }

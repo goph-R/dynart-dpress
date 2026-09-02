@@ -75,7 +75,6 @@ class SettingsAdminController extends AbstractAdminController {
         return $this->admin('dpress_admin:settings', [
             'title'     => 'Settings',
             'form'      => $form,
-            'narrow'    => true,
             'can_save'  => $this->can(Permissions::SETTING_UPDATE),
             'can_theme' => $this->can(Permissions::THEME_SWITCH),
             'themes'    => $this->themes->all(),

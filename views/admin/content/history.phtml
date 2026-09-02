@@ -15,10 +15,14 @@
                     <tr><th>When</th><th>What</th><th>Title</th><th>Status</th></tr>
                 </thead>
                 <tbody>
+                <?php // `rev_at` and `rev_type`, which is what `revisions()` selects. It said
+                      // `changed_at` and `operation`, so When and What were blank on every
+                      // history screen there has ever been - the same two names the dashboard
+                      // had wrong, in the same way, found the same way: by somebody looking. ?>
                 <?php foreach ($revisions as $revision): ?>
                     <tr>
-                        <td><?= esc_html(substr((string)($revision['changed_at'] ?? ''), 0, 16)) ?></td>
-                        <td><?= esc_html((string)($revision['operation'] ?? '')) ?></td>
+                        <td><?= esc_html(substr((string)($revision['rev_at'] ?? ''), 0, 16)) ?></td>
+                        <td><?= esc_html((string)($revision['rev_type'] ?? '')) ?></td>
                         <td><?= esc_html((string)($revision['title'] ?? '')) ?></td>
                         <td><?= esc_html((string)($revision['status'] ?? '')) ?></td>
                     </tr>

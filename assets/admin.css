@@ -100,7 +100,6 @@ body.admin {
 .admin-nav svg { width: 18px; height: 18px; flex: 0 0 18px; }
 
 .admin-main { flex: 1; min-width: 0; }
-.admin-main.narrow { max-width: 680px; }
 /* focused after a partial load, so somebody reading with a keyboard or a screen reader carries
    on from the new screen rather than from the top of the document - a move, not a highlight */
 .admin-main:focus { outline: none; }

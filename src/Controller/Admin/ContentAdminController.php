@@ -281,7 +281,6 @@ class ContentAdminController extends AbstractAdminController {
             'type'    => $type,
             'form'    => $form,
             'content' => $content,
-            'narrow'  => false,
             'back_url' => $this->router->url('/admin/content/'.$type),
             'view_url' => $content->isPublished() ? $this->router->url($this->content->publicPath($content)) : '',
             // one revision saying an empty row was made is not a history worth offering

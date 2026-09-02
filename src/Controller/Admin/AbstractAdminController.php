@@ -104,11 +104,10 @@ abstract class AbstractAdminController extends AbstractController {
         $this->view->set('admin_assets', $this->pluginAssets());
         $this->view->set('notice', $this->notice());
         $this->view->set('action_form', $this->actionForm());
-        // `title` and `narrow` are the two screen variables the chrome reads, and the layout
-        // fetches `main.phtml` rather than passing its own variables down, so they have to be
-        // view data as well. The composed title is here rather than in the layout because both
-        // the `<title>` element and the fragment's `data-title` need exactly the same string.
-        $this->view->set('narrow', !empty($variables['narrow']));
+        // `title` is a screen variable the chrome reads, and the layout fetches `main.phtml`
+        // rather than passing its own variables down, so it has to be view data as well. The
+        // composed title is here rather than in the layout because both the `<title>` element and
+        // the fragment's `data-title` need exactly the same string.
         $this->view->set('page_title', ((string)($variables['title'] ?? '') ?: 'Admin').' – '.($this->siteName() ?: 'dpress'));
         return $this->view->fetch($template, $variables);
     }

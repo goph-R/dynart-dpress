@@ -159,7 +159,6 @@ class TaxonomyAdminController extends AbstractAdminController {
         return $this->admin('dpress_admin:taxonomy/edit', [
             'title'    => $category === null ? 'New category' : 'Edit category',
             'form'     => $form,
-            'narrow'   => true,
             'back_url' => $this->router->url('/admin/categories'),
         ]);
     }
@@ -306,7 +305,6 @@ class TaxonomyAdminController extends AbstractAdminController {
         return $this->admin('dpress_admin:taxonomy/edit', [
             'title'    => $tag === null ? 'New tag' : 'Edit tag',
             'form'     => $form,
-            'narrow'   => true,
             'back_url' => $this->router->url('/admin/tags'),
         ]);
     }

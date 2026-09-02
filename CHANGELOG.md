@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.25.4] &ndash; 2026-09-02
+
+### Fixed
+- **"When" and "What" were blank on every history screen there has ever been.** The template read `$revision['changed_at']` and `$revision['operation']`; `revisions()` selects `rev_at` and `rev_type`. The same two names, wrong in the same way, as the dashboard in 0.25.2 — six blank columns between them, none of which raised anything, because a missing array key renders an empty cell.
+- The test that pinned this for the dashboard now covers **every template that renders revision rows**, and expands a `select a.*` so it can check a query that names no columns at all. Found by opening the screen and looking, which is twice now; there is a test for it instead.
+
+### Changed
+- **Every admin screen is the same width.** Media edit, media upload, settings, and the menu, taxonomy and user editors were capped at 680px while lists and the content editor ran full width. The `narrow` flag is gone — from the controllers, from `AbstractAdminController::admin()`, from `main.phtml` and from the stylesheet — rather than left as a mode nothing selects.
+
+---
+
 ## [0.25.3] &ndash; 2026-09-02
 
 ### Removed

@@ -12,7 +12,7 @@
  * it survives, and `?ajax=1` in a browser shows exactly what the browser will be given.
  */
 ?>
-<main class="admin-main<?= !empty($narrow) ? ' narrow' : '' ?>" tabindex="-1"
+<main class="admin-main" tabindex="-1"
       data-title="<?= esc_attr($page_title ?? '') ?>"
       data-section="<?= esc_attr($admin_section ?? '') ?>">
     <?php if (!empty($notice)): ?>

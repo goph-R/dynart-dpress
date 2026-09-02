@@ -161,7 +161,6 @@ class MediaAdminController extends AbstractAdminController {
         return $this->admin('dpress_admin:media/upload', [
             'title'  => 'Upload',
             'form'   => $form,
-            'narrow' => true,
             'max_size' => $this->media->humanSize($this->media->maxUploadSize()),
             'allowed'  => array_values(array_unique(array_values(MediaTypes::EXTENSIONS))),
             'back_url' => $this->router->url('/admin/media'),
@@ -224,7 +223,6 @@ class MediaAdminController extends AbstractAdminController {
             'title'  => 'Edit media',
             'form'   => $form,
             'media'  => $media,
-            'narrow' => true,
             'preview' => $this->mediaView->tag($media, 'medium'),
             'url'     => $this->mediaView->url($media),
             'usage'   => $this->media->usageCount($media->id),
