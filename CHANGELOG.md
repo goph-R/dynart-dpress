@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.25.7] &ndash; 2026-09-02
+
+### Removed
+- **The Title column in the media library and the picker dialog.** Found by sweeping every admin list's declared columns against the fields its endpoint actually returns: nothing was broken anywhere, but this one was empty on every row, because a media title is optional and rarely set. The `title` **field** stays in the payload — `Dpress.insertMedia()` uses it as the alt-text fallback when writing a link — and it stays sortable, editable and on the media form.
+
+---
+
 ## [0.25.6] &ndash; 2026-09-02
 
 ### Fixed

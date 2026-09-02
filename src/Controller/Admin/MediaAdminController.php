@@ -132,7 +132,6 @@ class MediaAdminController extends AbstractAdminController {
                 'thumbnail_html' => ['label' => 'Icon', 'view' => 'htmlLink', 'sortable' => false, 'width' => '54px',
                                      'options' => ['hrefProperty' => 'url']],
                 'file_name'  => ['label' => 'File', 'view' => 'link', 'options' => ['hrefProperty' => 'edit_url']],
-                'title'      => ['label' => 'Title'],
                 'category'   => ['label' => 'Kind'],
                 'size'       => ['label' => 'Size', 'view' => 'bytes', 'align' => 'right'],
                 'created_at' => ['label' => 'Uploaded', 'view' => 'dateTime'],

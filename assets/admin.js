@@ -553,7 +553,6 @@
             columnViews: {
                 thumbnail_html: {label: 'Icon', view: global.DynamicListColumnView.html, sortable: false, width: '52px'},
                 file_name: {label: 'File'},
-                title: {label: 'Title'},
                 created_at: {label: 'Uploaded', view: global.DynamicListColumnView.dateTime}
             },
             rowActions: [{
