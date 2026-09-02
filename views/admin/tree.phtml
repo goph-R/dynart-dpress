@@ -33,7 +33,13 @@ $moveUrl = (string)($move_url ?? '');
             <tr>
                 <?php if ($moveUrl !== ''): ?><th class="drag-column"></th><?php endif ?>
                 <?php foreach ($columns as $column): ?>
-                    <th><?= esc_html((string)($column['label'] ?? '')) ?></th>
+                    <?php // one `style`, not one per property: a second attribute of the same name
+                          // is dropped, so a column with both an align and a width would silently
+                          // lose the width ?>
+                    <?php $style = (empty($column['align']) ? '' : 'text-align: '.$column['align'].';')
+                                 .(empty($column['width']) ? '' : 'width: '.$column['width'].';') ?>
+                    <th<?= $style === '' ? '' : ' style="'.esc_attr($style).'"' ?>><?=
+                        esc_html((string)($column['label'] ?? '')) ?></th>
                 <?php endforeach ?>
                 <?php if (!empty($rowActions)): ?><th></th><?php endif ?>
             </tr>
@@ -64,8 +70,14 @@ $moveUrl = (string)($move_url ?? '');
                     }
                     $indented = !empty($column['tree']);
                     ?>
-                    <td<?= $indented ? ' data-tree-label style="padding-left: '
-                            .esc_attr((string)(14 + (int)($row['depth'] ?? 0) * 22)).'px"' : '' ?>><?= $cell ?></td>
+                    <?php
+                    // `data-property` for the same reason a dynamic list carries it: the
+                    // stylesheet reaches a column by name rather than by counting from the left
+                    $style = $indented ? 'padding-left: '.(14 + (int)($row['depth'] ?? 0) * 22).'px;' : '';
+                    $style .= empty($column['align']) ? '' : 'text-align: '.$column['align'].';';
+                    ?>
+                    <td data-property="<?= esc_attr((string)$property) ?>"<?= $indented ? ' data-tree-label' : '' ?><?=
+                        $style === '' ? '' : ' style="'.esc_attr($style).'"' ?>><?= $cell ?></td>
                 <?php endforeach ?>
                 <?php if (!empty($rowActions)): ?>
                     <td class="actions-column">

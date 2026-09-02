@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.31.1] &ndash; 2026-09-02
+
+### Added
+- **A `#` column on the categories screen**, for the reason the content list has one: `category#21` in somebody's markdown is written by hand as often as it is inserted by a button.
+- `dpress_admin:tree` takes `align` and `width` on a column, and tags every cell with `data-property` — the same vocabulary the dynamic lists use, so the id renders muted and tabular there too. The stylesheet rule that did that was scoped to `.dynamic-list`; it now reaches both kinds of table.
+
+### Notes
+The menu items screen has no `#` column, and that is not an oversight: a menu item is not something anything refers to by id. A category is.
+
+---
+
 ## [0.31.0] &ndash; 2026-09-02
 
 ### Changed

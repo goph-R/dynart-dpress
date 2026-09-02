@@ -73,6 +73,9 @@ class TaxonomyAdminController extends AbstractAdminController {
             'title'      => 'Categories',
             'categories' => $this->categoryTree(),
             'columns'    => [
+                // the id, for the reason the content list carries one: `category#21` in somebody's
+                // markdown is written by hand as often as it is inserted
+                'id'   => ['label' => '#', 'align' => 'right', 'width' => '1%'],
                 'name' => ['label' => 'Name', 'tree' => true, 'link' => $canEdit ? 'edit_url' : ''],
                 'slug' => ['label' => 'Slug'],
             ],
