@@ -188,24 +188,24 @@ class ContentAdminController extends AbstractAdminController {
 
     // --- the editor ---
 
-    #[Route('GET', '/admin/content/?/new')]
+    /**
+     * "New" - which writes a row and sends you to the editor for it
+     *
+     * A POST, not a link, for the reason every other write in the admin is one: a link that
+     * changes something can be followed by a prefetcher or a crawler, and this one inserts. It
+     * hands back the author's existing auto-draft when there is one, so clicking it twice does
+     * not make two.
+     *
+     * There is no `create()` any more. `edit()` is the only editor, which is the point of the
+     * whole thing: no screen has to answer "and what does this do before the post exists?".
+     */
     #[Route('POST', '/admin/content/?/new')]
     public function create(string $type): string {
         $this->enter($type, 'create');
-        $form = $this->forms->create(AdminForms::CONTENT, $this->editorContext($type, null));
-        if ($form->process()) {
-            $content = $form->handle(function ($form) use ($type) {
-                $values = $form->values();
-                $data = $this->contentData($values);
-                $data['type'] = $type;
-                $created = $this->content->create($data, (int)$this->currentUser()->id());
-                $this->applyTaxonomy($created, $values);
-                return $created;
-            });
-            $this->applyStatus($content, $form->values(), $type);
-            $this->done('/admin/content/'.$type, 'Created.');
-        }
-        return $this->editor($type, $form, null);
+        $this->requireAction();
+        $content = $this->content->startDraft($type, (int)$this->currentUser()->id());
+        $this->done('/admin/content/'.$type.'/edit/'.$content->id);
+        return '';
     }
 
     #[Route('GET', '/admin/content/?/edit/?')]
@@ -216,6 +216,8 @@ class ContentAdminController extends AbstractAdminController {
         $this->assertType($content, $type);
         $form = $this->forms->create(AdminForms::CONTENT, $this->editorContext($type, $content));
         if ($form->process()) {
+            // read before the save, which is what turns an auto-draft into a draft
+            $wasAutoDraft = $content->isAutoDraft();
             $form->handle(function ($form) use ($content) {
                 $values = $form->values();
                 $this->content->update($content, $this->contentData($values));
@@ -223,7 +225,7 @@ class ContentAdminController extends AbstractAdminController {
                 return $content;
             });
             $this->applyStatus($content, $form->values(), $type);
-            $this->done('/admin/content/'.$type, 'Saved.');
+            $this->done('/admin/content/'.$type, $wasAutoDraft ? 'Created.' : 'Saved.');
         }
         return $this->editor($type, $form, $content);
     }
@@ -231,15 +233,12 @@ class ContentAdminController extends AbstractAdminController {
     /**
      * What the attachments panel under the editor needs
      *
-     * Empty for a post that does not exist yet: there is no id to attach to, so the panel says
-     * so and the buttons are inactive. Attaching is an immediate write, the same as every other
-     * row action in the admin - keeping it in the form until save would be a second way of
-     * writing, and an abandoned form would leave files attached to nothing.
+     * Attaching is an immediate write, the same as every other row action in the admin - keeping
+     * it in the form until save would be a second way of writing, and an abandoned form would
+     * leave files attached to nothing. That needs an id, which is what `startDraft()` is for:
+     * there is always one, so this panel has no empty case any more.
      */
-    protected function attachmentPanel(string $type, ?Content $content): array {
-        if ($content === null) {
-            return [];
-        }
+    protected function attachmentPanel(string $type, Content $content): array {
         $base = $this->router->url('/admin/content/'.$type);
         $id = '/'.$content->id;
         return [
@@ -276,20 +275,23 @@ class ContentAdminController extends AbstractAdminController {
         ];
     }
 
-    protected function editor(string $type, $form, ?Content $content): string {
+    protected function editor(string $type, $form, Content $content): string {
         $isPage = $type === Content::TYPE_PAGE;
+        // It says "New" while it has never been saved, which is the only thing an auto-draft
+        // changes about this screen - it is a real row underneath either way
+        $isNew = $content->isAutoDraft();
         return $this->admin('dpress_admin:content/edit', [
             'attachments' => $this->attachmentPanel($type, $content),
             'can_attach'  => $this->can(Permissions::MEDIA_VIEW),
-            'title'   => ($content === null ? 'New ' : 'Edit ').($isPage ? 'page' : 'post'),
+            'title'   => ($isNew ? 'New ' : 'Edit ').($isPage ? 'page' : 'post'),
             'type'    => $type,
             'form'    => $form,
             'content' => $content,
             'narrow'  => false,
             'back_url' => $this->router->url('/admin/content/'.$type),
-            'view_url' => $content !== null && $content->isPublished()
-                ? $this->router->url($this->content->publicPath($content)) : '',
-            'history_url' => $content !== null && $this->can(Permissions::CONTENT_HISTORY)
+            'view_url' => $content->isPublished() ? $this->router->url($this->content->publicPath($content)) : '',
+            // one revision saying an empty row was made is not a history worth offering
+            'history_url' => !$isNew && $this->can(Permissions::CONTENT_HISTORY)
                 ? $this->router->url('/admin/content/'.$type.'/history/'.$content->id) : '',
         ]);
     }

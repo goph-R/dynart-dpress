@@ -164,6 +164,76 @@ class ContentService {
      * @param array $data title, markdown, and optionally type, slug, status, parent_id,
      *                    featured_media_id, published_at
      */
+    /**
+     * The row the editor is opened against, made if it is not there already
+     *
+     * **An editor with no id cannot do anything immediate**, and attaching a file is immediate -
+     * the same as every other row action in the admin. The old answer was to ask for a save
+     * first and come back, which is a strange thing to ask of somebody who has not written the
+     * post yet. So "New" writes a row, and from then on there is no such thing as an unsaved
+     * post: one editor path instead of two, and the next feature that wants an id has one.
+     *
+     * **The author's existing auto-draft is reused.** Clicking New five times is one row, not
+     * five, and anything attached before wandering off is still attached on the way back. That
+     * also bounds the table at one row per author per type, which is what makes pruning a tidy-up
+     * rather than a necessity.
+     *
+     * The two-tab case is the honest cost: open New twice, save the first, and the second tab is
+     * now editing the post the first one made. Nothing is lost - every save is a revision - but
+     * it is a surprise, and the same surprise as two tabs on one post, which this CMS has never
+     * guarded against either.
+     */
+    public function startDraft(string $type, int $authorId): Content {
+        $this->assertType($type);
+        $rows = $this->queryExecutor->findAll(
+            $this->queries->create('content_auto_draft', ['type' => $type, 'author_id' => $authorId])
+        );
+        if (!empty($rows) && ($existing = $this->findById((int)$rows[0]['id'])) !== null) {
+            return $existing;
+        }
+        $content = new Content();
+        $content->type = $type;
+        $content->author_id = $authorId;
+        $content->status = Content::STATUS_AUTO_DRAFT;
+        // Unique and not null, and there is no title to make one from yet. Random rather than
+        // `auto-draft-1`, so it can never be what somebody's real slug wanted to be. The first
+        // save replaces it from the title.
+        $content->slug = 'auto-draft-'.bin2hex(random_bytes(8));
+        $content->created_at = $this->now();
+        $content->updated_at = $content->created_at;
+        $this->emitBoth($content, self::EVENT_BEFORE_CREATE, 'before_create');
+        $this->em->save($content);
+        $this->emitBoth($content, self::EVENT_CREATED, 'created');
+        return $content;
+    }
+
+    /**
+     * Throws away the auto-drafts nobody came back to
+     *
+     * A tidy-up rather than a necessity, because reuse already caps these at one per author per
+     * type. Goes through `delete()` so an abandoned draft takes its attachments with it and the
+     * removal is audited like any other.
+     *
+     * @param string $before Anything created before this timestamp
+     * @return int How many went
+     */
+    public function pruneAutoDrafts(string $before): int {
+        $ids = $this->db->fetchColumn(
+            'select `id` from '.$this->em->safeTableName(Content::class)
+                .' where `status` = :status and `created_at` < :before',
+            [':status' => Content::STATUS_AUTO_DRAFT, ':before' => $before]
+        );
+        $count = 0;
+        foreach ($ids as $id) {
+            $content = $this->findById((int)$id);
+            if ($content !== null) {
+                $this->delete($content);
+                $count++;
+            }
+        }
+        return $count;
+    }
+
     public function create(array $data, int $authorId): Content {
         $content = new Content();
         $content->type = $this->assertType($data['type'] ?? Content::TYPE_POST);
@@ -193,6 +263,14 @@ class ContentService {
     public function update(Content $content, array $data): Content {
         // what this content's own URL is made of, before anything touches it
         $wasAt = [$content->slug, $content->parent_id];
+        // The first save of a row `startDraft()` made. It stops being scaffolding and becomes a
+        // draft here rather than in `applyStatus()`, because this is not a publishing decision -
+        // nothing about it is the author's to choose, and `assertStatus()` would refuse the value
+        // anyway. Read before the title is written, since the slug below needs to know.
+        $wasAutoDraft = $content->isAutoDraft();
+        if ($wasAutoDraft) {
+            $content->status = Content::STATUS_DRAFT;
+        }
         if (array_key_exists('title', $data)) {
             $content->title = trim($data['title']);
         }
@@ -201,6 +279,11 @@ class ContentService {
             if ($slug !== $content->slug) {
                 $content->slug = $this->uniqueSlug($slug, $content->id);
             }
+        } else if ($wasAutoDraft) {
+            // "left empty it is made from the title", which on every other save means "leave the
+            // one it has" - but the one it has is `auto-draft-3f9c...`, which is not a name
+            // anybody chose. So the first save resolves it the way `create()` would.
+            $content->slug = $this->uniqueSlug($content->title, $content->id);
         }
         if (array_key_exists('markdown', $data)) {
             $content->markdown = (string)$data['markdown'];

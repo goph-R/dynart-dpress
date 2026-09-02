@@ -108,7 +108,11 @@ class AdminForms {
             ], false);
         }
 
-        if ($content !== null) {
+        // An auto-draft is a row that exists so the editor has an id to write against; nothing
+        // in it was typed by anybody. So it fills the form the way a post that does not exist
+        // would - **especially the slug**, which holds a placeholder nobody chose and which, if
+        // it were offered back, would be submitted as if it had been meant and become the URL.
+        if ($content !== null && !$content->isAutoDraft()) {
             $form->addValues([
                 'title'    => $content->title,
                 'markdown' => $content->markdown,

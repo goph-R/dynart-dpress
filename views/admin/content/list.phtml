@@ -3,8 +3,12 @@
     <div class="page-head">
         <h1><?= esc_html($title) ?></h1>
         <span class="spacer"></span>
+        <?php // A button rather than a link, because it writes: "New" inserts the row the editor
+              // is opened against, so that attaching a file works before the first save. Posting
+              // it goes through the action form, the same as every other write on this screen. ?>
         <?php if (!empty($can_create)): ?>
-            <a class="button primary" href="<?= esc_attr($new_url) ?>">New</a>
+            <button type="button" class="button primary"
+                    onclick="Dpress.post(<?= esc_attr(json_encode($new_url)) ?>)">New</button>
         <?php endif ?>
     </div>
 

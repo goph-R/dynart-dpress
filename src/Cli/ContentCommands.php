@@ -154,6 +154,32 @@ class ContentCommands extends AbstractCommands {
         return $this->success("Re-rendered $count item(s).");
     }
 
+    /**
+     * `dpress content:prune [-days 7]`
+     *
+     * Throws away the rows "New" made that nobody ever saved. A tidy-up rather than a necessity:
+     * an author gets one auto-draft per type and clicking New again reuses it, so these are
+     * bounded whether this ever runs or not - which is why there is no cron and no default
+     * schedule, just a command for somebody who wants the table clean.
+     *
+     * Attachments go with them, because `delete()` is what does the removing.
+     */
+    public function pruneDrafts(array $params = []): int {
+        // through `param()`, because a declared parameter that was not given arrives as an empty
+        // string rather than as nothing, and `?? 7` never fires on one
+        $days = (int)$this->param($params, 'days', '7');
+        if ($days < 1) {
+            return $this->fail('-days has to be at least 1.');
+        }
+        $before = date('Y-m-d H:i:s', strtotime("-$days days"));
+        $count = $this->content->pruneAutoDrafts($before);
+        return $this->success(
+            $count === 0
+                ? "No unsaved drafts older than $days day(s)."
+                : "Removed $count unsaved draft(s) older than $days day(s)."
+        );
+    }
+
     protected function showLastDiff(array $revisions): void {
         if (count($revisions) < 2) {
             return;

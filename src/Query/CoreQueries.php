@@ -38,6 +38,7 @@ class CoreQueries {
         $factory->add('role_permissions', [self::class, 'rolePermissions']);
         $factory->add('content_list', [self::class, 'contentList']);
         $factory->add('content_by_slug', [self::class, 'contentBySlug']);
+        $factory->add('content_auto_draft', [self::class, 'autoDraft']);
         $factory->add('content_children', [self::class, 'contentChildren']);
         $factory->add('content_archive', [self::class, 'contentArchive']);
         $factory->add('category_list', [self::class, 'categoryList']);
@@ -237,7 +238,32 @@ class CoreQueries {
         return $query;
     }
 
+    /**
+     * The one row of a type that an author is allowed to have waiting for them
+     *
+     * "New" hands back the auto-draft this author already has rather than making another, so
+     * clicking it five times is one row, and a file attached before wandering off is still there
+     * on the way back. It also puts a hard ceiling on how many of these can exist at all: one per
+     * author per type, which is why there is no cron.
+     */
+    public function autoDraft(array $context): Query {
+        $query = new Query(Content::class);
+        $query->addCondition('`status` = :status', [':status' => Content::STATUS_AUTO_DRAFT]);
+        $query->addCondition('`type` = :type', [':type' => $context['type'] ?? Content::TYPE_POST]);
+        $query->addCondition('`author_id` = :authorId', [':authorId' => $context['author_id'] ?? 0]);
+        $query->addOrderBy('created_at', 'desc');
+        return $query;
+    }
+
+    /**
+     * **Auto-drafts are never listed, by anybody.** An empty row the editor made for itself is
+     * not a piece of content until somebody saves it, and the filter is here rather than in each
+     * caller because "list some content" is asked in a dozen places and every one of them means
+     * the same thing by it. `contentBySlug` and the archive are published-only and so exclude
+     * these already.
+     */
     protected function applyContentFilters(Query $query, array $context): void {
+        $query->addCondition('`status` <> :notAutoDraft', [':notAutoDraft' => Content::STATUS_AUTO_DRAFT]);
         if (!empty($context['type'])) {
             $query->addCondition('`type` = :type', [':type' => $context['type']]);
         }

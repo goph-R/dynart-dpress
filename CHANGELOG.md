@@ -5,6 +5,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.25.0] &ndash; 2026-09-02
+
+There is no such thing as an unsaved post.
+
+### Added
+- **"New" writes a row and opens the editor for it.** An immediate write needs an id, and being told to save an empty post and come back before you may attach a file to it is a strange thing to be told. `POST /admin/content/<type>/new` calls `ContentService::startDraft()` and redirects to the editor — a POST, not a link, because it inserts.
+- `Content::STATUS_AUTO_DRAFT`, **deliberately not in `STATUSES`** — that list is what the status select offers and what `assertStatus()` accepts, so the value cannot arrive from a form or from `content:create`. It is set in one place and left in one other: the first `update()`, which promotes it to a draft and makes the slug from the title.
+- `CoreQueries::autoDraft()`, and an exclusion in `applyContentFilters()` so **nothing ever lists one** — the content list, the search, the "Parent page" select, all of them.
+- `dpress content:prune [-days 7]`, which throws away the auto-drafts nobody came back to, attachments and all.
+
+### Changed
+- **`create()` is gone; `edit()` is the only editor.** That is the real prize: no screen has to answer "and what does this do before the post exists?" ever again. The attachments panel has no empty case, and the first save says *Created.* rather than *Saved.*
+- The editor says **New post** while the row has never been saved, and offers no History for it — one revision recording that an empty row was made is not a history.
+
+### Notes
+**An auto-draft is reused, not remade.** `startDraft()` hands back the author's existing one for that type, so clicking New five times is one row, a file attached before wandering off is still attached on the way back, and the table is bounded at one row per author per type. That bound is why `content:prune` is a tidy-up rather than a cron.
+
+**The form fills as if the post did not exist** — above all the placeholder slug. Offered back, it would be submitted as though it had been meant, and `auto-draft-3f9c1a2b4d5e6f70` would become the post's URL. Found while writing the change; there is a test for it.
+
+The honest cost is two tabs: open New twice, save the first, and the second tab is now editing the post the first one made. Nothing is lost — every save is a revision — and it is the same surprise as two tabs on one post, which this CMS has never guarded against either.
+
+---
+
 ## [0.24.0] &ndash; 2026-09-02
 
 Attachments are files, not an index of the article.

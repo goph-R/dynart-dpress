@@ -25,11 +25,9 @@
           // things in here are buttons rather than fields - nested inside the form they would
           // submit it, and their state would look like something Save is responsible for.
           //
-          // Nothing at all until the post exists, because attaching needs an id to attach to. It
-          // used to say so; a heading and a disabled button that explain themselves away are
-          // worse than an editor that simply has one fewer panel on it. The toolbar's image
-          // button still works there - putting a picture in the text never needed an id. ?>
-    <?php if (!empty($can_attach) && !empty($attachments)): ?>
+          // There is always an id to attach to: "New" writes the row before this screen renders,
+          // so this panel has no empty case and no "save the post first" to apologise with. ?>
+    <?php if (!empty($can_attach)): ?>
         <div class="panel attachments">
             <div class="page-head">
                 <h2>Attachments</h2>

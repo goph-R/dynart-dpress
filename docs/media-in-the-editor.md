@@ -186,8 +186,9 @@ site moved — the same reasoning as `siteAsset()` in `AbstractController`.
 ## 4. The attachments panel
 
 Under the markdown field, outside the editor's `<form>`, a `DynamicList` of what is attached to
-this content. It appears once the post exists, because attaching needs an id to attach to; on a
-new post there is no panel rather than a panel explaining that there is nothing it can do.
+this content. **It has no empty case**: attaching needs an id to attach to, and since 0.25.0
+"New" writes the row before the editor renders, so there is always one. That is the whole reason
+auto-drafts exist — see `CLAUDE.md`.
 
 | Row action | Does |
 |---|---|

@@ -127,6 +127,12 @@ class DpressCliApp extends CliApp {
             'description' => 'Re-render every markdown body, after a rendering change',
             'needsConfig' => true,
         ],
+        'content:prune' => [
+            'callable' => [ContentCommands::class, 'pruneDrafts'],
+            'description' => 'Remove the unsaved drafts "New" made that nobody came back to',
+            'params' => ['days'],
+            'needsConfig' => true,
+        ],
         'media:import' => [
             'callable' => [MediaCommands::class, 'import'],
             'description' => 'Import a file into the media library',

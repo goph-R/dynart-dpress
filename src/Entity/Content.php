@@ -31,6 +31,20 @@ class Content extends Entity {
     const STATUS_DRAFT = 'draft';
     const STATUS_PUBLISHED = 'published';
 
+    /**
+     * A row that exists so the editor has something to write against, and nothing more
+     *
+     * Opening "New" inserts one, because an editor with no id cannot attach a file, and asking
+     * somebody to save an empty post first so that they may attach something to it is a strange
+     * thing to ask. The **first save promotes it to a draft**; until then it holds no title and
+     * no text, since nothing but attaching writes before Save does.
+     *
+     * **Deliberately not in `STATUSES`.** That list is what the status select offers and what
+     * `assertStatus()` accepts, so this cannot be chosen by hand or arrive through a form - it is
+     * set once, by `startDraft()`, and left exactly once, by the first `update()`.
+     */
+    const STATUS_AUTO_DRAFT = 'auto_draft';
+
     const STATUSES = [self::STATUS_DRAFT, self::STATUS_PUBLISHED];
 
     #[Column(type: Column::TYPE_INT, primaryKey: true, autoIncrement: true, notNull: true)]
@@ -98,6 +112,13 @@ class Content extends Entity {
 
     public function isPublished(): bool {
         return $this->status === self::STATUS_PUBLISHED;
+    }
+
+    /**
+     * Has this ever been saved by the person writing it?
+     */
+    public function isAutoDraft(): bool {
+        return $this->status === self::STATUS_AUTO_DRAFT;
     }
 
     /**
