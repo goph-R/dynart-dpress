@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.36.1] &ndash; 2026-09-02
+
+### Changed
+- The quote mark on a blockquote is **stroked** like the other three icons rather than solid. At `.55` opacity a filled grey glyph on a dark background loses far more of itself than a 2px line does, so it read as faint next to icons drawn at the same size.
+
+---
+
 ## [0.36.0] &ndash; 2026-09-02
 
 ### Added
