@@ -15,6 +15,12 @@
                pink that reads well on near-black is faint on white and the reverse - these are
                5.2:1 here and 7.5:1 in the dark block, past WCAG AA and AAA respectively. */
             --link: #d4006b;
+            /* the four panels. One value each: the border is it at full strength and the
+               background is the same colour at a tenth, so a panel is always in key with itself */
+            --quote: #71717a;
+            --info: #2563eb;
+            --warning: #d97706;
+            --danger: #dc2626;
         }
         * { box-sizing: border-box; }
         body { margin: 0; font: 15px/1.6 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -85,11 +91,45 @@
         article h1 { font-size: 28px; margin: 0 0 18px; }
         article h2 { font-size: 21px; margin: 28px 0 10px; }
         article h3 { font-size: 17px; margin: 22px 0 8px; }
-        /* The margin is reset along with it: a browser indents a blockquote by 40px on the left,
-           which would leave the rule floating in the gutter rather than marking the column. The
-           horizontal padding is so the text does not sit against the border it just gained. */
-        blockquote { margin: 18px 0; padding: .5em 1em; border-left: 4px solid var(--link);
-                     background: rgba(0, 0, 0, .25); }
+        /* A blockquote, and the three panels `> [!WARNING]` and friends turn one into.
+           The margin is reset: a browser indents a blockquote 40px on the left, which would leave
+           the rule floating in the gutter rather than marking the column. `padding-right` is for
+           the icon, which is absolutely positioned and would otherwise have text run under it.
+           `color-mix` keeps one colour per panel - the border at full strength, the background at
+           a tenth of it - so a panel is always in key with itself and adding a fourth is one line. */
+        blockquote, .callout {
+            position: relative; margin: 18px 0; padding: .5em 3.2em .5em 1em;
+            border-left: 4px solid var(--quote);
+            background: color-mix(in srgb, var(--quote) 10%, transparent);
+        }
+        .callout-info    { border-left-color: var(--info);
+                           background: color-mix(in srgb, var(--info) 10%, transparent); }
+        .callout-warning { border-left-color: var(--warning);
+                           background: color-mix(in srgb, var(--warning) 10%, transparent); }
+        .callout-danger  { border-left-color: var(--danger);
+                           background: color-mix(in srgb, var(--danger) 10%, transparent); }
+        /* The icon is a background image rather than an `<svg>` in the document, for the reason
+           the syntax highlighting keeps its colours out of `body_html`: an icon is presentation,
+           and presentation in stored content means re-rendering every post to change it. */
+        blockquote::after, .callout::after {
+            content: ''; position: absolute; top: .6em; right: .8em;
+            width: 22px; height: 22px; opacity: .55;
+            background-repeat: no-repeat; background-size: contain;
+        }
+        blockquote::after, .callout-quote::after {
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2371717a"><path d="M7 7h4v4c0 2.8-1.7 4.6-4 5.4V15c1-.5 1.6-1.4 1.7-2.4H7V7zm7 0h4v4c0 2.8-1.7 4.6-4 5.4V15c1-.5 1.6-1.4 1.7-2.4H14V7z"/></svg>');
+        }
+        .callout-info::after {
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%232563eb" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6v.1"/></svg>');
+        }
+        .callout-warning::after {
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><path d="M12 10v4"/><path d="M12 17.2v.1"/></svg>');
+        }
+        .callout-danger::after {
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23dc2626" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/></svg>');
+        }
+        blockquote > :first-child, .callout > :first-child { margin-top: 0; }
+        blockquote > :last-child, .callout > :last-child { margin-bottom: 0; }
         article pre { background: #f4f4f5; padding: 12px; border-radius: 6px; overflow-x: auto; }
         article code { background: #f4f4f5; padding: 1px 5px; border-radius: 4px; font-size: 90%; }
         article pre code { background: none; padding: 0; }

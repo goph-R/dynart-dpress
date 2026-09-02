@@ -5,6 +5,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.36.0] &ndash; 2026-09-02
+
+### Added
+- **`> [!WARNING]` turns a blockquote into a panel.** Info, warning and danger, with a plain quote as the fourth. GitHub's five markers are all understood — `NOTE`, `TIP` and `IMPORTANT` read as info, `WARNING` as warning, `CAUTION` as danger — plus `INFO` and `DANGER`, which are what people guess.
+- Each panel is a left border in its own colour, a tenth of that colour as background through `color-mix`, and an icon. Four custom properties: `--quote`, `--info`, `--warning`, `--danger`.
+
+### Changed
+- A plain blockquote is **grey** rather than pink, and carries a quote mark.
+
+### Notes
+**The syntax is valid CommonMark either way**, which is the whole reason for choosing it. Anywhere without dpress — a README, an editor preview, a document exported from here — it is still a blockquote, still readable, with a visible `[!WARNING]` where the styling would have been. A convention that only works inside one CMS breaks the moment a document leaves it.
+
+It also means **the content is markdown**: bold, links, lists and code work inside a panel because CommonMark parsed them before any of this ran. A shortcode could not do that — `{{ warning('…') }}` takes a string, and a panel holds prose.
+
+**The icons are CSS**, data URIs on a `::after`, for the reason the syntax highlighting keeps its colours out of `body_html`: an icon is presentation, and presentation in stored content means `content:rerender` over every post to change it. What is stored is `<blockquote class="callout callout-warning">` and nothing more.
+
+The marker is only a marker at the very start of the quote, so `> See [!WARNING] in the docs` stays a sentence; an unrecognised one is left exactly as written.
+
+---
+
 ## [0.35.5] &ndash; 2026-09-02
 
 ### Fixed
