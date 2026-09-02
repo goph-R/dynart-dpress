@@ -112,8 +112,13 @@
         .dpress-embed { width: 100%; aspect-ratio: 16 / 9; height: auto; border: 0; display: block; }
         .featured img { border-radius: 8px; }
         .tags { margin-top: 20px; }
-        .tag { display: inline-block; background: #f4f4f5; border-radius: 999px; padding: 3px 11px;
-               font-size: 13px; text-decoration: none; color: #3f3f46; margin: 0 4px 4px 0; }
+        /* `:visited` stated as well, and it has to be: `a:visited` is (0,1,1) and `.tag` alone is
+           (0,1,0), so the link colour won on every tag somebody had already been to - a cloud
+           where half the pills are pink for a reason that is nobody's business. A pill is chrome,
+           like the header links, rather than a link in prose. */
+        .tag, .tag:visited { display: inline-block; background: #f4f4f5; border-radius: 999px;
+               padding: 3px 11px; font-size: 13px; text-decoration: none; color: #3f3f46;
+               margin: 0 4px 4px 0; }
         .attachments-title { font-size: 15px; margin: 24px 0 8px; }
         .attachments { list-style: none; padding: 0; margin: 0; }
         .attachments li { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
@@ -182,7 +187,7 @@
             .links a { color: #a1a1aa; }
             .post-summary { border-bottom-color: #3f3f46; }
             article pre, article code { background: #18181b; }
-            .tag { background: #3f3f46; color: #e4e4e7; }
+            .tag, .tag:visited { background: #3f3f46; color: #e4e4e7; }
             .sidebar .block { background: #27272a; }
             .block-title { color: #a1a1aa; }
         }

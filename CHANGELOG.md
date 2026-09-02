@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.37.1] &ndash; 2026-09-02
+
+### Fixed
+- **A tag keeps its own colour after somebody has visited it.** `a:visited` is `(0,1,1)` and `.tag` alone is `(0,1,0)`, so the link colour won and a cloud came out half pink — for a reason that is nobody's business. A pill is chrome, like the header links, rather than a link in prose, so `:visited` is now stated with it.
+
+---
+
 ## [0.37.0] &ndash; 2026-09-02
 
 ### Added
