@@ -45,7 +45,7 @@ class CodeAssets {
         'rowhammer'  => 'Rowhammer',
     ];
 
-    const DEFAULT_THEME = 'enlighter';
+    const DEFAULT_THEME = 'dracula';
 
     /**
      * Highlighting switched off, spelled as a value rather than as an empty one

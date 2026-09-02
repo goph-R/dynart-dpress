@@ -87,8 +87,8 @@ convention and renders as an ordinary block.
 
 ## 4. Themes
 
-`enlighter`, `atomic`, `beyond`, `bootstrap4`, `classic`, `dracula`, `droide`, `eclipse`,
-`godzilla`, `minimal`, `monokai`, `mowtwo`, `rowhammer` — and `none`.
+`enlighter`, `atomic`, `beyond`, `bootstrap4`, `classic`, **`dracula`** (the default), `droide`,
+`eclipse`, `godzilla`, `minimal`, `monokai`, `mowtwo`, `rowhammer` — and `none`.
 
 **Off is the word `none`, not an empty value.** `SettingService::get()` reads `''` as *absent* and
 answers with the default, so an empty setting would mean "the default theme" rather than "no

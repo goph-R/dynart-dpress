@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.35.0] &ndash; 2026-09-02
+
+### Changed
+- **Dracula is the default code theme.** Only for a site that has never chosen one — an existing setting is left alone.
+- **Links in the built-in templates are `#ff0071`**, visited included. `:visited` is stated separately because it is the more specific match and would otherwise keep the browser's purple whatever `a` said — the same thing that bit the admin in 0.30.1.
+
+### Notes
+Only links in the text change. The header, the menu, the breadcrumb and the meta lines each set their own colour and are more specific than a bare `a`, so their deliberate whites and greys stay — say the word if those should be pink too.
+
+`#ff0071` on the white card measures about **3.8:1**, which is under WCAG AA's 4.5:1 for body text; on the dark background it is about 4.7:1 and passes. Worth knowing rather than worth changing on my own — it is a brand colour, and a slightly darker pink for light mode only would fix it if it matters.
+
+---
+
 ## [0.34.2] &ndash; 2026-09-02
 
 ### Fixed

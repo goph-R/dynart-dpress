@@ -13,6 +13,12 @@
         * { box-sizing: border-box; }
         body { margin: 0; font: 15px/1.6 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
                background: #f4f4f5; color: #18181b; }
+        /* Links in the text. `:visited` needs saying separately - it is the more specific match
+           and would otherwise keep the browser's purple whatever `a` said. The header, the menu,
+           the breadcrumb and the meta lines all set their own colour and are more specific than
+           this, so their deliberate greys and whites stay as they are. */
+        a { color: #ff0071; }
+        a:visited { color: #ff0071; }
         header { background: #18181b; color: #fafafa; padding: 14px 20px; display: flex; gap: 16px; align-items: center; }
         header a { color: #fafafa; text-decoration: none; }
         header .brand { display: flex; align-items: center; }
