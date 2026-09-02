@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.27.3] &ndash; 2026-09-02
+
+### Fixed
+- **One filter change asked the server twice.** A `<select>` fires `input` and then `change`, and `bindFilters()` had a separate listener on each — so choosing a category on the media page sent one request at once and an identical one 250 ms later. Two more of the same shape went with it: a text field fires `change` on blur as well as `input` while typing, so tabbing out of a search box asked again for what was already on screen; and `DynamicList` binds `submit` itself when it is handed a form, so pressing Enter went through two handlers.
+- One timer that every event reschedules, and a guard on what was last asked. Typing waits 250 ms, anything else goes at the end of the tick — late enough for a select's two events to collapse, soon enough to feel immediate. `submit` is not bound in `bindFilters()` at all now; the list already has it.
+
+### Changed
+- **The media picker dialog uses that same binder.** It had its own debounced `input` handler doing nearly the same job slightly worse: a select there waited 250 ms and an unchanged filter was asked for again. `debounce()` has no callers left and is gone.
+
+---
+
 ## [0.27.2] &ndash; 2026-09-02
 
 ### Fixed

@@ -49,9 +49,105 @@ const DOCUMENT = {
     url: '/uploads/2026/08/notes-d4e5f6.txt'
 };
 
+
+// --- a filter form, its events, and control over the clock ---
+
+/**
+ * `bindFilters` schedules through `setTimeout`, so the test owns the clock rather than waiting
+ */
+let pending = [];
+global.setTimeout = function (fn) { pending.push(fn); return pending.length; };
+global.clearTimeout = function (id) { if (id) { pending[id - 1] = null; } };
+function runTimers() {
+    const due = pending;
+    pending = [];
+    due.forEach(fn => fn && fn());
+}
+
+global.FormData = class {
+    constructor(form) { this.form = form; }
+    forEach(callback) { (this.form.fields || []).forEach(f => callback(f.value, f.name)); }
+};
+
+function filterForm(fields) {
+    const listeners = {};
+    return {
+        fields,
+        addEventListener(type, fn) { (listeners[type] = listeners[type] || []).push(fn); },
+        fire(type, target) { (listeners[type] || []).forEach(fn => fn({target: target})); }
+    };
+}
+
+function countingList() {
+    return {asked: 0, applyFilters() { this.asked++; }};
+}
+
+const SELECT = {tagName: 'SELECT'};
+const SEARCH = {tagName: 'INPUT', type: 'search'};
+
 // --- the tests ---
 
 const tests = {
+
+    /**
+     * A `<select>` fires `input` and then `change`. Two listeners meant two requests for one
+     * choice - one at once and one 250 ms later - which is what somebody watching the network
+     * tab on the media page saw.
+     */
+    'choosing a filter asks once'() {
+        const form = filterForm([{name: 'category', value: 'image'}]);
+        const list = countingList();
+        window.Dpress.bindFilters(form, list);
+        form.fire('input', SELECT);
+        form.fire('change', SELECT);
+        runTimers();
+        assert.strictEqual(list.asked, 1);
+    },
+
+    /**
+     * Typing fires `input` per keystroke and `change` on blur, and the blur adds nothing: the
+     * filters are already what they were when the debounce ran
+     */
+    'typing and then leaving the box asks once'() {
+        const field = {name: 'search', value: ''};
+        const form = filterForm([field]);
+        const list = countingList();
+        window.Dpress.bindFilters(form, list);
+        field.value = 'f';   form.fire('input', SEARCH);
+        field.value = 'fo';  form.fire('input', SEARCH);
+        field.value = 'fox'; form.fire('input', SEARCH);
+        runTimers();
+        assert.strictEqual(list.asked, 1, 'the keystrokes did not coalesce');
+        form.fire('change', SEARCH);
+        runTimers();
+        assert.strictEqual(list.asked, 1, 'leaving the box asked again for what was on screen');
+    },
+
+    'a filter that actually moves asks again'() {
+        const field = {name: 'category', value: 'image'};
+        const form = filterForm([field]);
+        const list = countingList();
+        window.Dpress.bindFilters(form, list);
+        form.fire('change', SELECT);
+        runTimers();
+        field.value = 'video';
+        form.fire('change', SELECT);
+        runTimers();
+        assert.strictEqual(list.asked, 2);
+    },
+
+    /**
+     * `DynamicList` binds `submit` itself when it is handed a form, so binding it here too put
+     * two handlers on Enter
+     */
+    'submit is left to the list'() {
+        const form = filterForm([]);
+        const list = countingList();
+        window.Dpress.bindFilters(form, list);
+        form.fire('submit', SEARCH);
+        runTimers();
+        assert.strictEqual(list.asked, 0);
+    },
 
     'an image is inserted as an image'() {
         const textarea = field('');

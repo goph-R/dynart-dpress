@@ -543,9 +543,6 @@
         }
 
         var filterForm = dialog.querySelector('.picker-filters');
-        filterForm.addEventListener('input', debounce(function () {
-            list.applyFilters();
-        }, 250));
 
         var list = new global.DynamicList(dialog.querySelector('.picker-list'), {
             filterForm: filterForm,
@@ -566,6 +563,10 @@
             }],
             findItems: Dpress.endpoint(endpoint)
         });
+
+        // the same binder the list screens use, rather than a second one that happens to do
+        // nearly the same thing - the dialog gets the dedupe and the immediate select for free
+        Dpress.bindFilters(filterForm, list);
 
         function close() {
             dialog.close();
@@ -671,33 +672,71 @@
         }
     }
 
-    function debounce(callback, wait) {
+    /**
+     * A filter form refreshes its list as it is typed in, rather than on a submit button
+     *
+     * **One change, one request.** Three things made that not so. A `<select>` fires `input` and
+     * then `change`, and those were two separate listeners, so choosing a category asked the
+     * server twice - once at once and once 250 ms later. A text field fires `change` on blur as
+     * well as `input` while typing, so tabbing out of a search box asked again for what was
+     * already on the screen. And `DynamicList` binds `submit` itself when it is given a form, so
+     * pressing Enter went through two handlers.
+     *
+     * So: one timer that every event reschedules, and a guard on what was last asked. Typing
+     * waits 250 ms; anything else goes at the end of the tick, which is late enough for a
+     * select's two events to collapse into one and soon enough to feel immediate. Submit is not
+     * bound here at all - the list already has it.
+     */
+    Dpress.bindFilters = function (form, list) {
         var timer = null;
-        return function () {
-            var args = arguments;
+        var lastAsked = null;
+
+        function apply() {
+            timer = null;
+            var now = serializeForm(form);
+            if (now === lastAsked) {
+                return; // nothing about the filters moved, so the answer would be the one on screen
+            }
+            lastAsked = now;
+            list.applyFilters();
+        }
+
+        function schedule(event) {
             clearTimeout(timer);
-            timer = setTimeout(function () {
-                callback.apply(null, args);
-            }, wait);
-        };
+            timer = setTimeout(apply, isTyped(event.target) ? 250 : 0);
+        }
+
+        form.addEventListener('input', schedule);
+        form.addEventListener('change', schedule);
+    };
+
+    /**
+     * Is this a control somebody types into, rather than one they choose from?
+     *
+     * A select, a checkbox and a radio are done the moment they are touched; a text box is not,
+     * which is the whole reason for the wait.
+     */
+    function isTyped(target) {
+        if (!target || !target.tagName) {
+            return false;
+        }
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+            return false;
+        }
+        var type = (target.type || 'text').toLowerCase();
+        return type !== 'checkbox' && type !== 'radio';
     }
 
     /**
-     * A filter form refreshes its list as it is typed in, rather than on a submit button
+     * The filter state as a string, for comparing one against the last
      */
-    Dpress.bindFilters = function (form, list) {
-        var refresh = debounce(function () {
-            list.applyFilters();
-        }, 250);
-        form.addEventListener('input', refresh);
-        form.addEventListener('change', function () {
-            list.applyFilters();
+    function serializeForm(form) {
+        var parts = [];
+        new FormData(form).forEach(function (value, name) {
+            parts.push(name + '=' + value);
         });
-        form.addEventListener('submit', function (event) {
-            event.preventDefault();
-            list.applyFilters();
-        });
-    };
+        return parts.join('&');
+    }
 
     // --- moving between screens without leaving the page ---
 
