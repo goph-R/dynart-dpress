@@ -37,6 +37,13 @@
 
 * { box-sizing: border-box; }
 
+/* `hidden` has to win, and without this it loses
+   The browser's own `[hidden] { display: none }` is an author-beatable rule, so any styling here
+   that sets `display` on an element - `.button` is `inline-block`, `.form-error` is `block` -
+   silently overrode it. The Remove button of a media field with nothing chosen was rendered
+   hidden and shown anyway, and so was the picker's upload error. */
+[hidden] { display: none !important; }
+
 body.admin {
     margin: 0;
     font: 15px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;

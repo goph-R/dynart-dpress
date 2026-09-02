@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.27.2] &ndash; 2026-09-02
+
+### Fixed
+- **`hidden` now actually hides.** The markup already marked the media field's Remove button hidden when nothing was chosen; the browser's own `[hidden] { display: none }` is an author-beatable rule, so `.button { display: inline-block }` quietly overrode it and the button showed anyway. One `[hidden] { display: none !important }` in the admin stylesheet fixes it — and with it the media picker's upload error, which `.form-error { display: block }` had been overriding in exactly the same way.
+
+---
+
 ## [0.27.1] &ndash; 2026-09-02
 
 ### Fixed
