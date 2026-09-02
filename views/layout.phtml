@@ -9,16 +9,18 @@
         <link rel="apple-touch-icon" href="<?= esc_attr($site_icon) ?>">
     <?php endif ?>
     <style>
-        :root { color-scheme: light dark; }
+        :root {
+            color-scheme: light dark;
+            /* every link that is a link rather than chrome. One value, so it is one edit. */
+            --link: #fe71af;
+        }
         * { box-sizing: border-box; }
         body { margin: 0; font: 15px/1.6 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
                background: #f4f4f5; color: #18181b; }
-        /* Links in the text. `:visited` needs saying separately - it is the more specific match
-           and would otherwise keep the browser's purple whatever `a` said. The header, the menu,
-           the breadcrumb and the meta lines all set their own colour and are more specific than
-           this, so their deliberate greys and whites stay as they are. */
-        a { color: #ff0071; }
-        a:visited { color: #ff0071; }
+        /* `:visited` needs saying separately every time - it is the more specific match, and
+           would otherwise keep the browser's purple whatever `a` said. The header and the menu
+           still set their own, because a link on a dark bar is chrome rather than a link. */
+        a, a:visited { color: var(--link); }
         header { background: #18181b; color: #fafafa; padding: 14px 20px; display: flex; gap: 16px; align-items: center; }
         header a { color: #fafafa; text-decoration: none; }
         header .brand { display: flex; align-items: center; }
@@ -48,14 +50,14 @@
         .menu a { font-size: 14px; opacity: .85; }
         .menu .menu { display: none; }
         .breadcrumb { font-size: 13px; color: #71717a; margin-bottom: 14px; }
-        .breadcrumb a { color: #71717a; }
+        .breadcrumb a, .breadcrumb a:visited { color: var(--link); }
         main.wide { max-width: 720px; }
         .post-summary { padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid #e4e4e7; }
         .post-summary:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 0; }
         .post-summary h2 { font-size: 18px; margin: 0 0 4px; }
         .post-summary h2 a { color: inherit; text-decoration: none; }
         .meta { color: #71717a; font-size: 13px; margin: 0 0 10px; }
-        .meta a { color: #71717a; }
+        .meta a, .meta a:visited { color: var(--link); }
         /* Nothing an author puts in a document may be wider than the column it is in. A photo
            straight off a phone is four thousand pixels across, and a video is 1920 whatever the
            column is; without this either of them decides how wide the page is. `height: auto`

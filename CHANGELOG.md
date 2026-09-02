@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.35.1] &ndash; 2026-09-02
+
+### Changed
+- **The link colour is `--link`**, one custom property at `:root`, so changing it is one edit.
+- **`#fe71af`**, and the breadcrumb and meta links use it too — they were grey.
+
+### Notes
+On the dark background this is a clear improvement: about **7.1:1** against **4.7:1** for `#ff0071`. On the white card it is **2.5:1** against the old **3.8:1**, so it reads worse there, not better — a lighter pink helps dark mode and hurts light mode, and my note about contrast was about white specifically.
+
+The variable is what makes having both trivial: a second `--link` inside the existing `prefers-color-scheme: dark` block, with something nearer `#d4006b` at `:root`, would give each scheme a value that passes. Left alone because the colour was asked for by name.
+
+`.links a` — the log in and register links under a form — stays grey, and so does the header, which sets its own on a dark bar.
+
+---
+
 ## [0.35.0] &ndash; 2026-09-02
 
 ### Changed
