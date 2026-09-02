@@ -214,10 +214,10 @@ class MenuAdminController extends AbstractAdminController {
         $this->requirePermission(Permissions::MENU_VIEW);
         $menu = $this->found($this->menus->findMenu((int)$id));
         $canEdit = $this->can(Permissions::MENU_UPDATE);
+        // no edit action: the label opens the item, so an icon beside it is a second button for
+        // the same thing - the rule the lists have followed since the row actions went
         $rowActions = [];
         if ($canEdit) {
-            $rowActions[] = ['title' => 'Edit', 'class' => 'edit', 'link' => 'edit_url',
-                             'icon' => $this->icon('edit')];
             $rowActions[] = ['title' => 'Delete', 'class' => 'delete', 'post' => 'delete_url',
                              'icon' => $this->icon('delete'),
                              'confirm' => 'Delete this item? Its children move up one level.'];
@@ -227,7 +227,7 @@ class MenuAdminController extends AbstractAdminController {
             'menu'     => $menu,
             'items'    => $this->itemRows($menu),
             'columns'  => [
-                'label'       => ['label' => 'Label', 'tree' => true],
+                'label'       => ['label' => 'Label', 'tree' => true, 'link' => $canEdit ? 'edit_url' : ''],
                 // markup, because a target that has gone says so under itself - the same opt out
                 // a dynamic list's `html` view is, and for the same reason
                 'target_html' => ['label' => 'Points at', 'view' => 'html'],

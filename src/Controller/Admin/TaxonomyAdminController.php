@@ -60,11 +60,9 @@ class TaxonomyAdminController extends AbstractAdminController {
     public function categories(): string {
         $this->requirePermission(Permissions::CATEGORY_VIEW);
         $canEdit = $this->can(Permissions::CATEGORY_UPDATE);
+        // no edit action, for the reason the menu items screen has none: the name opens the
+        // category, so an icon beside it is a second button for the same thing
         $rowActions = [];
-        if ($canEdit) {
-            $rowActions[] = ['title' => 'Edit', 'class' => 'edit', 'link' => 'edit_url',
-                             'icon' => $this->icon('edit')];
-        }
         if ($this->can(Permissions::CATEGORY_DELETE)) {
             $rowActions[] = ['title' => 'Delete', 'class' => 'delete', 'post' => 'delete_url',
                              'icon' => $this->icon('delete'),

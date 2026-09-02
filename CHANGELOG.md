@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.30.2] &ndash; 2026-09-02
+
+### Changed
+- **The menu item's label opens the item**, and the edit icon beside it is gone — the rule the dynamic lists have followed since the row actions went: *the edit buttons are not needed, as the click on the name goes there.*
+- **The categories screen lost its edit icon too.** Its name was already a link, so the icon was a second button for the same thing; leaving one screen with it and one without would have been the odd part. Both keep their per-row delete.
+
+---
+
 ## [0.30.1] &ndash; 2026-09-02
 
 ### Fixed
