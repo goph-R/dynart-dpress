@@ -220,7 +220,11 @@
         var idProperty = options.idProperty || 'id';
         var columnViews = options.columnViews || {};
         var rowActions = options.rowActions || [];
-        var groupActions = options.groupActions || null;
+        // The checkbox column exists to feed a group action, so an empty list of them means no
+        // column. `[]` is not falsy, and `Dpress.list()` passes exactly that for a list that
+        // declared none - so the attachments panel drew a checkbox on every row, a select-all
+        // above them, and nothing anywhere to do with a selection.
+        var groupActions = options.groupActions && options.groupActions.length ? options.groupActions : null;
         var rowDetail = options.rowDetail || null;
         var orderDisabled = options.orderDisabled || [];
         var allOrderDisabled = options.allOrderDisabled || false;

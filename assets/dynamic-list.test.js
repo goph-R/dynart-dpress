@@ -336,6 +336,27 @@ const tests = {
         assert.ok(view({size: 0}, 'size').includes('empty'));
     },
 
+    /**
+     * The checkbox column exists to feed a group action. `Dpress.list()` maps whatever the server
+     * declared, which is `[]` for a list that declared none - and `[]` is not falsy, so the
+     * attachments panel drew a checkbox on every row, a select-all above them, and nothing
+     * anywhere to do with a selection.
+     */
+    'no group actions means no checkbox column'() {
+        const it = build({columnViews: COLUMNS, groupActions: []}, TWO_ROWS);
+        const headers = find(find(it.root, n => n.tagName === 'TABLE'), n => n.tagName === 'THEAD')
+            .children[0].children;
+        assert.ok(!headers.some(h => h.classList.contains('checkbox-column')), 'a select-all with nothing to select for');
+        const cells = it.tbody().children[0].children;
+        assert.ok(!cells.some(c => c.classList.contains('checkbox-column')), 'a checkbox with nothing to do');
+    },
+
+    'group actions bring the checkbox column back'() {
+        const it = build({columnViews: COLUMNS, groupActions: [{label: 'Delete', action() {}}]}, TWO_ROWS);
+        const cells = it.tbody().children[0].children;
+        assert.ok(cells.some(c => c.classList.contains('checkbox-column')));
+    },
+
     'selection survives a refresh'() {
         const it = build({
             columnViews: COLUMNS,

@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.25.6] &ndash; 2026-09-02
+
+### Fixed
+- **A list with no group actions no longer draws a checkbox column.** The checkboxes exist to feed a group action, and `[]` is not falsy — `Dpress.list()` passes exactly that for a list that declared none, so the column was drawn with nothing anywhere to do with a selection. Two places had it: the **attachments panel**, which declares no group actions at all, and **any list whose only group action is behind a permission the viewer lacks** — the stock `editor` role holds `page.view` but not `page.delete`, so an editor saw a select-all and a checkbox per row on the Pages list, both inert.
+
+---
+
 ## [0.25.5] &ndash; 2026-09-02
 
 ### Fixed
