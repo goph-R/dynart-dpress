@@ -14,9 +14,11 @@ $value = (string)$form->value($name);
           // media field - a featured image and a thumbnail - and one variable cannot be the
           // preview of both. It is markup the builder rendered; the picker replaces it with its
           // own when somebody chooses a different file. ?>
-    <div class="media-field-preview" data-media-preview>
-        <?php if ($value !== '' && !empty($field['preview'])): ?><?= $field['preview'] ?><?php endif ?>
-    </div>
+    <?php // On one line on purpose, and it has to stay that way: `:empty` in the stylesheet hides
+          // this when there is no preview, and a newline inside the element is a text node, which
+          // is not empty. Broken across lines "for readability" the field grows a gap in front of
+          // its Choose… button and nothing says why. ?>
+    <div class="media-field-preview" data-media-preview><?php if ($value !== '' && !empty($field['preview'])): ?><?= $field['preview'] ?><?php endif ?></div>
     <button type="button" class="button small" data-media-pick>Choose…</button>
     <button type="button" class="button small" data-media-clear<?= $value === '' ? ' hidden' : '' ?>>Remove</button>
 </div>

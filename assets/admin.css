@@ -171,6 +171,9 @@ button.link { background: none; border: 0; color: var(--muted); cursor: pointer;
 .permission-groups code { font-size: 12.5px; }
 
 .media-field { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+/* with nothing chosen the preview is an empty box that still takes a flex slot, so the field
+   opens with a gap in front of its first button. The template keeps it genuinely empty. */
+.media-field-preview:empty { display: none; }
 .media-field-preview img { max-height: 64px; border-radius: var(--radius); display: block; }
 
 

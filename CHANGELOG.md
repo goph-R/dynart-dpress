@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.27.1] &ndash; 2026-09-02
+
+### Fixed
+- **A media field with nothing chosen no longer opens with a gap.** The preview is a flex item, so an empty one still takes a slot and its `gap` in front of the Choose… button. Hidden with `:empty` — which needed the template emitting the element on one line, because a newline inside it is a text node and a text node is not empty. There is a comment saying so, since tidying that line back onto three would put the gap back and nothing would say why.
+
+---
+
 ## [0.27.0] &ndash; 2026-09-02
 
 ### Changed
