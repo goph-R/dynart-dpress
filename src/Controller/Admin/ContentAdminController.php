@@ -250,7 +250,7 @@ class ContentAdminController extends AbstractAdminController {
                 'allOrderDisabled' => true,
                 'texts'     => ['noResults' => 'No attachments yet.'],
                 'columns'   => [
-                    'thumbnail_html' => ['label' => '', 'view' => 'html', 'sortable' => false, 'width' => '52px'],
+                    'thumbnail_html' => ['label' => 'Icon', 'view' => 'html', 'sortable' => false, 'width' => '52px'],
                     'file_name'      => ['label' => 'File'],
                     'alt'            => ['label' => 'Alt text'],
                 ],

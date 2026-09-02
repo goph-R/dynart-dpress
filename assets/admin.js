@@ -551,7 +551,7 @@
             filterForm: filterForm,
             pageSize: 12,
             columnViews: {
-                thumbnail_html: {label: '', view: global.DynamicListColumnView.html, sortable: false, width: '52px'},
+                thumbnail_html: {label: 'Icon', view: global.DynamicListColumnView.html, sortable: false, width: '52px'},
                 file_name: {label: 'File'},
                 title: {label: 'Title'},
                 created_at: {label: 'Uploaded', view: global.DynamicListColumnView.dateTime}

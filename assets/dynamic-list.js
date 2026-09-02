@@ -416,12 +416,16 @@
                 if (column.width) {
                     header.style.width = column.width;
                 }
+                // `label: ''` means a column that wants no heading - a thumbnail, a checkbox.
+                // `||` treated that as "no label given" and printed the property name, so a
+                // column asking for a blank header got `thumbnail_html` across the top of it.
+                var label = column.label === undefined || column.label === null ? property : column.label;
                 if (allOrderDisabled || orderDisabled.indexOf(property) !== -1 || column.sortable === false) {
-                    header.textContent = column.label || property;
+                    header.textContent = label;
                 } else {
                     var button = element('button', 'sort');
                     button.type = 'button';
-                    button.textContent = column.label || property;
+                    button.textContent = label;
                     button.addEventListener('click', function () {
                         sortBy(property);
                     });

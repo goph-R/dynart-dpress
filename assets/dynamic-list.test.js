@@ -215,6 +215,25 @@ const tests = {
         assert.strictEqual(it.paging().children.length, 0);
     },
 
+    /**
+     * `label: ''` is a column that wants no heading - a thumbnail, a checkbox. `||` read that as
+     * "no label given" and printed the property name, so a column asking for a blank header got
+     * `thumbnail_html` written across the top of it.
+     */
+    'a column asking for no heading gets none, rather than its property name'() {
+        const it = build({columnViews: {title: {label: '', sortable: false}}}, TWO_ROWS);
+        const header = find(find(it.root, n => n.tagName === 'TABLE'), n => n.tagName === 'THEAD')
+            .children[0].children.find(n => n.getAttribute('data-property') === 'title');
+        assert.strictEqual(header.textContent, '');
+    },
+
+    'a column with no label at all still falls back to its property name'() {
+        const it = build({columnViews: {title: {sortable: false}}}, TWO_ROWS);
+        const header = find(find(it.root, n => n.tagName === 'TABLE'), n => n.tagName === 'THEAD')
+            .children[0].children.find(n => n.getAttribute('data-property') === 'title');
+        assert.strictEqual(header.textContent, 'title');
+    },
+
     'one page needs no pager'() {
         const it = build({columnViews: COLUMNS, pageSize: 25}, {items: TWO_ROWS.items, total: 2});
         assert.strictEqual(it.paging().children.length, 0);

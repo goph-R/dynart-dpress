@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.25.5] &ndash; 2026-09-02
+
+### Fixed
+- **A column asking for no heading got its property name instead.** `label: ''` says "no heading" — a thumbnail, a checkbox — and the header fell back with `column.label || property`, which reads an empty string as "nothing given". So the media library, the picker dialog and the attachments panel all had `thumbnail_html` written across the top of a column of pictures. An explicit empty label is honoured now; a missing one still falls back.
+
+### Changed
+- That column is labelled **Icon** in all three lists, which is what it shows and short enough not to set the width.
+
+---
+
 ## [0.25.4] &ndash; 2026-09-02
 
 ### Fixed
