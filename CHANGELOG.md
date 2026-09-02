@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.31.2] &ndash; 2026-09-02
+
+### Fixed
+- **A checkbox in a filter form is no longer 160px wide.** `.filters input` set a minimum meant for the things somebody types or picks in, and caught the media list's *Show deleted* along with them. `label.inline input` set `width: auto` but not `min-width`, which is why it survived; the minimum now excludes checkboxes and radios at the source.
+
+---
+
 ## [0.31.1] &ndash; 2026-09-02
 
 ### Added
