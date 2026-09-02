@@ -545,9 +545,7 @@
                 table.style.display = 'none';
                 status.className = 'list-status no-results';
                 status.textContent = texts.noResults;
-                // an empty `noResults` means say nothing at all, rather than draw an empty box:
-                // some lists sit under a heading that has already said what they are
-                status.style.display = texts.noResults === '' ? 'none' : '';
+                status.style.display = '';
             } else {
                 table.style.display = '';
                 status.style.display = 'none';
@@ -567,7 +565,6 @@
             status.style.display = '';
             paging.innerHTML = '';
             recordsLabel.innerHTML = '';
-            showFooterIfItSaysAnything();
         }
 
         function addRow(item, index) {
@@ -787,17 +784,6 @@
                     }
                 });
             }
-            showFooterIfItSaysAnything();
-        }
-
-        /**
-         * An empty footer is not empty on the screen: it has a top border and its padding, so a
-         * list with no rows draws a line under whatever is above it and a strip of nothing below
-         * that. Hidden when it has nothing to say - the same rule `.group-actions:empty` follows.
-         */
-        function showFooterIfItSaysAnything() {
-            footer.style.display = recordsLabel.children.length === 0 && paging.children.length === 0
-                ? 'none' : '';
         }
     }
 

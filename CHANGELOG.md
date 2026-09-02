@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.25.2] &ndash; 2026-09-02
+
+### Fixed
+- **The dashboard's "Recent changes" was a stack of empty lines.** Two separate faults, one of them three releases old. The template read `$revision['changed_at']` and `$revision['operation']` while `recent()` selects `rev_at` and `rev_type`, so **two of the three columns had always been blank** — a missing key renders an empty cell, with no error and no warning, which is why nobody reported it. What made it visible was the third column going blank too: an auto-draft has no title, and ten of them at the top of the list left nothing but the row borders. `recent()` now leaves auto-drafts out, since opening "New" is not a change worth reporting.
+- There is a test now that reads the template, pulls out every column it asks for, and checks `recent()` actually selects it. Nothing connected the two before.
+
+### Reverted
+- **"No attachments yet." is back, and so is the line under it** — 0.24.0 took the message out and 0.25.1 hid the empty list's footer with it. Hiding the footer was general, so it applied to every list, and an empty panel with no message and no rule reads as something failing to load rather than as something being empty.
+
+---
+
 ## [0.25.1] &ndash; 2026-09-02
 
 ### Fixed

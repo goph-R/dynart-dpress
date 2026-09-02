@@ -115,9 +115,13 @@ class ContentHistoryService {
             .' from '.$this->auditTable().' a'
             .' join '.$this->em->safeTableName(Revision::class).' r on r.`id` = a.`rev_id`'
             .' left join '.$this->em->safeTableName(User::class).' u on u.`id` = r.`user_id`'
+            // An auto-draft is a row the editor made for itself, with no title and nothing in it.
+            // Opening "New" is not a change worth reporting, and ten of them in a row turned the
+            // dashboard into a stack of empty lines - which is how this was found.
+            .' where a.`status` <> :notAutoDraft'
             .' order by a.`rev_id` desc'
             .' limit '.max(1, $limit);
-        return $this->db->fetchAll($sql);
+        return $this->db->fetchAll($sql, [':notAutoDraft' => Content::STATUS_AUTO_DRAFT]);
     }
 
     protected function auditTable(): string {

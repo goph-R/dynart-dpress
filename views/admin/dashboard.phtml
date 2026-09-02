@@ -17,11 +17,14 @@
         <div class="panel">
             <h2>Recent changes</h2>
             <table class="plain">
+                <?php // `rev_at` and `rev_type`, which is what `recent()` selects. It said
+                      // `changed_at` and `operation` for three releases, so two of these three
+                      // columns were blank the whole time and nothing said why. ?>
                 <?php foreach ($recent as $revision): ?>
                     <tr>
-                        <td><?= esc_html(substr((string)($revision['changed_at'] ?? ''), 0, 16)) ?></td>
+                        <td><?= esc_html(substr((string)($revision['rev_at'] ?? ''), 0, 16)) ?></td>
                         <td><?= esc_html((string)($revision['title'] ?? '')) ?></td>
-                        <td><?= esc_html((string)($revision['operation'] ?? '')) ?></td>
+                        <td><?= esc_html((string)($revision['rev_type'] ?? '')) ?></td>
                     </tr>
                 <?php endforeach ?>
             </table>

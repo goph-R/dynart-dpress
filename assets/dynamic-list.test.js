@@ -99,7 +99,6 @@ function build(options, result) {
         tbody: () => find(find(root, n => n.tagName === 'TABLE'), n => n.tagName === 'TBODY'),
         paging: () => find(find(root, n => n.classList.contains('list-footer')),
                            n => n.classList.contains('paging')),
-        footer: () => find(root, n => n.classList.contains('list-footer')),
         status: () => find(root, n => n.classList.contains('list-status'))
     };
 }
@@ -214,32 +213,6 @@ const tests = {
         assert.strictEqual(it.list.items().length, 0);
         assert.ok(it.status().classList.contains('no-results'));
         assert.strictEqual(it.paging().children.length, 0);
-    },
-
-    /**
-     * The attachments panel is a heading, an "Add attachment" button and this list. Empty, it
-     * has nothing to add to what the heading already said, so it says nothing rather than
-     * drawing a box around a sentence nobody needs.
-     */
-    'an empty noResults means the list says nothing at all'() {
-        const it = build({columnViews: COLUMNS, texts: {noResults: ''}}, {items: [], total: 0});
-        assert.strictEqual(it.status().textContent, '');
-        assert.strictEqual(it.status().style.display, 'none');
-    },
-
-    /**
-     * An empty footer is not empty on the screen - it has a top border and its padding, so a list
-     * with no rows drew a line under whatever was above it and a strip of nothing below that.
-     * Visible under the attachments panel, where the heading is all that is left.
-     */
-    'a footer with nothing to say is not drawn'() {
-        const it = build({columnViews: COLUMNS}, {items: [], total: 0});
-        assert.strictEqual(it.footer().style.display, 'none');
-    },
-
-    'a footer with a record count is drawn'() {
-        const it = build({columnViews: COLUMNS}, TWO_ROWS);
-        assert.notStrictEqual(it.footer().style.display, 'none');
     },
 
     'one page needs no pager'() {

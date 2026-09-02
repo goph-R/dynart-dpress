@@ -248,9 +248,7 @@ class ContentAdminController extends AbstractAdminController {
                 'endpoint'  => $base.'/attachments'.$id,
                 'pageSize'  => 50,
                 'allOrderDisabled' => true,
-                // An empty attachment list says everything it has to say by being empty, and the
-                // "Add attachment" button above it is already the invitation.
-                'texts'     => ['noResults' => ''],
+                'texts'     => ['noResults' => 'No attachments yet.'],
                 'columns'   => [
                     'thumbnail_html' => ['label' => '', 'view' => 'html', 'sortable' => false, 'width' => '52px'],
                     // what to type to put this file in the text. The insert button writes it for
