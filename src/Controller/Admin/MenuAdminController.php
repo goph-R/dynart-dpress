@@ -71,7 +71,7 @@ class MenuAdminController extends AbstractAdminController {
                     'items' => ['label' => 'Items', 'align' => 'right', 'sortable' => false],
                 ],
                 'rowActions'   => $this->menuRowActions(),
-                'groupActions' => $this->menuGroupActions(),
+                'groupActions' => [],
                 // as with the roles: every menu there is fits on one page, so the page brings it
                 'firstPage' => $this->page(),
             ],
@@ -112,19 +112,12 @@ class MenuAdminController extends AbstractAdminController {
         if (!$this->can(Permissions::MENU_UPDATE)) {
             return [];
         }
-        return [
-            ['type' => 'rename', 'title' => 'Rename', 'icon' => $this->icon('rename'),
-             'link' => $this->router->url('/admin/menus/edit/')],
-        ];
-    }
-
-    protected function menuGroupActions(): array {
-        if (!$this->can(Permissions::MENU_UPDATE)) {
-            return [];
-        }
-        return [['type' => 'delete', 'label' => 'Delete selected',
-                 'post' => $this->router->url('/admin/menus/delete-selected'),
-                 'confirm' => 'Delete the selected menus and all of their items?']];
+        return array_merge(
+            [['type' => 'rename', 'title' => 'Rename', 'icon' => $this->icon('rename'),
+              'link' => $this->router->url('/admin/menus/edit/')]],
+            $this->deleteRowAction('/admin/menus/delete/', Permissions::MENU_UPDATE,
+                'Delete this menu and all of its items?')
+        );
     }
 
     // --- menus ---
@@ -164,22 +157,6 @@ class MenuAdminController extends AbstractAdminController {
             $this->done('/admin/menus', 'Saved.');
         }
         return $this->menuEditor($form, $menu);
-    }
-
-    #[Route('POST', '/admin/menus/delete-selected')]
-    public function deleteMany(): string {
-        $this->requirePermission(Permissions::MENU_UPDATE);
-        $this->requireAction();
-        $notice = $this->deleteSelected(function (int $id) {
-            $menu = $this->menus->findMenu($id);
-            if ($menu === null) {
-                return false;
-            }
-            $this->menus->deleteMenu($menu);
-            return true;
-        });
-        $this->done('/admin/menus', $notice);
-        return '';
     }
 
     #[Route('POST', '/admin/menus/delete/?')]

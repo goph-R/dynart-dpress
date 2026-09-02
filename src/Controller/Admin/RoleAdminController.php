@@ -67,8 +67,9 @@ class RoleAdminController extends AbstractAdminController {
                     'permissions' => ['label' => 'Permissions', 'sortable' => false],
                     'users'       => ['label' => 'Users', 'align' => 'right', 'sortable' => false],
                 ],
-                'rowActions'   => [],
-                'groupActions' => $this->groupActions(),
+                'rowActions'   => $this->deleteRowAction('/admin/roles/delete/', Permissions::ROLE_DELETE,
+                    'Delete this role? Everybody holding it loses what it granted.'),
+                'groupActions' => [],
                 // there are as many roles as somebody made: one page, no paging, and the screen
                 // may as well arrive with it rather than send the browser back for it
                 'firstPage' => $this->page(),
@@ -101,15 +102,6 @@ class RoleAdminController extends AbstractAdminController {
             ];
         }
         return $this->rows($rows, count($rows));
-    }
-
-    protected function groupActions(): array {
-        if (!$this->can(Permissions::ROLE_DELETE)) {
-            return [];
-        }
-        return [['type' => 'delete', 'label' => 'Delete selected',
-                 'post' => $this->router->url('/admin/roles/delete-selected'),
-                 'confirm' => 'Delete the selected roles? Everybody holding one loses what it granted.']];
     }
 
     #[Route('GET', '/admin/roles/new')]
@@ -157,24 +149,6 @@ class RoleAdminController extends AbstractAdminController {
             $this->done('/admin/roles', 'Saved.');
         }
         return $this->editor($form, $role);
-    }
-
-    #[Route('POST', '/admin/roles/delete-selected')]
-    public function deleteMany(): string {
-        $this->requirePermission(Permissions::ROLE_DELETE);
-        $this->requireAction();
-        $notice = $this->deleteSelected(function (int $id) {
-            $role = $this->roles->findById($id);
-            if ($role === null) {
-                return false;
-            }
-            // `delete()` refuses the ones the system needs and says which - the selection is a
-            // rectangle somebody dragged, and it will contain those
-            $this->roles->delete($role);
-            return true;
-        });
-        $this->done('/admin/roles', $notice);
-        return '';
     }
 
     #[Route('POST', '/admin/roles/delete/?')]

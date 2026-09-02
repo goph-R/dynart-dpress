@@ -224,75 +224,27 @@ abstract class AbstractAdminController extends AbstractController {
     }
 
     /**
-     * The ids a group action was given
+     * The delete every list has, on the row rather than on a selection
      *
-     * @return int[]
+     * One row, one confirmation, one thing gone. **Deleting many at once went in 0.31.0**: it cost
+     * a checkbox column on every screen and a bar above every list, for the most dangerous
+     * operation in the admin behind a single confirm - and the case for it, a library full of
+     * files somebody uploaded by mistake, is the case the CLI is already better at. `media:delete`
+     * takes an id and a shell takes a loop.
+     *
+     * Selecting rows is still there for anything that is not a delete: the plugins screen enables
+     * and disables with it, and turning six plugins on is a thing somebody does once.
+     *
+     * @return array the row action, or nothing at all when this person may not delete
      */
-    protected function actionIds(): array {
-        $ids = $this->request->get('ids', []);
-        return array_values(array_filter(array_map('intval', is_array($ids) ? $ids : [$ids])));
-    }
-
-    /**
-     * The group action every list has: delete what is selected
-     *
-     * A row action is one thing and knows it worked. A group action is many, and some of them
-     * will be refused - the account you are signed in with, the last administrator, a role the
-     * system needs. **Refusing one must not abandon the rest**, so each is tried on its own and
-     * what could not be done is reported rather than thrown.
-     *
-     * The rules stay with the controller that owns them. `$each` answers with one of three
-     * things, because there are three outcomes and only two of them are worth a sentence:
-     *
-     * - `true`  - gone, and counted
-     * - `false` - there was nothing to do. A row somebody else deleted between the page loading
-     *             and the button being pressed is the outcome that was wanted, not a problem, and
-     *             counting it would report more deletions than happened
-     * - a string - refused, and this is why
-     *
-     * Anything it throws is caught and read as the third.
-     *
-     * @param callable $each fn(int $id): bool|string
-     */
-    protected function deleteSelected(callable $each): string {
-        $ids = $this->actionIds();
-        if (!$ids) {
-            // said here rather than inferred from the counts: a selection that was entirely
-            // deleted by somebody else also ends with nothing done, and the two are different
-            // sentences. "Nothing was selected" when five rows were is how somebody concludes
-            // the button is broken and presses it again.
-            return 'Nothing was selected.';
+    protected function deleteRowAction(string $urlPrefix, string $permission, string $confirm): array {
+        if (!$this->can($permission)) {
+            return [];
         }
-        $done = 0;
-        $refused = [];
-        foreach ($ids as $id) {
-            try {
-                $outcome = $each($id);
-            } catch (DpressException $e) {
-                $outcome = $e->getMessage();
-            }
-            if (is_bool($outcome)) {
-                $done += $outcome ? 1 : 0;
-                continue;
-            }
-            // the same reason twice is one sentence: five rows refused for one cause should read
-            // as one cause, not as a wall
-            if (!in_array($outcome, $refused, true)) {
-                $refused[] = $outcome;
-            }
-        }
-        return $this->deletedNotice($done, $refused);
-    }
-
-    /**
-     * What a group delete says afterwards
-     *
-     * `0 deleted.` is a real answer - everything selected was already gone - and it is not the
-     * same as having selected nothing.
-     */
-    protected function deletedNotice(int $done, array $refused): string {
-        $notice = $done === 1 ? '1 deleted.' : $done.' deleted.';
-        return $refused ? $notice.' '.join(' ', $refused) : $notice;
+        return [[
+            'type' => 'delete', 'title' => 'Delete', 'icon' => $this->icon('delete'),
+            'post' => $this->router->url($urlPrefix), 'confirm' => $confirm,
+        ]];
     }
 
     /**

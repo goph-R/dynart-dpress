@@ -157,14 +157,11 @@ class ContentAdminController extends AbstractAdminController {
                 'link' => $this->router->url('/admin/content/'.$type.'/history/'),
             ];
         }
-        $groupActions = [];
-        if ($this->can(Permissions::forContent($type, 'delete'))) {
-            $groupActions[] = [
-                'type' => 'delete', 'label' => 'Delete selected',
-                'post' => $this->router->url('/admin/content/'.$type.'/delete-selected'),
-                'confirm' => 'Delete the selected items permanently?',
-            ];
-        }
+        $rowActions = array_merge($rowActions, $this->deleteRowAction(
+            '/admin/content/'.$type.'/delete/',
+            Permissions::forContent($type, 'delete'),
+            'Delete this permanently? Its history is kept.'
+        ));
         return [
             'endpoint' => $this->router->url('/admin/content/'.$type.'/list'),
             'orderBy'  => $type === Content::TYPE_PAGE ? 'title' : 'published_at',
@@ -182,7 +179,7 @@ class ContentAdminController extends AbstractAdminController {
                 'updated_at'   => ['label' => 'Changed', 'view' => 'dateTime'],
             ],
             'rowActions'   => $rowActions,
-            'groupActions' => $groupActions,
+            'groupActions' => [],
         ];
     }
 
@@ -520,31 +517,6 @@ class ContentAdminController extends AbstractAdminController {
     }
 
     // --- the list actions ---
-
-    /**
-     * The list's own way of removing things
-     *
-     * A separate path rather than the same one with no id: `/delete/?` and `/delete` are two
-     * routes, and a bulk delete arriving at the single one with an empty segment would be a 404
-     * at best. The single route stays - it is what a plugin or a script would use.
-     */
-    #[Route('POST', '/admin/content/?/delete-selected')]
-    public function deleteMany(string $type): string {
-        $this->enter($type, 'delete');
-        $this->requireAction();
-        $notice = $this->deleteSelected(function (int $id) use ($type) {
-            $content = $this->content->findById($id);
-            // the type check is not pedantry: the ids arrive in a request, and this route holds
-            // the `post` permission, not the `page` one
-            if ($content === null || $content->type !== $type) {
-                return false;
-            }
-            $this->content->delete($content);
-            return true;
-        });
-        $this->done('/admin/content/'.$type, $notice);
-        return '';
-    }
 
     #[Route('POST', '/admin/content/?/publish/?')]
     public function publish(string $type, string $id): string {

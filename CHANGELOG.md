@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.31.0] &ndash; 2026-09-02
+
+### Changed
+- **Deleting is a trash icon on the row again, with a confirmation, on every list.** *Delete selected* is gone from content, media, tags, menus, users and roles, and with it the checkbox column and the bar above every list — the checkboxes disappear on their own, because a list with no group actions has drawn none since 0.25.6.
+- **The plugins screen keeps its group actions.** Enabling six plugins at once is a real act; deleting six things at once is a mistake looking for somewhere to happen.
+
+### Removed
+- The six `/delete-selected` endpoints, and `deleteSelected()`, `deletedNotice()` and `actionIds()` in the admin base, which had no callers left. The plugins screen reads its own ids, because a plugin is named by its folder rather than by a number.
+
+### Notes
+This reverses 0.21.0, which took the row deletes out and put a selection in. What decided it back: a bulk delete costs a checkbox column on every screen, forever, for the most dangerous operation in the admin behind a single confirm — and the one case that genuinely wants it, a library full of files uploaded by mistake, is the case a CLI already answers better. `media:delete` takes an id and a shell takes a loop.
+
+Every `/delete/?` endpoint was already there. Only the buttons ever moved.
+
+---
+
 ## [0.30.2] &ndash; 2026-09-02
 
 ### Changed

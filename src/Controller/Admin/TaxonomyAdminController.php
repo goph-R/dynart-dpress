@@ -230,9 +230,9 @@ class TaxonomyAdminController extends AbstractAdminController {
                 'name' => ['label' => 'Name', 'view' => 'link', 'options' => ['hrefProperty' => 'edit_url']],
                 'slug' => ['label' => 'Slug'],
             ],
-            'rowActions'   => [],
-            'groupActions' => $this->groupActions('tags', Permissions::TAG_DELETE,
-                'Delete the selected tags? They are removed from every post that carries them.'),
+            'rowActions'   => $this->deleteRowAction('/admin/tags/delete/', Permissions::TAG_DELETE,
+                'Delete this tag? It is removed from every post that carries it.'),
+            'groupActions' => [],
         ];
         $config['firstPage'] = $this->tagPage($this->firstPageContext($config, self::TAG_SORTABLE, ['search']));
         return $this->admin('dpress_admin:taxonomy/tags', [
@@ -295,22 +295,6 @@ class TaxonomyAdminController extends AbstractAdminController {
         return $this->tagEditor($form, $tag);
     }
 
-    #[Route('POST', '/admin/tags/delete-selected')]
-    public function deleteTags(): string {
-        $this->requirePermission(Permissions::TAG_DELETE);
-        $this->requireAction();
-        $notice = $this->deleteSelected(function (int $id) {
-            $tag = $this->taxonomy->findTag($id);
-            if ($tag === null) {
-                return false;
-            }
-            $this->taxonomy->deleteTag($tag);
-            return true;
-        });
-        $this->done('/admin/tags', $notice);
-        return '';
-    }
-
     #[Route('POST', '/admin/tags/delete/?')]
     public function deleteTag(string $id): string {
         $this->requirePermission(Permissions::TAG_DELETE);
@@ -331,12 +315,4 @@ class TaxonomyAdminController extends AbstractAdminController {
     /**
      * The edit and delete actions both lists share
      */
-    protected function groupActions(string $segment, string $delete, string $confirm): array {
-        if (!$this->can($delete)) {
-            return [];
-        }
-        return [['type' => 'delete', 'label' => 'Delete selected',
-                 'post' => $this->router->url('/admin/'.$segment.'/delete-selected'),
-                 'confirm' => $confirm]];
-    }
 }

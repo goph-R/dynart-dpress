@@ -134,9 +134,12 @@ class PluginAdminController extends AbstractAdminController {
     /**
      * The group-action shape, on names rather than ids
      *
-     * `deleteSelected()` in the base coerces its ids to `int`, which is right everywhere else and
-     * wrong here - a plugin is identified by its folder name. Same rules otherwise: each is tried
-     * on its own, one refusal does not abandon the rest, and the page says what happened.
+     * A plugin is identified by its folder name rather than by an id, which is why the ids are
+     * read here rather than coerced to `int` somewhere shared. Each is tried on its own, one
+     * refusal does not abandon the rest, and the page says what happened.
+     *
+     * This is the last group action in the admin: deleting many at once went in 0.31.0, and
+     * enabling six plugins at a time is the thing selection is actually good for.
      */
     protected function apply(callable $each, string $verb, string $suffix = ''): string {
         $this->requirePermission(Permissions::PLUGIN_MANAGE);
