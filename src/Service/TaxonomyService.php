@@ -7,6 +7,7 @@ use Dynart\Micro\Entities\Database;
 use Dynart\Micro\Entities\EntityManager;
 use Dynart\Micro\Entities\QueryExecutor;
 use Dynart\Dpress\Content\Slugger;
+use Dynart\Dpress\Content\TreeOrder;
 use Dynart\Dpress\DpressException;
 use Dynart\Dpress\Entity\Category;
 use Dynart\Dpress\Entity\ContentCategory;
@@ -40,6 +41,7 @@ class TaxonomyService {
         protected QueryFactory $queries,
         protected EventServiceInterface $events,
         protected Slugger $slugger,
+        protected TreeOrder $tree,
     ) {}
 
     // --- Categories ---
@@ -92,6 +94,19 @@ class TaxonomyService {
         }
         $this->assertNoCategoryCycle($category);
         $this->em->save($category);
+        $this->events->emit(self::EVENT_CATEGORY_UPDATED, [$category]);
+    }
+
+    /**
+     * Moves a category under a parent, at a position among that parent's children
+     *
+     * What a drag on the categories screen ends up calling. Unlike a menu there is no scope: the
+     * categories of a site are one tree.
+     *
+     * @throws DpressException if the parent is inside the category itself
+     */
+    public function moveCategory(Category $category, ?int $parentId, int $position): void {
+        $this->tree->move(Category::class, $category->id, $parentId, $position);
         $this->events->emit(self::EVENT_CATEGORY_UPDATED, [$category]);
     }
 

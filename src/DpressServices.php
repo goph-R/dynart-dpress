@@ -35,6 +35,7 @@ use Dynart\Dpress\Content\LinkTargetResolverInterface;
 use Dynart\Dpress\Content\LinkTargets;
 use Dynart\Dpress\Content\MarkdownRenderer;
 use Dynart\Dpress\Content\Slugger;
+use Dynart\Dpress\Content\TreeOrder;
 use Dynart\Dpress\Entity\AuthAttempt;
 use Dynart\Dpress\Entity\Category;
 use Dynart\Dpress\Entity\Content;
@@ -187,6 +188,7 @@ class DpressServices {
         Micro::add(LinkTargetResolverInterface::class, LinkTargets::class);
         Micro::add(InternalLinks::class);
         Micro::add(Slugger::class);
+        Micro::add(TreeOrder::class);
         Micro::add(ContentService::class);
         Micro::add(ContentHistoryService::class);
         Micro::add(MediaTypes::class);

@@ -7,6 +7,7 @@ use Dynart\Micro\RouterInterface;
 use Dynart\Micro\Entities\Database;
 use Dynart\Micro\Entities\EntityManager;
 use Dynart\Micro\Entities\QueryExecutor;
+use Dynart\Dpress\Content\TreeOrder;
 use Dynart\Dpress\DpressException;
 use Dynart\Dpress\Entity\Category;
 use Dynart\Dpress\Entity\Content;
@@ -40,6 +41,7 @@ class MenuService {
         protected RouterInterface $router,
         protected ContentService $content,
         protected TaxonomyService $taxonomy,
+        protected TreeOrder $tree,
     ) {}
 
     // --- Menus ---
@@ -126,6 +128,26 @@ class MenuService {
     public function updateItem(MenuItem $item, array $data): void {
         $this->fill($item, $data);
         $this->em->save($item);
+        $this->events->emit(self::EVENT_ITEM_SAVED, [$item]);
+    }
+
+    /**
+     * Moves an item under a parent, at a position among that parent's children
+     *
+     * What a drag on the items screen ends up calling. The parent has to be in **this** menu:
+     * the tree is scoped to `menu_id`, so an item pulled into another menu's item would be a
+     * child nothing in either menu ever renders.
+     *
+     * @throws DpressException if the parent is elsewhere, or inside the item itself
+     */
+    public function moveItem(MenuItem $item, ?int $parentId, int $position): void {
+        if ($parentId !== null) {
+            $parent = $this->findItem($parentId);
+            if ($parent === null || $parent->menu_id !== $item->menu_id) {
+                throw new DpressException('That item is not in this menu.');
+            }
+        }
+        $this->tree->move(MenuItem::class, $item->id, $parentId, $position, ['menu_id' => $item->menu_id]);
         $this->events->emit(self::EVENT_ITEM_SAVED, [$item]);
     }
 

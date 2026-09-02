@@ -359,6 +359,23 @@ table.plain .actions-column { text-align: right; white-space: nowrap; }
 table.menu-items tr.broken td { background: rgba(220, 38, 38, .06); }
 table.menu-items .form-error { display: block; }
 
+/* --- dragging a tree into order --- */
+
+.drag-column { width: 1%; padding-right: 0 !important; }
+.action.drag { cursor: grab; color: var(--muted); }
+.action.drag:active { cursor: grabbing; }
+/* the row follows the pointer by being re-inserted, not by moving, so this is the only sign that
+   a row is the one being carried */
+tr.dragging td { opacity: .45; }
+/* Where it would land. `before` and `after` are a line, because a drop between two rows is a
+   position; `inside` is a fill, because that one changes what the row belongs to - a different
+   kind of answer deserves a different kind of mark. */
+tr.drop-before td { box-shadow: inset 0 2px 0 0 var(--accent); }
+tr.drop-after td { box-shadow: inset 0 -2px 0 0 var(--accent); }
+tr.drop-inside td { background: rgba(127, 127, 127, .14); }
+/* a drag that selects the labels as it goes is a drag that looks broken */
+table[data-sortable-tree] tbody { user-select: none; }
+
 label.inline { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
 label.inline input { width: auto; }
 

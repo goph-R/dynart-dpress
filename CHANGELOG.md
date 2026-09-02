@@ -5,6 +5,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.28.0] &ndash; 2026-09-02
+
+### Added
+- **Menu items are dragged into order.** A two-line handle replaces the Position column, and a drop both reorders and re-nests: the top quarter of a row drops **before** it, the bottom quarter **after** it, and the middle **inside** it. That vocabulary can express any move in a tree, which is why there are three zones and not two.
+- `Dpress.sortableTree()` — pointer events rather than HTML5 drag and drop, which cannot say where *inside* a row the pointer is without a handler on every row, drags a ghost image nobody asked for, and behaves differently on a table row in every browser. The rows carry the tree in `data-id` / `data-parent` / `data-depth` and the module reads nothing else, so the same code will drive the categories screen.
+- `Content\TreeOrder` — moving a node around any `parent_id` + `position` tree, with `MenuService::moveItem()` and `TaxonomyService::moveCategory()` over it, and `POST /admin/menus/items/move/?`.
+
+### Notes
+**Positions are renumbered, not nudged.** A drag says "put this under that, third"; what comes back out is `0, 1, 2, …` with no gaps, on both the sibling row the node left and the one it joined. Nudged positions drift into `0, 3, 3, 7`, where ties fall back on insertion order and nobody can see why the list looks like it does.
+
+**A node cannot be dropped inside its own branch**, checked to any depth on both sides — the browser will not offer it and the server refuses it anyway. Without that the branch is still in the table with a parent chain that loops, so nothing walking down from the top ever reaches it again: gone from every screen while still being there.
+
+The move is applied to the table before the server has answered, because the server renumbers from the same order and agrees. If it does not — a refused move, a lost connection — the screen is showing something that did not happen, so it asks for the screen again rather than guessing its way back.
+
+**The categories screen still has its Position column.** It is a flat, searchable, paginated list with a group delete, and dragging cannot mean anything while it is sorted by name or split across pages. Making it draggable means making it a tree table like this one, and what that costs is set out in the notes for the next release.
+
+---
+
 ## [0.27.4] &ndash; 2026-09-02
 
 ### Fixed

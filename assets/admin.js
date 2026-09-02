@@ -430,6 +430,219 @@
         }
     }
 
+    // --- dragging a tree into order ---
+
+    /**
+     * Reordering and re-nesting a tree that is rendered as a flat table
+     *
+     * The rows carry the tree: `data-id`, `data-parent` and `data-depth`, and the order they sit
+     * in is the order they render in. Everything below reads those and nothing else, so the same
+     * code drives the menu items screen and the categories one.
+     *
+     * **Pointer events, not HTML5 drag and drop.** The native one cannot say where *inside* a row
+     * the pointer is without a `dragover` handler on every row, it drags a ghost image nobody
+     * asked for, and on a table row it behaves differently in every browser. This needs one
+     * number - how far down the row the pointer is - and pointer capture hands it over directly.
+     *
+     * Three zones per row: the top quarter drops **before** it, the bottom quarter **after** it,
+     * and the middle **inside** it. That is the whole vocabulary, and it can express any move.
+     */
+    Dpress.sortableTree = function (tbody, options) {
+        options = options || {};
+        var dragging = null;   // the row being moved
+        var moving = [];       // it and its descendants, which travel with it
+        var target = null;     // the row under the pointer
+        var zone = '';         // 'before' | 'after' | 'inside'
+
+        function rows() {
+            return Array.prototype.slice.call(tbody.querySelectorAll('tr[data-id]'));
+        }
+
+        function depthOf(row) {
+            return parseInt(row.getAttribute('data-depth'), 10) || 0;
+        }
+
+        /**
+         * A row and everything nested under it: every following row deeper than it, until one is
+         * not. They move together or the tree tears.
+         */
+        function branch(row) {
+            var all = rows();
+            var start = all.indexOf(row);
+            var depth = depthOf(row);
+            var out = [row];
+            for (var i = start + 1; i < all.length && depthOf(all[i]) > depth; i++) {
+                out.push(all[i]);
+            }
+            return out;
+        }
+
+        function childrenOf(parentId) {
+            return rows().filter(function (row) {
+                return (row.getAttribute('data-parent') || '') === (parentId || '');
+            });
+        }
+
+        function clearZones() {
+            rows().forEach(function (row) {
+                row.classList.remove('drop-before', 'drop-after', 'drop-inside');
+            });
+        }
+
+        function over(event) {
+            clearZones();
+            target = null;
+            zone = '';
+            var under = document.elementFromPoint(event.clientX, event.clientY);
+            var row = under && under.closest ? under.closest('tr[data-id]') : null;
+            // dropping a branch inside itself is the one move that destroys it: the rows stay in
+            // the table with a parent chain that loops, and nothing walking down ever reaches them
+            if (!row || moving.indexOf(row) !== -1) {
+                return;
+            }
+            var box = row.getBoundingClientRect();
+            var where = (event.clientY - box.top) / box.height;
+            zone = where < 0.25 ? 'before' : (where > 0.75 ? 'after' : 'inside');
+            target = row;
+            row.classList.add('drop-' + zone);
+        }
+
+        /**
+         * Where the drop lands, in the terms the server wants: a parent, and an index among that
+         * parent's children
+         */
+        function destination() {
+            if (zone === 'inside') {
+                return {
+                    parent: target.getAttribute('data-id'),
+                    position: childrenOf(target.getAttribute('data-id')).length
+                };
+            }
+            var parent = target.getAttribute('data-parent') || '';
+            var siblings = childrenOf(parent).filter(function (row) {
+                return moving.indexOf(row) === -1;
+            });
+            var index = siblings.indexOf(target);
+            return {parent: parent, position: zone === 'before' ? index : index + 1};
+        }
+
+        /**
+         * Moves the branch in the table, so the screen shows the answer before the server gives
+         * one. The server renumbers from the same order, so the two agree.
+         */
+        function place(to) {
+            var previous = zone === 'before' ? previousOf(target) : lastOf(branch(target));
+            var shift = (zone === 'inside' ? depthOf(target) + 1 : depthOf(target)) - depthOf(dragging);
+            var at = previous;
+            moving.forEach(function (row) {
+                if (at) {
+                    at.after(row);
+                } else {
+                    tbody.insertBefore(row, tbody.firstChild);
+                }
+                at = row;
+                setDepth(row, depthOf(row) + shift);
+            });
+            dragging.setAttribute('data-parent', to.parent || '');
+        }
+
+        function lastOf(list) {
+            return list[list.length - 1];
+        }
+
+        function previousOf(row) {
+            var all = rows();
+            var index = all.indexOf(row);
+            return index > 0 ? all[index - 1] : null;
+        }
+
+        function setDepth(row, depth) {
+            row.setAttribute('data-depth', String(depth));
+            var cell = row.querySelector('[data-tree-label]');
+            if (cell) {
+                cell.style.paddingLeft = (14 + depth * 22) + 'px';
+            }
+        }
+
+        function finish() {
+            clearZones();
+            moving.forEach(function (row) { row.classList.remove('dragging'); });
+            dragging = null;
+            moving = [];
+            target = null;
+            zone = '';
+        }
+
+        function drop() {
+            if (!target || !zone || !dragging) {
+                return finish();
+            }
+            var to = destination();
+            var id = dragging.getAttribute('data-id');
+            place(to);
+            finish();
+            if (options.onMove) {
+                options.onMove(id, to.parent, to.position);
+            }
+        }
+
+        tbody.addEventListener('pointerdown', function (event) {
+            var handle = event.target.closest ? event.target.closest('[data-drag-handle]') : null;
+            if (!handle || event.button !== 0) {
+                return;
+            }
+            event.preventDefault();
+            dragging = handle.closest('tr[data-id]');
+            moving = branch(dragging);
+            moving.forEach(function (row) { row.classList.add('dragging'); });
+            handle.setPointerCapture(event.pointerId);
+        });
+        tbody.addEventListener('pointermove', function (event) {
+            if (dragging) {
+                over(event);
+            }
+        });
+        tbody.addEventListener('pointerup', function () {
+            if (dragging) {
+                drop();
+            }
+        });
+        tbody.addEventListener('pointercancel', finish);
+    };
+
+    /**
+     * The tree tables that declare where a move should be posted
+     */
+    function initSortableTrees(root) {
+        root.querySelectorAll('[data-sortable-tree]').forEach(function (table) {
+            if (table.dataset.sortableBound) {
+                return;
+            }
+            table.dataset.sortableBound = '1';
+            var url = table.getAttribute('data-sortable-tree');
+            var tbody = table.querySelector('tbody');
+            if (!tbody) {
+                return;
+            }
+            Dpress.sortableTree(tbody, {
+                onMove: function (id, parentId, position) {
+                    Dpress.send(url + id, {parent_id: parentId || '', position: position})
+                        .then(function (answer) {
+                            if (answer && answer.error) {
+                                throw new Error(answer.error);
+                            }
+                        })
+                        .catch(function (error) {
+                            console.error('dpress: that move was refused', error);
+                            // the screen is showing a move the server did not make, so it is the
+                            // screen that is wrong: ask for it again rather than guess it back
+                            Dpress.navigate(global.location.href, false);
+                        });
+                }
+            });
+        });
+    }
+
     /**
      * The "Add attachment" button beside the list
      */
@@ -936,6 +1149,7 @@
         initConfirms(root);
         initMarkdown(root);
         initMediaFields(root);
+        initSortableTrees(root);
         initLists(root);
         initAttachments(root);
         extraInits.forEach(function (fn) {

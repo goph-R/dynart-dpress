@@ -21,14 +21,27 @@
         <?php if (empty($items)): ?>
             <p class="form-description">This menu has no items yet.</p>
         <?php else: ?>
-            <table class="plain menu-items">
+            <?php // `data-sortable-tree` is the endpoint a drop posts to, and the rows carry the
+                  // tree itself - id, parent, depth - because that is all the dragging reads.
+                  // Position is not a column any more: a number somebody edits to reorder a list
+                  // is a worse way of saying the same thing than moving the row. ?>
+            <table class="plain menu-items"<?= !empty($can_edit) ? ' data-sortable-tree="'.esc_attr($move_url).'"' : '' ?>>
                 <thead>
-                    <tr><th>Label</th><th>Points at</th><th>Position</th><th></th></tr>
+                    <tr><th class="drag-column"></th><th>Label</th><th>Points at</th><th></th></tr>
                 </thead>
                 <tbody>
                 <?php foreach ($items as $item): ?>
-                    <tr<?= $item['url'] === null ? ' class="broken"' : '' ?>>
-                        <td style="padding-left: <?= esc_attr((string)(14 + $item['depth'] * 22)) ?>px">
+                    <tr<?= $item['url'] === null ? ' class="broken"' : '' ?>
+                        data-id="<?= esc_attr((string)$item['id']) ?>"
+                        data-parent="<?= esc_attr((string)($item['parent_id'] ?? '')) ?>"
+                        data-depth="<?= esc_attr((string)$item['depth']) ?>">
+                        <td class="drag-column">
+                            <?php if (!empty($can_edit)): ?>
+                                <button type="button" class="action drag" data-drag-handle
+                                        title="Drag to reorder" aria-label="Drag to reorder"><?= $drag_icon ?></button>
+                            <?php endif ?>
+                        </td>
+                        <td data-tree-label style="padding-left: <?= esc_attr((string)(14 + $item['depth'] * 22)) ?>px">
                             <?= esc_html($item['label']) ?>
                         </td>
                         <td>
@@ -37,7 +50,6 @@
                                 <small class="form-error">not rendered - its target is gone</small>
                             <?php endif ?>
                         </td>
-                        <td><?= esc_html((string)$item['position']) ?></td>
                         <td class="actions-column">
                             <?php // the same two icons the dynamic lists use, rendered by the
                                   // controller for the same reason: an icon is markup that is

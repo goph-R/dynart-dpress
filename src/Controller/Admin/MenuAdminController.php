@@ -9,6 +9,7 @@ use Dynart\Micro\RequestInterface;
 use Dynart\Micro\RouterInterface;
 use Dynart\Micro\ViewInterface;
 use Dynart\Dpress\Entity\Content;
+use Dynart\Dpress\DpressException;
 use Dynart\Dpress\Entity\Menu;
 use Dynart\Dpress\Entity\MenuItem;
 use Dynart\Dpress\Form\AdminForms;
@@ -224,6 +225,8 @@ class MenuAdminController extends AbstractAdminController {
             // for them itself
             'edit_icon'   => $this->icon('edit'),
             'delete_icon' => $this->icon('delete'),
+            'drag_icon'   => $this->icon('drag'),
+            'move_url'    => $this->router->url('/admin/menus/items/move/'),
         ]);
     }
 
@@ -251,6 +254,7 @@ class MenuAdminController extends AbstractAdminController {
                 'target'   => $this->describeTarget($row),
                 'url'      => $this->menus->resolveUrl($row),
                 'position' => (int)$row['position'],
+                'parent_id' => $rowParent,
                 'depth'    => $depth,
                 'edit_url' => $this->router->url('/admin/menus/items/edit/'.$row['id']),
                 'delete_url' => $this->router->url('/admin/menus/items/delete/'.$row['id']),
@@ -313,6 +317,34 @@ class MenuAdminController extends AbstractAdminController {
     }
 
     #[Route('POST', '/admin/menus/items/delete/?')]
+    /**
+     * Where a drag on the items screen lands
+     *
+     * Answers with data rather than redirecting: the screen has already moved the row, and
+     * reloading it would throw away the scroll position for a change the person can see.
+     *
+     * `parent_id` empty means the top level, which is why it is read as a string first - `(int)''`
+     * is `0`, and `0` is not a parent, it is "no parent" spelled in a way `findItem()` would go
+     * looking for.
+     */
+    #[Route('POST', '/admin/menus/items/move/?')]
+    public function moveItem(string $id): array {
+        $this->requirePermission(Permissions::MENU_UPDATE);
+        $this->requireAction();
+        $item = $this->found($this->menus->findItem((int)$id));
+        $parent = trim((string)$this->request->get('parent_id', ''));
+        try {
+            $this->menus->moveItem(
+                $item,
+                $parent === '' ? null : (int)$parent,
+                (int)$this->request->get('position', 0)
+            );
+        } catch (DpressException $e) {
+            return $this->answer(['error' => $e->getMessage()]);
+        }
+        return $this->answer();
+    }
+
     public function deleteItem(string $id): string {
         $this->requirePermission(Permissions::MENU_UPDATE);
         $this->requireAction();
