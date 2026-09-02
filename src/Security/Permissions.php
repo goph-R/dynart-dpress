@@ -68,6 +68,13 @@ class Permissions {
     const MENU_VIEW = 'menu.view';
     const MENU_UPDATE = 'menu.update';
 
+    /**
+     * Blocks are the layout rather than the content: the same pair a menu gets, and not four
+     * verbs, because making one and throwing one away are the same kind of act as moving one
+     */
+    const BLOCK_VIEW = 'block.view';
+    const BLOCK_UPDATE = 'block.update';
+
     const THEME_VIEW = 'theme.view';
 
     /** Switching the theme changes how every page of the site looks */
@@ -121,6 +128,8 @@ class Permissions {
         self::MEDIA_PURGE     => 'media',
         self::MENU_VIEW       => 'menu',
         self::MENU_UPDATE     => 'menu',
+        self::BLOCK_VIEW      => 'block',
+        self::BLOCK_UPDATE    => 'block',
         self::THEME_VIEW      => 'theme',
         self::PLUGIN_MANAGE  => 'plugin',
         self::THEME_SWITCH    => 'theme',

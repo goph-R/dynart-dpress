@@ -5,6 +5,7 @@ namespace Dynart\Dpress;
 use Dynart\Micro\ConfigInterface;
 use Dynart\Micro\LoggerInterface;
 use Dynart\Micro\FormWidgets;
+use Dynart\Dpress\Block\Blocks;
 use Dynart\Dpress\Content\Shortcodes;
 use Dynart\Micro\Micro;
 use Dynart\Micro\TranslationInterface;
@@ -20,6 +21,7 @@ use Dynart\Dpress\Controller\Admin\AssetController;
 use Dynart\Dpress\Controller\Admin\ContentAdminController;
 use Dynart\Dpress\Controller\Admin\DashboardController;
 use Dynart\Dpress\Controller\Admin\MediaAdminController;
+use Dynart\Dpress\Controller\Admin\BlockAdminController;
 use Dynart\Dpress\Controller\Admin\MenuAdminController;
 use Dynart\Dpress\Controller\Admin\PluginAdminController;
 use Dynart\Dpress\Controller\Admin\RoleAdminController;
@@ -69,6 +71,7 @@ class DpressWebApp extends WebApp {
         MediaAdminController::class,
         TaxonomyAdminController::class,
         MenuAdminController::class,
+        BlockAdminController::class,
         UserAdminController::class,
         RoleAdminController::class,
         SettingsAdminController::class,
@@ -142,6 +145,7 @@ class DpressWebApp extends WebApp {
         DpressServices::registerViews($view, Micro::get(TranslationInterface::class));
         DpressServices::registerWidgets(Micro::get(FormWidgets::class));
         DpressServices::registerShortcodes(Micro::get(Shortcodes::class));
+        DpressServices::registerBlocks(Micro::get(Blocks::class));
         $this->applyTheme($view);
 
         DpressServices::registerEntities(Micro::get(EntityManager::class));

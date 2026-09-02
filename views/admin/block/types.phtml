@@ -1,0 +1,24 @@
+<?php
+/**
+ * Which kind of block to add
+ *
+ * A step of its own rather than a select on the form, because the fields depend on the type and a
+ * form that rebuilds itself under somebody is a form that loses what they typed. Whatever is
+ * registered appears here, so a plugin's block needs no template.
+ */
+?>
+<?php $this->useLayout($admin_layout) ?>
+<?php $this->startBlock('content') ?>
+    <div class="page-head">
+        <h1><?= esc_html($title) ?></h1>
+        <span class="spacer"></span>
+        <a class="button" href="<?= esc_attr($back_url) ?>">Back</a>
+    </div>
+    <div class="panel">
+        <ul class="choices">
+            <?php foreach ($types as $type): ?>
+                <li><a href="<?= esc_attr($type['url']) ?>"><?= esc_html($type['label']) ?></a></li>
+            <?php endforeach ?>
+        </ul>
+    </div>
+<?php $this->endBlock() ?>

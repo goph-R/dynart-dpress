@@ -1,0 +1,12 @@
+<?php /**
+ * The tags in use, each carrying how heavily it is used as a class
+ *
+ * `tag-1` to `tag-5` rather than an inline `font-size`: the block works out what is popular, the
+ * stylesheet decides what popular looks like.
+ */ ?>
+<div class="tag-cloud">
+    <?php foreach ($tags as $tag): ?>
+        <a class="tag tag-<?= (int)$tag['weight'] ?>" href="<?= esc_attr(route_url('/tag/'.$tag['slug'])) ?>"
+           title="<?= esc_attr($tag['total'].' post(s)') ?>">#<?= esc_html($tag['name']) ?></a>
+    <?php endforeach ?>
+</div>

@@ -15,7 +15,7 @@ use Dynart\Dpress\Content\Shortcodes;
 use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Media\MediaView;
 use Dynart\Dpress\Service\MediaService;
-use Dynart\Dpress\Service\MenuService;
+use Dynart\Dpress\Theme\Places;
 use Dynart\Dpress\Service\SettingService;
 
 /**
@@ -145,6 +145,9 @@ abstract class AbstractController {
         $this->view->set('site_icon', $this->siteIcon());
         $this->view->set('registration_open', $this->registrationOpen());
         $this->view->set('main_menu', $this->menu('main'));
+        // the layout's way to fill a place with what a site put there. A variable, so a template
+        // still looks up nothing itself, and lazy, so a theme that renders no places reads nothing
+        $this->view->set('places', Micro::get(Places::class));
         $html = Micro::get(Shortcodes::class)->expand($this->view->fetch($template, $variables));
         return $this->withCodeAssets($html);
     }
@@ -172,11 +175,12 @@ abstract class AbstractController {
     /**
      * Renders a menu place, or nothing when no menu is assigned to it
      *
-     * Rendered here rather than in the layout so a template stays free of service lookups.
+     * Rendered here rather than in the layout so a template stays free of service lookups. The
+     * work itself is `Places`, which is also what a theme reaches a place through - one
+     * implementation, so the header and a sidebar cannot disagree about what `main` means.
      */
     protected function menu(string $place): string {
-        $items = Micro::get(MenuService::class)->tree($place);
-        return empty($items) ? '' : $this->view->fetch('dpress:menu', ['items' => $items, 'place' => $place]);
+        return Micro::get(Places::class)->menu($place);
     }
 
     protected function message(string $title, string $message, array $link = []): string {

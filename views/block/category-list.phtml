@@ -1,0 +1,11 @@
+<?php /** The category tree. Recurses, because categories nest. */ ?>
+<ul class="category-list">
+    <?php foreach ($items as $item): ?>
+        <li>
+            <a href="<?= esc_attr(route_url('/category/'.$item['slug'])) ?>"><?= esc_html($item['name']) ?></a>
+            <?php if (!empty($item['children'])): ?>
+                <?= $this->fetch('dpress:block/category-list', ['items' => $item['children']]) ?>
+            <?php endif ?>
+        </li>
+    <?php endforeach ?>
+</ul>

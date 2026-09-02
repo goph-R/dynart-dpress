@@ -190,6 +190,14 @@ The defaults are **paths**, resolved by `siteAsset()` against `app.base_url` so 
 
 **A theme is a folder under `themes/` with a `theme.ini`.** Dropping one in installs it; there is no registry. The active theme is a setting, so switching is a runtime action. A setting naming a missing theme falls back to the built-in templates rather than fataling.
 
+**A place is one idea, and both editors offer it.** A theme declares `places[] = sidebar`; a menu is assigned to a place, blocks are ordered in one, and `Places::render()` puts the menu first and the blocks after it. Two vocabularies - `places` for menus, `regions` for blocks - would have been a theme author learning two words for one concept and guessing which screen meant which. The built-in layout declares `main` and `sidebar`, and renders blocks in both: a place the editors offer and nothing draws is a promise the site quietly breaks.
+
+**A block is a type plus its settings**, never a column per kind. `type` names something registered in `Blocks` - the registry `Shortcodes` is, with the same `add()` for the core three and for a plugin's - and `settings` is one JSON column holding whatever that type's `fields` asked for. A new kind of block is therefore a registration and never a migration, which is the whole reason it is shaped this way. The type is fixed when a block is made: changing it would leave one type's settings under another type's name.
+
+**The markdown block renders at save**, through the type's optional `prepare` hook, so a page view prints HTML and parses nothing - the `lead_html` rule one level down, and the reason `content:rerender` re-renders blocks too. Shortcodes inside one work with nothing added, because `expand()` runs over the finished page. An unregistered type leaves an HTML comment and a log line rather than throwing: the plugin that provided it may simply be off this morning, and a sidebar with one thing missing still renders. See [docs/blocks.md](docs/blocks.md).
+
+**Blocks are not audited**, like menus (plan §4.4): arranging a layout is moving things about, and a revision per drag is churn rather than history.
+
 **Menu items store a target, not a URL** — `content` / `category` / `tag` / `url` / `home` plus an id — so renaming a page moves its entry with it. `MenuService::tree()` resolves at render time and drops an item whose target is gone. One menu per place: assigning one moves any other out.
 
 **Menus are not audited, settings are** (plan §4.4). A menu editor rewrites the tree wholesale, so its history would be churn.

@@ -331,6 +331,7 @@ abstract class AbstractAdminController extends AbstractController {
             ['key' => 'media',     'label' => 'Media',     'icon' => 'media',     'route' => '/admin/media', 'permission' => Permissions::MEDIA_VIEW],
             ['key' => 'taxonomy',  'label' => 'Taxonomy',  'icon' => 'taxonomy',  'route' => '/admin/categories', 'permission' => Permissions::CATEGORY_VIEW],
             ['key' => 'menus',     'label' => 'Menus',     'icon' => 'menus',     'route' => '/admin/menus', 'permission' => Permissions::MENU_VIEW],
+            ['key' => 'blocks',    'label' => 'Blocks',    'icon' => 'blocks',    'route' => '/admin/blocks', 'permission' => Permissions::BLOCK_VIEW],
             ['key' => 'users',     'label' => 'Users',     'icon' => 'users',     'route' => '/admin/users', 'permission' => Permissions::USER_VIEW],
             ['key' => 'roles',     'label' => 'Roles',     'icon' => 'roles',     'route' => '/admin/roles', 'permission' => Permissions::ROLE_VIEW],
             ['key' => 'plugins',   'label' => 'Plugins',   'icon' => 'plugins',   'route' => '/admin/plugins', 'permission' => Permissions::PLUGIN_MANAGE],

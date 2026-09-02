@@ -4,6 +4,7 @@ namespace Dynart\Dpress\Query;
 
 use Dynart\Micro\Entities\EntityManager;
 use Dynart\Micro\Entities\Query;
+use Dynart\Dpress\Entity\Block;
 use Dynart\Dpress\Entity\Category;
 use Dynart\Dpress\Entity\Content;
 use Dynart\Dpress\Entity\ContentAttachment;
@@ -52,6 +53,7 @@ class CoreQueries {
         $factory->add('content_attachments', [self::class, 'contentAttachments']);
         $factory->add('menu_list', [self::class, 'menuList']);
         $factory->add('menu_items', [self::class, 'menuItems']);
+        $factory->add('block_list', [self::class, 'blockList']);
     }
 
     // --- Menus ---
@@ -67,6 +69,27 @@ class CoreQueries {
         $query->addCondition('`menu_id` = :menuId', [':menuId' => $context['menu_id'] ?? 0]);
         $query->addOrderBy('position');
         $query->addOrderBy('label');
+        return $query;
+    }
+
+    /**
+     * The blocks, in the order a place renders them
+     *
+     * Registered rather than written into the service for the reason every read path here is:
+     * `query.block_list:created` is where a plugin narrows what a sidebar shows - and it can only
+     * narrow, because conditions are appended and there is no way to take one off.
+     */
+    public function blockList(array $context): Query {
+        $query = new Query(Block::class);
+        if (array_key_exists('place', $context)) {
+            $query->addCondition('`place` = :place', [':place' => $context['place']]);
+        }
+        if (!empty($context['enabled'])) {
+            $query->addCondition('`enabled` = :enabled', [':enabled' => 1]);
+        }
+        $query->addOrderBy('place');
+        $query->addOrderBy('position');
+        $query->addOrderBy('id');
         return $query;
     }
 

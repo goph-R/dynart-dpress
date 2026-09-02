@@ -5,6 +5,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.37.0] &ndash; 2026-09-02
+
+### Added
+- **Blocks: a tag cloud, a category list and a piece of markdown, in a place beside the content.** `/admin/blocks` is a table per place, dragged into order with the handle the trees use. The built-in layout gains a **sidebar** — two columns above 900px, stacked below it — and renders nothing at all when a site has no blocks.
+- **The markdown block is the general one.** `[![Buy me a coffee](media#14)](https://ko-fi.com/name)` is the case it was asked for: an image reference that survives the site moving, the same editor and media picker as anywhere else, and `{{ video('media#10') }}` working in it with nothing added.
+- A block type is a **registration** — `Blocks::add()`, the call `Shortcodes` and `FormWidgets` already gave plugins. `fields` describes its settings as form fields, `prepare` is an optional save-time hook, `render` returns HTML.
+- `block.view` / `block.update`, the `block_list` query, `block:saved`, `block:deleted` and `block:before_render`.
+- `dpress content:rerender` now re-renders blocks as well.
+
+### Changed
+- **A place is one idea.** A theme's `places[]` is offered to both editors: a menu is assigned to a place, blocks are ordered in one, and whatever is in a place renders there. The built-in templates declare `main` and `sidebar` and render blocks in both.
+- `TreeOrder` grew `moveFlat()` and `renumberFlat()`, so a list that does not nest reorders through the same renumbering rule rather than a second copy of it.
+
+### Notes
+The settings live in **one JSON column** rather than a column per type, and that is the decision the rest follows from: a new kind of block is a registration, never a migration — which is the only way a plugin can add one at all. It also means the editor never branches on `type`, the mistake `FormWidgets` was built to take out of form rendering.
+
+Like a post, **a markdown block is rendered when it is saved**. A page view prints HTML and parses nothing, which is why `content:rerender` had to grow: a block holding `media#14` has exactly the problem a post holding `media#14` has when the site moves.
+
+**A site with no blocks pays nothing**: the layout asks the place, the place answers `''`, and no query is made. A place with three in it costs two queries plus whatever the blocks ask for — about 1 ms on the development site.
+
+**Blocks are not audited**, like menus: arranging a layout is moving things about, and a revision per drag is churn rather than history.
+
+Per-block visibility rules — "posts only", "home only" — are deliberately left out for now.
+
+---
+
 ## [0.36.1] &ndash; 2026-09-02
 
 ### Changed

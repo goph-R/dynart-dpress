@@ -16,6 +16,7 @@
  *   $rowActions [['title' => '', 'icon' => '', 'link' => 'edit_url']] or ['post' => 'delete_url',
  *               'confirm' => '', 'class' => 'delete']
  *   $move_url   where a drop posts to, or '' for a tree nobody may rearrange
+ *   $flat       true for a list that does not nest, so dragging offers no "inside" - blocks
  *   $empty      what to say when there is nothing here
  *
  * A row may carry `class` for its `<tr>`, which is how the menu items screen marks the ones whose
@@ -28,7 +29,8 @@ $moveUrl = (string)($move_url ?? '');
 <?php if (empty($rows)): ?>
     <p class="form-description"><?= esc_html($empty ?? 'Nothing here yet.') ?></p>
 <?php else: ?>
-    <table class="plain tree-table"<?= $moveUrl !== '' ? ' data-sortable-tree="'.esc_attr($moveUrl).'"' : '' ?>>
+    <table class="plain tree-table"<?= $moveUrl !== '' ? ' data-sortable-tree="'.esc_attr($moveUrl).'"' : '' ?><?=
+            empty($flat) ? '' : ' data-sortable-flat' ?>>
         <thead>
             <tr>
                 <?php if ($moveUrl !== ''): ?><th class="drag-column"></th><?php endif ?>

@@ -38,8 +38,12 @@ class ThemeService {
      * places in its manifest and the fallback has no manifest, so `places()` came back empty and
      * the menu editor said a menu had nowhere to render - on a site whose header was rendering
      * one. Declared here instead of nowhere.
+     *
+     * `sidebar` is the second one, beside the content, and it is where the built-in layout renders
+     * blocks. **A place is one idea**: what is assigned to it renders there, whether that is a menu
+     * or a list of blocks, so both editors offer this same list.
      */
-    const BUILT_IN_PLACES = ['main' => 'Main'];
+    const BUILT_IN_PLACES = ['main' => 'Main', 'sidebar' => 'Sidebar'];
 
     private ?array $themes = null;
 

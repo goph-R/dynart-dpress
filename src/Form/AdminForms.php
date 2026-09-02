@@ -28,6 +28,7 @@ class AdminForms {
     const SETTINGS = 'admin_settings';
     const MENU = 'admin_menu';
     const MENU_ITEM = 'admin_menu_item';
+    const BLOCK = 'admin_block';
     const UPLOAD = 'admin_upload';
 
     /**
@@ -49,6 +50,7 @@ class AdminForms {
         $factory->add(self::SETTINGS, [self::class, 'settings']);
         $factory->add(self::MENU, [self::class, 'menu']);
         $factory->add(self::MENU_ITEM, [self::class, 'menuItem']);
+        $factory->add(self::BLOCK, [self::class, 'block']);
         $factory->add(self::UPLOAD, [self::class, 'upload']);
         $factory->add(self::ACTION, [self::class, 'action']);
     }
@@ -269,6 +271,40 @@ class AdminForms {
         if ($menu !== null) {
             $form->addValues(['name' => $menu->name, 'place' => $menu->place]);
         }
+    }
+
+    /**
+     * The block editor: what every block has, then what its type asked for
+     *
+     * The type is **not** a field. It is fixed when the block is made, because changing it would
+     * leave a row holding one type's settings under another type's name - and "make a different
+     * block" is a clearer thing to offer than a select that silently empties.
+     *
+     * The type's own fields come from `Blocks::fields()` and are merged in here, so a plugin's
+     * block gets a real editor without touching a template. They are named `settings[<name>]`,
+     * which is what keeps one type's field out of another's stored settings.
+     */
+    public function block(DpressForm $form, array $context): void {
+        $form->addFields([
+            'title' => ['type' => 'text', 'label' => 'Title', 'required' => false,
+                        'description' => 'The heading above it. Leave it empty for no heading.'],
+        ]);
+        foreach ((array)($context['fields'] ?? []) as $name => $field) {
+            $form->addFields([self::blockSettingName($name) => $field], false);
+        }
+        $form->addFields([
+            'place'   => ['type' => 'select', 'label' => 'Place', 'required' => false,
+                          'options' => $context['places'] ?? ['' => '(not placed)'],
+                          'description' => 'The places the active theme renders.'],
+            'enabled' => ['type' => 'checkbox', 'label' => 'Enabled', 'required' => false,
+                          'text' => 'Render this block'],
+        ], false);
+        $form->addValues($context['values'] ?? []);
+    }
+
+    /** How a type's setting is named in the form, so two types cannot collide */
+    public static function blockSettingName(string $name): string {
+        return 'settings_'.$name;
     }
 
     public function menuItem(DpressForm $form, array $context): void {

@@ -1,0 +1,34 @@
+<?php
+/**
+ * The blocks, one table per place
+ *
+ * A table each rather than one list with a Place column: where a block is, is the thing somebody
+ * came to this screen to see. An empty place still gets its table, because an empty place is
+ * where a block can go.
+ */
+?>
+<?php $this->useLayout($admin_layout) ?>
+<?php $this->startBlock('content') ?>
+    <div class="page-head">
+        <h1><?= esc_html($title) ?></h1>
+        <span class="spacer"></span>
+        <?php if (!empty($can_edit)): ?>
+            <a class="button primary" href="<?= esc_attr($new_url) ?>">Add block</a>
+        <?php endif ?>
+    </div>
+
+    <?php foreach ($tables as $table): ?>
+        <div class="panel">
+            <h2 class="panel-title"><?= esc_html($table['label']) ?></h2>
+            <?= $this->fetch('dpress_admin:tree', [
+                'rows'       => $table['rows'],
+                'columns'    => $columns,
+                'rowActions' => $row_actions,
+                'move_url'   => $table['move_url'],
+                'drag_icon'  => $drag_icon,
+                'flat'       => true,
+                'empty'      => $table['empty'],
+            ]) ?>
+        </div>
+    <?php endforeach ?>
+<?php $this->endBlock() ?>

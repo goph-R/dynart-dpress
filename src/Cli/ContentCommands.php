@@ -7,6 +7,7 @@ use Dynart\Micro\CliOutputInterface;
 use Dynart\Dpress\DpressException;
 use Dynart\Dpress\Entity\Content;
 use Dynart\Dpress\Service\ContentHistoryService;
+use Dynart\Dpress\Service\BlockService;
 use Dynart\Dpress\Service\ContentService;
 use Dynart\Dpress\Service\UserService;
 
@@ -24,6 +25,7 @@ class ContentCommands extends AbstractCommands {
         protected ContentService $content,
         protected ContentHistoryService $history,
         protected UserService $users,
+        protected BlockService $blocks,
     ) {
         parent::__construct($output);
     }
@@ -149,9 +151,17 @@ class ContentCommands extends AbstractCommands {
     /**
      * `dpress content:rerender`
      */
+    /**
+     * Rebuilds every piece of stored HTML there is
+     *
+     * **Blocks too**, and that is not a courtesy: a markdown block holding `media#14` has exactly
+     * the problem a post holding `media#14` has when the site moves, and a sidebar still pointing
+     * at the old address on every page would be the most visible thing left wrong.
+     */
     public function rerender(array $params = []): int {
         $count = $this->content->rerenderAll();
-        return $this->success("Re-rendered $count item(s).");
+        $blocks = $this->blocks->rerenderAll();
+        return $this->success("Re-rendered $count item(s) and $blocks block(s).");
     }
 
     /**

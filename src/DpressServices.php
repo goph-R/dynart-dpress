@@ -39,10 +39,15 @@ use Dynart\Dpress\Content\LinkTargets;
 use Dynart\Dpress\Content\MarkdownRenderer;
 use Dynart\Dpress\Content\Shortcode\VideoShortcode;
 use Dynart\Dpress\Content\ShortcodeRenderer;
+use Dynart\Dpress\Block\Blocks;
+use Dynart\Dpress\Block\CategoryListBlock;
+use Dynart\Dpress\Block\MarkdownBlock;
+use Dynart\Dpress\Block\TagCloudBlock;
 use Dynart\Dpress\Content\Shortcodes;
 use Dynart\Dpress\Content\Slugger;
 use Dynart\Dpress\Content\TreeOrder;
 use Dynart\Dpress\Entity\AuthAttempt;
+use Dynart\Dpress\Entity\Block;
 use Dynart\Dpress\Entity\Category;
 use Dynart\Dpress\Entity\Content;
 use Dynart\Dpress\Entity\ContentAttachment;
@@ -91,9 +96,11 @@ use Dynart\Dpress\Media\SvgSanitizer;
 use Dynart\Dpress\Media\SvgSanitizerInterface;
 use Dynart\Dpress\Service\ContentService;
 use Dynart\Dpress\Service\MediaService;
+use Dynart\Dpress\Service\BlockService;
 use Dynart\Dpress\Service\MenuService;
 use Dynart\Dpress\Service\SettingService;
 use Dynart\Dpress\Service\TaxonomyService;
+use Dynart\Dpress\Theme\Places;
 use Dynart\Dpress\Theme\ThemeService;
 use Dynart\Dpress\Service\RoleService;
 use Dynart\Dpress\Service\SchemaService;
@@ -135,6 +142,7 @@ class DpressServices {
         Setting::class,
         Menu::class,
         MenuItem::class,
+        Block::class,
         AuthAttempt::class,
     ];
 
@@ -214,6 +222,12 @@ class DpressServices {
         Micro::add(ThemeService::class);
         Micro::add(PluginService::class);
         Micro::add(MenuService::class);
+        Micro::add(Blocks::class);
+        Micro::add(BlockService::class);
+        Micro::add(Places::class);
+        Micro::add(TagCloudBlock::class);
+        Micro::add(CategoryListBlock::class);
+        Micro::add(MarkdownBlock::class);
         Micro::add(SchemaCommands::class);
         Micro::add(SystemCommands::class);
         Micro::add(UserCommands::class);
@@ -284,6 +298,46 @@ class DpressServices {
     const SHORTCODES = [
         'video' => [[VideoShortcode::class, 'render'], Shortcodes::BLOCK],
     ];
+
+    /**
+     * The kinds of block the CMS provides
+     *
+     * Through exactly the call a plugin uses, for the reason the widgets and the shortcodes are:
+     * a mechanism the core does not eat is a mechanism nobody has tested.
+     *
+     * `fields` is the type's own settings, as form fields - which is what keeps the block editor
+     * from being a template that branches on `type`, the mistake `FormWidgets` was built to take
+     * out of form rendering. `prepare` is the save-time hook, and only the markdown block wants
+     * one: it renders there so a page view never parses markdown.
+     */
+    const BLOCKS = [
+        'tag_cloud' => [
+            'title'  => 'Tag cloud',
+            'render' => [TagCloudBlock::class, 'render'],
+            'fields' => [
+                'limit' => ['type' => 'text', 'label' => 'How many tags', 'required' => false,
+                            'description' => 'The most used ones. Empty or 0 shows every tag.'],
+            ],
+        ],
+        'category_list' => [
+            'title'  => 'Category list',
+            'render' => [CategoryListBlock::class, 'render'],
+        ],
+        'markdown' => [
+            'title'   => 'Markdown',
+            'render'  => [MarkdownBlock::class, 'render'],
+            'prepare' => [MarkdownBlock::class, 'prepare'],
+            'fields'  => [
+                'markdown' => ['type' => 'markdown', 'label' => 'Markdown', 'required' => false],
+            ],
+        ],
+    ];
+
+    public static function registerBlocks(Blocks $blocks): void {
+        foreach (self::BLOCKS as $type => $definition) {
+            $blocks->add($type, $definition);
+        }
+    }
 
     public static function registerShortcodes(Shortcodes $shortcodes): void {
         foreach (self::SHORTCODES as $name => [$handler, $kind]) {

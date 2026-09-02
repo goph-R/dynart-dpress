@@ -71,6 +71,35 @@ class TreeOrder {
     }
 
     /**
+     * The same move on a list that does not nest
+     *
+     * A sidebar is a list, not a tree - blocks have no `parent_id` at all. What is worth sharing
+     * is not the parent handling but the **renumbering rule**: `0, 1, 2, …` written over the whole
+     * row, never a nudge. Writing that a second time in a service is how two of them end up
+     * disagreeing about what a gap means.
+     *
+     * @param array $scope the column values the list is confined to, e.g. `place`
+     */
+    public function moveFlat(string $className, int $id, int $position, array $scope = []): void {
+        $ids = array_values(array_filter($this->scopedIds($className, $scope), fn($x) => $x !== $id));
+        $position = max(0, min($position, count($ids)));
+        array_splice($ids, $position, 0, [$id]);
+        $this->renumber($className, $ids);
+    }
+
+    /**
+     * Writes `0, 1, 2, …` over a list of ids that is already in the right order
+     *
+     * For the callers that changed the *membership* of a list rather than the order inside it -
+     * deleting a block, or moving one to another place - and now have a gap where it was.
+     *
+     * @param int[] $ids
+     */
+    public function renumberFlat(string $className, array $ids): void {
+        $this->renumber($className, $ids);
+    }
+
+    /**
      * Writes `0, 1, 2, …` over a list of ids, saving only what actually moved
      *
      * @param int[] $ids in the order they should end up
@@ -119,18 +148,49 @@ class TreeOrder {
     }
 
     /**
+     * The ids in a flat list, in position order
+     *
+     * @return int[]
+     */
+    protected function scopedIds(string $className, array $scope): array {
+        [$where, $params] = $this->scopeCondition($scope);
+        return $this->idsWhere($className, $where === [] ? ['1 = 1'] : $where, $params);
+    }
+
+    /**
      * The ids directly under a parent, in position order
      *
      * @return int[]
      */
     protected function childIds(string $className, ?int $parentId, array $scope): array {
-        $where = [$parentId === null ? '`parent_id` is null' : '`parent_id` = :parentId'];
-        $params = $parentId === null ? [] : [':parentId' => $parentId];
+        [$where, $params] = $this->scopeCondition($scope);
+        array_unshift($where, $parentId === null ? '`parent_id` is null' : '`parent_id` = :parentId');
+        if ($parentId !== null) {
+            $params[':parentId'] = $parentId;
+        }
+        return $this->idsWhere($className, $where, $params);
+    }
+
+    /**
+     * `column = :scopeN` for every column the tree is confined to
+     *
+     * @return array [string[] $where, array $params]
+     */
+    protected function scopeCondition(array $scope): array {
+        $where = [];
+        $params = [];
         foreach (array_keys($scope) as $index => $column) {
             $name = ':scope'.$index;
             $where[] = $this->db->escapeName($column).' = '.$name;
             $params[$name] = $scope[$column];
         }
+        return [$where, $params];
+    }
+
+    /**
+     * @return int[]
+     */
+    protected function idsWhere(string $className, array $where, array $params): array {
         $rows = $this->db->fetchColumn(
             'select `id` from '.$this->em->safeTableName($className)
                 .' where '.join(' and ', $where).' order by `position`, `id`',

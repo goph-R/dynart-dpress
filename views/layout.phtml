@@ -34,6 +34,13 @@
         header .brand { display: flex; align-items: center; }
         header .logo { height: 26px; width: auto; display: block; }
         header .spacer { flex: 1; }
+        /* a block in the header is beside the menu rather than a card of its own: the sidebar's
+           panel styling is the sidebar's, and a white box in a black bar is not what anybody
+           putting something up here meant */
+        header .block { font-size: 13px; }
+        header .block-title { display: inline; font-size: 13px; margin: 0 6px 0 0;
+                              text-transform: none; letter-spacing: 0; color: inherit; opacity: .7; }
+        header .tag-cloud { display: inline-flex; }
         header form { margin: 0; }
         header button { background: none; border: 1px solid #52525b; color: #fafafa; border-radius: 6px;
                         padding: 5px 10px; cursor: pointer; font: inherit; }
@@ -60,6 +67,35 @@
         .breadcrumb { font-size: 13px; color: #71717a; margin-bottom: 14px; }
         .breadcrumb a, .breadcrumb a:visited { color: var(--link); }
         main.wide { max-width: 720px; }
+        /* The content column keeps the width it always had and the sidebar is added beside it, so
+           putting a block in a place does not reflow the reading column. `minmax(0, 1fr)` rather
+           than `1fr`, or a wide code block inside the content stretches the grid track and pushes
+           the sidebar off the page instead of scrolling inside itself. */
+        main.has-sidebar { max-width: 1020px; display: grid; align-items: start; gap: 24px;
+                           grid-template-columns: minmax(0, 1fr) 252px; }
+        .sidebar .block { background: #fff; border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; }
+        .sidebar .block:last-child { margin-bottom: 0; }
+        .block-title { font-size: 14px; text-transform: uppercase; letter-spacing: .04em;
+                       color: #71717a; margin: 0 0 10px; }
+        .block > :last-child { margin-bottom: 0; }
+        .block img { border-radius: 8px; }
+        .block .menu { flex-direction: column; gap: 6px; }
+        .category-list { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+        .category-list .category-list { padding-left: 14px; }
+        .category-list li { padding: 3px 0; }
+        .tag-cloud { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px; }
+        /* five buckets, and the block decides which one a tag is in - what "used a lot" looks
+           like is the stylesheet's business, which is why no font size is written into the HTML */
+        .tag-cloud .tag-1 { font-size: 12px; }
+        .tag-cloud .tag-2 { font-size: 13px; }
+        .tag-cloud .tag-3 { font-size: 14px; }
+        .tag-cloud .tag-4 { font-size: 16px; }
+        .tag-cloud .tag-5 { font-size: 18px; }
+        /* Under the width where two columns stop being two columns, the sidebar goes below the
+           content rather than beside it - which is also the order it is in the document. */
+        @media (max-width: 900px) {
+            main.has-sidebar { grid-template-columns: minmax(0, 1fr); }
+        }
         .post-summary { padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid #e4e4e7; }
         .post-summary:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 0; }
         .post-summary h2 { font-size: 18px; margin: 0 0 4px; }
@@ -147,6 +183,8 @@
             .post-summary { border-bottom-color: #3f3f46; }
             article pre, article code { background: #18181b; }
             .tag { background: #3f3f46; color: #e4e4e7; }
+            .sidebar .block { background: #27272a; }
+            .block-title { color: #a1a1aa; }
         }
     </style>
 </head>
@@ -160,6 +198,10 @@
         <?php endif ?>
     </a>
     <?= $main_menu ?? '' ?>
+    <?php // whatever else was put in this place. A place is one idea: if the editor offers `main`
+          // and the admin lists a table for it, then what somebody puts there has to render, or
+          // the promise is only true for menus. ?>
+    <?= isset($places) ? $places->blocks('main') : '' ?>
     <span class="spacer"></span>
     <?php if (!empty($current_user)): ?>
         <a href="<?= esc_attr(route_url('/profile')) ?>"><?= esc_html($current_user->name() ?: 'Profile') ?></a>
@@ -173,10 +215,19 @@
         <?php endif ?>
     <?php endif ?>
 </header>
-<main class="wide">
+<?php
+// what the site has put beside the content, if anything. Asked for once, here, so the layout can
+// leave the whole column out rather than render an empty one - a sidebar with nothing in it is a
+// hole in the design at every width.
+$sidebar = isset($places) ? $places->render('sidebar') : '';
+?>
+<main class="wide<?= $sidebar === '' ? '' : ' has-sidebar' ?>">
     <div class="card">
         <?= $this->block('content') ?>
     </div>
+    <?php if ($sidebar !== ''): ?>
+        <aside class="sidebar"><?= $sidebar ?></aside>
+    <?php endif ?>
 </main>
 </body>
 </html>

@@ -133,6 +133,16 @@ body.admin {
 
 .panel { background: var(--panel); border-radius: var(--radius); padding: 22px; }
 .panel + .panel { margin-top: 18px; }
+/* the name of a place, over the table of what is in it */
+.panel-title { font-size: 15px; margin: 0 0 12px; color: var(--muted); }
+/* the block types, on the way to a new one: links, because each is a page */
+.choices { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+.choices a { display: block; border: 1px solid var(--line); border-radius: var(--radius);
+             padding: 10px 16px; text-decoration: none; }
+.choices a:hover { border-color: var(--accent); }
+/* a block that is switched off is listed, and says so, rather than being hidden from its own screen */
+.tree-table tr.is-disabled td[data-property="title"] { opacity: .55; }
+
 .panel > h2 { font-size: 16px; margin: 0 0 14px; }
 
 .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 10px; }

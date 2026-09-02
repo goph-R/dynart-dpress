@@ -7,6 +7,7 @@ use Dynart\Micro\Entities\MigrationInterface;
 use Dynart\Micro\Entities\QueryExecutor;
 use Dynart\Micro\Entities\Revision;
 use Dynart\Dpress\Entity\AuthAttempt;
+use Dynart\Dpress\Entity\Block;
 use Dynart\Dpress\Entity\Category;
 use Dynart\Dpress\Entity\Content;
 use Dynart\Dpress\Entity\ContentAttachment;
@@ -70,6 +71,7 @@ class CreateSchema implements MigrationInterface {
         Setting::class,
         Menu::class,
         MenuItem::class,
+        Block::class,
         AuthAttempt::class,
     ];
 
@@ -89,6 +91,7 @@ class CreateSchema implements MigrationInterface {
         Permissions::TAG_VIEW, Permissions::TAG_CREATE, Permissions::TAG_UPDATE, Permissions::TAG_DELETE,
         Permissions::MEDIA_VIEW, Permissions::MEDIA_CREATE, Permissions::MEDIA_UPDATE, Permissions::MEDIA_DELETE,
         Permissions::MENU_VIEW, Permissions::MENU_UPDATE,
+        Permissions::BLOCK_VIEW, Permissions::BLOCK_UPDATE,
         Permissions::SETTING_VIEW,
     ];
 

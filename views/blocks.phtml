@@ -1,0 +1,14 @@
+<?php /**
+ * Everything in one place, each in its own section. Themes override this to change the wrapper.
+ *
+ * The type is a class, so a theme can style one kind of block without the CMS inventing an option
+ * for every difference somebody might want.
+ */ ?>
+<?php foreach ($blocks as $block): ?>
+    <section class="block block-<?= esc_attr(str_replace('_', '-', $block['type'])) ?>">
+        <?php if ($block['title'] !== ''): ?>
+            <h2 class="block-title"><?= esc_html($block['title']) ?></h2>
+        <?php endif ?>
+        <?= $block['html'] ?>
+    </section>
+<?php endforeach ?>

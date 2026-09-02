@@ -502,7 +502,11 @@
             }
             var box = row.getBoundingClientRect();
             var where = (event.clientY - box.top) / box.height;
-            zone = where < 0.25 ? 'before' : (where > 0.75 ? 'after' : 'inside');
+            // a flat list has two answers rather than three, and the whole row is the target: the
+            // narrow middle band that means "inside" in a tree would be dead space in a sidebar
+            zone = options.flat
+                ? (where < 0.5 ? 'before' : 'after')
+                : (where < 0.25 ? 'before' : (where > 0.75 ? 'after' : 'inside'));
             target = row;
             row.classList.add('drop-' + zone);
         }
@@ -625,6 +629,8 @@
                 return;
             }
             Dpress.sortableTree(tbody, {
+                // a list that does not nest - the blocks in a place - offers no "inside" zone
+                flat: table.hasAttribute('data-sortable-flat'),
                 onMove: function (id, parentId, position) {
                     Dpress.send(url + id, {parent_id: parentId || '', position: position})
                         .then(function (answer) {
