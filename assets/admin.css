@@ -356,8 +356,8 @@ table.plain th, table.plain td { text-align: left; padding: 8px 14px; border-bot
 table.plain th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 table.plain tr:last-child td { border-bottom: 0; }
 table.plain .actions-column { text-align: right; white-space: nowrap; }
-table.menu-items tr.broken td { background: rgba(220, 38, 38, .06); }
-table.menu-items .form-error { display: block; }
+table.tree-table tr.broken td { background: rgba(220, 38, 38, .06); }
+table.tree-table .form-error { display: block; }
 
 /* --- dragging a tree into order --- */
 

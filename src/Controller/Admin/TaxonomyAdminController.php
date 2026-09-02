@@ -59,20 +59,32 @@ class TaxonomyAdminController extends AbstractAdminController {
     #[Route('GET', '/admin/categories')]
     public function categories(): string {
         $this->requirePermission(Permissions::CATEGORY_VIEW);
+        $canEdit = $this->can(Permissions::CATEGORY_UPDATE);
+        $rowActions = [];
+        if ($canEdit) {
+            $rowActions[] = ['title' => 'Edit', 'class' => 'edit', 'link' => 'edit_url',
+                             'icon' => $this->icon('edit')];
+        }
+        if ($this->can(Permissions::CATEGORY_DELETE)) {
+            $rowActions[] = ['title' => 'Delete', 'class' => 'delete', 'post' => 'delete_url',
+                             'icon' => $this->icon('delete'),
+                             'confirm' => 'Delete this category? Its children move up one level, and '
+                                 .'the posts in it keep their other categories.'];
+        }
         return $this->admin('dpress_admin:taxonomy/categories', [
             'title'      => 'Categories',
             'categories' => $this->categoryTree(),
+            'columns'    => [
+                'name' => ['label' => 'Name', 'tree' => true, 'link' => $canEdit ? 'edit_url' : ''],
+                'slug' => ['label' => 'Slug'],
+            ],
+            'row_actions' => $rowActions,
             'can_create' => $this->can(Permissions::CATEGORY_CREATE),
-            'can_edit'   => $this->can(Permissions::CATEGORY_UPDATE),
-            'can_delete' => $this->can(Permissions::CATEGORY_DELETE),
             'new_url'    => $this->router->url('/admin/categories/new'),
             'tags_url'   => $this->router->url('/admin/tags'),
-            'move_url'   => $this->router->url('/admin/categories/move/'),
-            // the same three icons the menu items screen renders, and for the same reason: an
-            // icon is markup that is ours, and no template builds one out of a request
-            'edit_icon'   => $this->icon('edit'),
-            'delete_icon' => $this->icon('delete'),
-            'drag_icon'   => $this->icon('drag'),
+            // no drag for somebody who may not change one; the endpoint checks the same thing
+            'move_url'   => $canEdit ? $this->router->url('/admin/categories/move/') : '',
+            'drag_icon'  => $this->icon('drag'),
         ]);
     }
 

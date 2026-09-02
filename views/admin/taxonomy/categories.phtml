@@ -20,46 +20,13 @@
     </div>
 
     <div class="panel">
-        <?php if (empty($categories)): ?>
-            <p class="form-description">No categories yet.</p>
-        <?php else: ?>
-            <table class="plain menu-items"<?= !empty($can_edit) ? ' data-sortable-tree="'.esc_attr($move_url).'"' : '' ?>>
-                <thead>
-                    <tr><th class="drag-column"></th><th>Name</th><th>Slug</th><th></th></tr>
-                </thead>
-                <tbody>
-                <?php foreach ($categories as $category): ?>
-                    <tr data-id="<?= esc_attr((string)$category['id']) ?>"
-                        data-parent="<?= esc_attr((string)($category['parent_id'] ?? '')) ?>"
-                        data-depth="<?= esc_attr((string)$category['depth']) ?>">
-                        <td class="drag-column">
-                            <?php if (!empty($can_edit)): ?>
-                                <button type="button" class="action drag" data-drag-handle
-                                        title="Drag to reorder" aria-label="Drag to reorder"><?= $drag_icon ?></button>
-                            <?php endif ?>
-                        </td>
-                        <td data-tree-label style="padding-left: <?= esc_attr((string)(14 + $category['depth'] * 22)) ?>px">
-                            <?php if (!empty($can_edit)): ?>
-                                <a href="<?= esc_attr($category['edit_url']) ?>"><?= esc_html($category['name']) ?></a>
-                            <?php else: ?>
-                                <?= esc_html($category['name']) ?>
-                            <?php endif ?>
-                        </td>
-                        <td><?= esc_html($category['slug']) ?></td>
-                        <td class="actions-column">
-                            <?php if (!empty($can_edit)): ?>
-                                <a class="action edit" href="<?= esc_attr($category['edit_url']) ?>"
-                                   title="Edit" aria-label="Edit"><?= $edit_icon ?></a>
-                            <?php endif ?>
-                            <?php if (!empty($can_delete)): ?>
-                                <button type="button" class="action delete" title="Delete" aria-label="Delete"
-                                        onclick="Dpress.post(<?= esc_attr(json_encode($category['delete_url'])) ?>, 'Delete this category? Its children move up one level, and the posts in it keep their other categories.')"><?= $delete_icon ?></button>
-                            <?php endif ?>
-                        </td>
-                    </tr>
-                <?php endforeach ?>
-                </tbody>
-            </table>
-        <?php endif ?>
+        <?= $this->fetch('dpress_admin:tree', [
+            'rows'       => $categories,
+            'columns'    => $columns,
+            'rowActions' => $row_actions,
+            'move_url'   => $move_url,
+            'drag_icon'  => $drag_icon,
+            'empty'      => 'No categories yet.',
+        ]) ?>
     </div>
 <?php $this->endBlock() ?>

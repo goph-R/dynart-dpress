@@ -213,20 +213,31 @@ class MenuAdminController extends AbstractAdminController {
     public function items(string $id): string {
         $this->requirePermission(Permissions::MENU_VIEW);
         $menu = $this->found($this->menus->findMenu((int)$id));
+        $canEdit = $this->can(Permissions::MENU_UPDATE);
+        $rowActions = [];
+        if ($canEdit) {
+            $rowActions[] = ['title' => 'Edit', 'class' => 'edit', 'link' => 'edit_url',
+                             'icon' => $this->icon('edit')];
+            $rowActions[] = ['title' => 'Delete', 'class' => 'delete', 'post' => 'delete_url',
+                             'icon' => $this->icon('delete'),
+                             'confirm' => 'Delete this item? Its children move up one level.'];
+        }
         return $this->admin('dpress_admin:menu/items', [
             'title'    => $menu->name,
             'menu'     => $menu,
             'items'    => $this->itemRows($menu),
-            'can_edit' => $this->can(Permissions::MENU_UPDATE),
+            'columns'  => [
+                'label'       => ['label' => 'Label', 'tree' => true],
+                // markup, because a target that has gone says so under itself - the same opt out
+                // a dynamic list's `html` view is, and for the same reason
+                'target_html' => ['label' => 'Points at', 'view' => 'html'],
+            ],
+            'row_actions' => $rowActions,
+            'can_edit' => $canEdit,
             'new_url'  => $this->router->url('/admin/menus/items/'.$menu->id.'/new'),
             'back_url' => $this->router->url('/admin/menus'),
-            // this screen is a plain table rather than a dynamic list, so its two icons come in
-            // the same way a list's do - from the controller, rather than the template reaching
-            // for them itself
-            'edit_icon'   => $this->icon('edit'),
-            'delete_icon' => $this->icon('delete'),
-            'drag_icon'   => $this->icon('drag'),
-            'move_url'    => $this->router->url('/admin/menus/items/move/'),
+            'move_url' => $canEdit ? $this->router->url('/admin/menus/items/move/') : '',
+            'drag_icon' => $this->icon('drag'),
         ]);
     }
 
@@ -248,11 +259,20 @@ class MenuAdminController extends AbstractAdminController {
             if ($rowParent !== $parentId) {
                 continue;
             }
+            $url = $this->menus->resolveUrl($row);
             $result[] = [
                 'id'       => (int)$row['id'],
                 'label'    => (string)$row['label'],
                 'target'   => $this->describeTarget($row),
-                'url'      => $this->menus->resolveUrl($row),
+                // Built here rather than in the template, because it is markup rather than a value
+                // and the tree partial escapes anything it is not told is markup. `htmlspecialchars`
+                // rather than `esc_html`, which is a *view* helper and is not loaded out here - the
+                // two are the same call, and this is the side of the fence that has to say so.
+                'target_html' => htmlspecialchars($this->describeTarget($row))
+                    .($url === null ? '<small class="form-error">not rendered - its target is gone</small>' : ''),
+                // what makes the row stand out: the item is in the menu and renders nowhere
+                'class'    => $url === null ? 'broken' : '',
+                'url'      => $url,
                 'position' => (int)$row['position'],
                 'parent_id' => $rowParent,
                 'depth'    => $depth,

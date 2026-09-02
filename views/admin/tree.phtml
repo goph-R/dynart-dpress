@@ -1,0 +1,101 @@
+<?php
+/**
+ * A tree table, from a configuration rather than from markup
+ *
+ * The counterpart of `dpress_admin:list`, and the same bargain: the server decides the columns and
+ * the row actions, and a screen writes one array instead of a table. What differs is who renders -
+ * a dynamic list is built in the browser from JSON, and this is built here, because a tree is not
+ * paged, not sorted and not filtered, so there is nothing for the browser to decide.
+ *
+ * Dragging is `Dpress.sortableTree()`, which reads `data-id`, `data-parent` and `data-depth` off
+ * the rows and knows nothing else about them. A third tree screen needs no JavaScript.
+ *
+ * Expects:
+ *   $rows       flat, depth first, each with `id`, `parent_id`, `depth` and the column values
+ *   $columns    property => ['label' => '', 'tree' => bool, 'view' => 'html', 'link' => 'edit_url']
+ *   $rowActions [['title' => '', 'icon' => '', 'link' => 'edit_url']] or ['post' => 'delete_url',
+ *               'confirm' => '', 'class' => 'delete']
+ *   $move_url   where a drop posts to, or '' for a tree nobody may rearrange
+ *   $empty      what to say when there is nothing here
+ *
+ * A row may carry `class` for its `<tr>`, which is how the menu items screen marks the ones whose
+ * target has gone.
+ */
+$columns = $columns ?? [];
+$rowActions = $rowActions ?? [];
+$moveUrl = (string)($move_url ?? '');
+?>
+<?php if (empty($rows)): ?>
+    <p class="form-description"><?= esc_html($empty ?? 'Nothing here yet.') ?></p>
+<?php else: ?>
+    <table class="plain tree-table"<?= $moveUrl !== '' ? ' data-sortable-tree="'.esc_attr($moveUrl).'"' : '' ?>>
+        <thead>
+            <tr>
+                <?php if ($moveUrl !== ''): ?><th class="drag-column"></th><?php endif ?>
+                <?php foreach ($columns as $column): ?>
+                    <th><?= esc_html((string)($column['label'] ?? '')) ?></th>
+                <?php endforeach ?>
+                <?php if (!empty($rowActions)): ?><th></th><?php endif ?>
+            </tr>
+        </thead>
+        <tbody>
+        <?php foreach ($rows as $row): ?>
+            <?php // the three attributes the dragging reads, and nothing more: the tree is the
+                  // rows, not a structure held anywhere else ?>
+            <tr<?= empty($row['class']) ? '' : ' class="'.esc_attr($row['class']).'"' ?>
+                data-id="<?= esc_attr((string)$row['id']) ?>"
+                data-parent="<?= esc_attr((string)($row['parent_id'] ?? '')) ?>"
+                data-depth="<?= esc_attr((string)($row['depth'] ?? 0)) ?>">
+                <?php if ($moveUrl !== ''): ?>
+                    <td class="drag-column">
+                        <button type="button" class="action drag" data-drag-handle
+                                title="Drag to reorder" aria-label="Drag to reorder"><?= $drag_icon ?? '' ?></button>
+                    </td>
+                <?php endif ?>
+                <?php foreach ($columns as $property => $column): ?>
+                    <?php
+                    $value = $row[$property] ?? '';
+                    // `html` is the opt out, for a value the controller built on purpose - the
+                    // same rule, and the same reason, as the dynamic list's column views
+                    $cell = ($column['view'] ?? '') === 'html' ? (string)$value : esc_html((string)$value);
+                    $href = !empty($column['link']) ? (string)($row[$column['link']] ?? '') : '';
+                    if ($href !== '') {
+                        $cell = '<a href="'.esc_attr($href).'">'.$cell.'</a>';
+                    }
+                    $indented = !empty($column['tree']);
+                    ?>
+                    <td<?= $indented ? ' data-tree-label style="padding-left: '
+                            .esc_attr((string)(14 + (int)($row['depth'] ?? 0) * 22)).'px"' : '' ?>><?= $cell ?></td>
+                <?php endforeach ?>
+                <?php if (!empty($rowActions)): ?>
+                    <td class="actions-column">
+                        <?php foreach ($rowActions as $action): ?>
+                            <?php $class = 'action '.(string)($action['class'] ?? '') ?>
+                            <?php if (!empty($action['link'])): ?>
+                                <?php $href = (string)($row[$action['link']] ?? '') ?>
+                                <?php if ($href !== ''): ?>
+                                    <a class="<?= esc_attr($class) ?>" href="<?= esc_attr($href) ?>"
+                                       title="<?= esc_attr((string)$action['title']) ?>"
+                                       aria-label="<?= esc_attr((string)$action['title']) ?>"><?= $action['icon'] ?? '' ?></a>
+                                <?php endif ?>
+                            <?php elseif (!empty($action['post'])): ?>
+                                <?php $url = (string)($row[$action['post']] ?? '') ?>
+                                <?php if ($url !== ''): ?>
+                                    <?php // a delete is a POST for the reason every state change
+                                          // in the admin is: a link that changes something can be
+                                          // followed by a prefetcher or an `<img>` elsewhere ?>
+                                    <button type="button" class="<?= esc_attr($class) ?>"
+                                            title="<?= esc_attr((string)$action['title']) ?>"
+                                            aria-label="<?= esc_attr((string)$action['title']) ?>"
+                                            onclick="Dpress.post(<?= esc_attr(json_encode($url)) ?><?=
+                                                empty($action['confirm']) ? '' : ', '.esc_attr(json_encode($action['confirm'])) ?>)"><?= $action['icon'] ?? '' ?></button>
+                                <?php endif ?>
+                            <?php endif ?>
+                        <?php endforeach ?>
+                    </td>
+                <?php endif ?>
+            </tr>
+        <?php endforeach ?>
+        </tbody>
+    </table>
+<?php endif ?>

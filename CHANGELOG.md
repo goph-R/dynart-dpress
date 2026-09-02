@@ -5,6 +5,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.30.0] &ndash; 2026-09-02
+
+### Added
+- **`dpress_admin:tree`** — the counterpart of `dpress_admin:list`, and the same bargain: a tree screen writes one array and no markup. Columns (`tree` for the indented one, `view => 'html'` for markup the controller built, `link` to make it a link), row actions (`link` or `post` with a confirm), and where a drop posts to.
+
+### Changed
+- **The menu items and categories screens render through it.** The two templates were copied from one another, down to the categories table carrying `class="menu-items"`, and copied markup drifts. Between them they lose 109 lines and gain 67, and both are now a page head and one `fetch()`.
+- `table.menu-items` is `table.tree-table`, which is what it always was.
+- A tree screen with no drag permission renders no handles and no `data-sortable-tree`, rather than handles that post to an endpoint that would refuse them.
+
+### Notes
+The behaviour was already shared — `Dpress.sortableTree()` reads `data-id`, `data-parent` and `data-depth` and knows nothing about menus or categories. It was only the markup that was duplicated, which is the half that rots quietly.
+
+`TreeTableTest` pins what a config-driven table can still get wrong: a column with no field behind it is a row of blanks with no error and no warning, and a row action naming a property nothing carries renders no button at all. Both screens are checked, the way the attachments panel is and the way the dashboard was not until it had been broken for three releases.
+
+---
+
 ## [0.29.0] &ndash; 2026-09-02
 
 ### Changed
