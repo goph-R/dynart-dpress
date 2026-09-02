@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.35.5] &ndash; 2026-09-02
+
+### Fixed
+- **A post's title was smaller than the headings inside it.** `h1` is 20px and a markdown `##` had no rule at all, so it fell to the browser's `1.5em` — about 22.5px. Every post read as though it began in the middle. `article` now carries a scale, 28 / 21 / 17, scoped so the 20px `h1` on a login or a form card is left alone.
+
+---
+
 ## [0.35.4] &ndash; 2026-09-02
 
 ### Changed

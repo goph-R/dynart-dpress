@@ -76,6 +76,15 @@
         .attachments { list-style: none; padding: 0; margin: 0; }
         .attachments li { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
         .attachment-icon svg { width: 24px; height: 24px; color: #71717a; display: block; }
+        /* A scale for the headings a document contains, scoped to `article` so the 20px `h1` on a
+           login or a form card is left alone.
+           Without this a `##` had no rule and fell to the browser's `1.5em` - about 22.5px, which
+           is *larger* than the title above it, so every post read as though it began in the
+           middle. The title is the biggest thing on the page, and what an author writes inside it
+           steps down from there. */
+        article h1 { font-size: 28px; margin: 0 0 18px; }
+        article h2 { font-size: 21px; margin: 28px 0 10px; }
+        article h3 { font-size: 17px; margin: 22px 0 8px; }
         /* The margin is reset along with it: a browser indents a blockquote by 40px on the left,
            which would leave the rule floating in the gutter rather than marking the column. The
            horizontal padding is so the text does not sit against the border it just gained. */
