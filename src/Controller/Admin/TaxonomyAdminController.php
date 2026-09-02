@@ -8,6 +8,7 @@ use Dynart\Micro\JwtAuthInterface;
 use Dynart\Micro\RequestInterface;
 use Dynart\Micro\RouterInterface;
 use Dynart\Micro\ViewInterface;
+use Dynart\Dpress\DpressException;
 use Dynart\Dpress\Form\AdminForms;
 use Dynart\Dpress\Form\FormFactory;
 use Dynart\Dpress\Query\ListRequest;
@@ -23,7 +24,6 @@ use Dynart\Dpress\Service\TaxonomyService;
  */
 class TaxonomyAdminController extends AbstractAdminController {
 
-    const CATEGORY_SORTABLE = ['id', 'name', 'slug', 'position'];
     const TAG_SORTABLE = ['id', 'name', 'slug'];
 
     public function __construct(
@@ -45,58 +45,91 @@ class TaxonomyAdminController extends AbstractAdminController {
 
     // --- categories ---
 
+    /**
+     * The category tree, whole, in the order it renders in
+     *
+     * **Not a dynamic list**, which it was until 0.29.0. Categories are a tree somebody arranges,
+     * and a dynamic list is a table somebody searches - dragging a row means nothing while the
+     * rows are sorted by name or split across pages, so the two cannot both be true of one screen.
+     * What it cost: the search box, the sortable columns, the pager and *Delete selected*. What it
+     * bought: the indent is real, and the order on the screen is the order on the site.
+     *
+     * The whole tree renders, because a page of a tree is not a tree.
+     */
     #[Route('GET', '/admin/categories')]
     public function categories(): string {
         $this->requirePermission(Permissions::CATEGORY_VIEW);
-        $config = [
-            'endpoint' => $this->router->url('/admin/categories/list'),
-            'orderBy'  => 'name',
-            'columns'  => [
-                'id'        => ['label' => '#', 'align' => 'right', 'width' => '1%'],
-                'name'      => ['label' => 'Name', 'view' => 'link', 'options' => ['hrefProperty' => 'edit_url']],
-                'slug'      => ['label' => 'Slug'],
-                'parent'    => ['label' => 'Parent', 'sortable' => false],
-                'position'  => ['label' => 'Position', 'align' => 'right'],
-            ],
-            'rowActions'   => [],
-            'groupActions' => $this->groupActions('categories', Permissions::CATEGORY_DELETE,
-                'Delete the selected categories? The posts in them keep their other categories.'),
-        ];
-        $config['firstPage'] = $this->categoryPage($this->firstPageContext($config, self::CATEGORY_SORTABLE, ['search']));
         return $this->admin('dpress_admin:taxonomy/categories', [
             'title'      => 'Categories',
+            'categories' => $this->categoryTree(),
             'can_create' => $this->can(Permissions::CATEGORY_CREATE),
+            'can_edit'   => $this->can(Permissions::CATEGORY_UPDATE),
+            'can_delete' => $this->can(Permissions::CATEGORY_DELETE),
             'new_url'    => $this->router->url('/admin/categories/new'),
             'tags_url'   => $this->router->url('/admin/tags'),
-            'list_id'    => 'category-list',
-            'list_config' => $config,
+            'move_url'   => $this->router->url('/admin/categories/move/'),
+            // the same three icons the menu items screen renders, and for the same reason: an
+            // icon is markup that is ours, and no template builds one out of a request
+            'edit_icon'   => $this->icon('edit'),
+            'delete_icon' => $this->icon('delete'),
+            'drag_icon'   => $this->icon('drag'),
         ]);
     }
 
-    #[Route('GET', '/admin/categories/list')]
-    public function categoryRows(): array {
-        $this->requirePermission(Permissions::CATEGORY_VIEW);
-        return $this->categoryPage($this->list->context(self::CATEGORY_SORTABLE, ['search']));
+    /**
+     * Every category, flattened depth first with the depth kept for the indent
+     */
+    protected function categoryTree(): array {
+        // no `max` in the context: `applyListOptions()` reads it with `isset`, so `max => 0` is
+        // `limit 0` and returns nothing, which is not the same as no limit at all
+        return $this->flattenCategories($this->taxonomy->categories(), null, 0);
+    }
+
+    protected function flattenCategories(array $rows, ?int $parentId, int $depth): array {
+        $result = [];
+        foreach ($rows as $row) {
+            $rowParent = $row['parent_id'] === null ? null : (int)$row['parent_id'];
+            if ($rowParent !== $parentId) {
+                continue;
+            }
+            $result[] = [
+                'id'        => (int)$row['id'],
+                'name'      => (string)$row['name'],
+                'slug'      => (string)$row['slug'],
+                'parent_id' => $rowParent,
+                'depth'     => $depth,
+                'edit_url'  => $this->router->url('/admin/categories/edit/'.$row['id']),
+                'delete_url' => $this->router->url('/admin/categories/delete/'.$row['id']),
+            ];
+            foreach ($this->flattenCategories($rows, (int)$row['id'], $depth + 1) as $child) {
+                $result[] = $child;
+            }
+        }
+        return $result;
     }
 
     /**
-     * One page of categories, for the endpoint and for the screen that seeds its first page
+     * Where a drag on the categories screen lands
+     *
+     * Answers with data rather than redirecting, for the reason the menu items one does: the
+     * screen has already moved the row.
      */
-    protected function categoryPage(array $context): array {
-        $names = $this->categoryNames();
-        $rows = [];
-        foreach ($this->taxonomy->categories($context) as $category) {
-            $rows[] = [
-                'id'       => (int)$category['id'],
-                'name'     => $category['name'],
-                'slug'     => $category['slug'],
-                'position' => (int)$category['position'],
-                'parent'   => $category['parent_id'] === null ? '' : ($names[(int)$category['parent_id']] ?? '?'),
-                'edit_url' => $this->can(Permissions::CATEGORY_UPDATE)
-                    ? $this->router->url('/admin/categories/edit/'.$category['id']) : '',
-            ];
+    #[Route('POST', '/admin/categories/move/?')]
+    public function moveCategory(string $id): array {
+        $this->requirePermission(Permissions::CATEGORY_UPDATE);
+        $this->requireAction();
+        $category = $this->found($this->taxonomy->findCategory((int)$id));
+        $parent = trim((string)$this->request->get('parent_id', ''));
+        try {
+            $this->taxonomy->moveCategory(
+                $category,
+                $parent === '' ? null : (int)$parent,
+                (int)$this->request->get('position', 0)
+            );
+        } catch (DpressException $e) {
+            return $this->answer(['error' => $e->getMessage()]);
         }
-        return $this->rows($rows, $this->taxonomy->countCategories($context));
+        return $this->answer();
     }
 
     #[Route('GET', '/admin/categories/new')]
@@ -128,22 +161,6 @@ class TaxonomyAdminController extends AbstractAdminController {
             $this->done('/admin/categories', 'Saved.');
         }
         return $this->categoryEditor($form, $category);
-    }
-
-    #[Route('POST', '/admin/categories/delete-selected')]
-    public function deleteCategories(): string {
-        $this->requirePermission(Permissions::CATEGORY_DELETE);
-        $this->requireAction();
-        $notice = $this->deleteSelected(function (int $id) {
-            $category = $this->taxonomy->findCategory($id);
-            if ($category === null) {
-                return false;
-            }
-            $this->taxonomy->deleteCategory($category); // re-parents its children, as ever
-            return true;
-        });
-        $this->done('/admin/categories', $notice);
-        return '';
     }
 
     #[Route('POST', '/admin/categories/delete/?')]
@@ -188,14 +205,6 @@ class TaxonomyAdminController extends AbstractAdminController {
             $options[$category['id']] = $category['name'];
         }
         return $options;
-    }
-
-    protected function categoryNames(): array {
-        $names = [];
-        foreach ($this->taxonomy->categories() as $category) {
-            $names[(int)$category['id']] = $category['name'];
-        }
-        return $names;
     }
 
     // --- tags ---

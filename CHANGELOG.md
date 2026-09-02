@@ -5,6 +5,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.29.0] &ndash; 2026-09-02
+
+### Changed
+- **The categories screen is a tree table, dragged into order.** The same handle, the same three drop zones and the same `TreeOrder` behind it as the menu items screen, over `POST /admin/categories/move/?`.
+- **What that cost, deliberately:** the search box, the sortable columns, the pager and **Delete selected**. A dynamic list is a table somebody searches; a tree is something somebody arranges, and dragging a row means nothing while the rows are sorted by name or split across pages. The two cannot both be true of one screen, so the screen picked one. Each row keeps its own Edit and Delete, the way the menu items screen always has.
+- The whole tree renders. A page of a tree is not a tree.
+
+### Removed
+- `GET /admin/categories/list`, `POST /admin/categories/delete-selected`, `TaxonomyAdminController::CATEGORY_SORTABLE` and the paged row builder behind them — all unreachable once the screen stopped being a list, and an endpoint nothing can reach is worse than one that is gone.
+
+---
+
 ## [0.28.0] &ndash; 2026-09-02
 
 ### Added
