@@ -130,9 +130,11 @@ the only thing that knows where a document starts and ends.
 
 ## 5. In the editor
 
-The attachments panel under the textarea has a **Reference** column showing `media#<id>`, so the
-token can be read off the row and typed by hand. The insert button and the toolbar's 🖼 button
-both write the reference rather than the URL.
+The toolbar's 🖼 button and the attachment list's insert action both write the reference rather
+than the URL. There was a **Reference** column in the attachment panel too, showing `media#<id>`
+to be read off the row and typed by hand; it went in 0.25.3, once the attachment list had stopped
+being how a picture gets into an article. To write one by hand, the ids are in the media library
+at `/admin/media`, which has a `#` column like every other admin list.
 
 **The toolbar's button attaches nothing** (0.24.0). A reference is all it takes to put a picture
 in an article, so the file need not hang off the post as well, and the button therefore works

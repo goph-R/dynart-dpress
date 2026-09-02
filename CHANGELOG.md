@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.25.3] &ndash; 2026-09-02
+
+### Removed
+- **The Reference column in the attachments panel**, and the `ref` field behind it. It existed so `media#<id>` could be read off a row and typed into the text by hand, back when attaching a picture was how it got into an article. It is not any more: the toolbar's 🖼 button writes the reference and attaches nothing, and the list's insert action builds it from the row's id. To write one out by hand the ids are in the media library, which has a `#` column like every other admin list.
+
+### Changed
+- The test that pinned that column now pins **the agreement instead** — every column the panel declares has a field the rows carry. A column with no field is a row of blanks with no error and no warning, which is exactly how the dashboard stayed two-thirds empty for three releases. The Reference column could then be removed without touching the test, and the next column added is covered the moment it exists.
+
+---
+
 ## [0.25.2] &ndash; 2026-09-02
 
 ### Fixed
