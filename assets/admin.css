@@ -112,8 +112,14 @@ body.admin {
    list that turns purple as somebody works down it is reporting their browsing history back to
    them instead of saying anything about the content. The underline is the affordance.
    `:visited` needs saying separately: it is a more specific match than `a` and would otherwise
-   keep the browser's colour. The header and the rail are outside `.admin-main` and set their own. */
-.admin-main a, .admin-main a:visited { color: inherit; }
+   keep the browser's colour. The header and the rail are outside `.admin-main` and set their own.
+
+   **Not `.button`.** An anchor styled as a button is not a link for this purpose, and `.admin-main
+   a` is (0,1,1) against `.button`'s (0,1,0) - so it won, and every Back and Cancel quietly took
+   its colour from whatever it sat in rather than from `--ink`. Nothing looked wrong because
+   nothing sits in a coloured container today, which is luck rather than design. `.button.primary`
+   is (0,2,0) and was never affected, which is why the Upload button was always right. */
+.admin-main a:not(.button), .admin-main a:not(.button):visited { color: inherit; }
 /* focused after a partial load, so somebody reading with a keyboard or a screen reader carries
    on from the new screen rather than from the top of the document - a move, not a highlight */
 .admin-main:focus { outline: none; }

@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.31.3] &ndash; 2026-09-02
+
+### Fixed
+- **An anchor styled as a button keeps its own colour.** 0.30.1's `.admin-main a { color: inherit }` is (0,1,1) against `.button`'s (0,1,0), so it won: every Back and Cancel took its colour from whatever it sat in rather than from `--ink`. Nothing looked wrong because no button currently sits in a coloured container — luck rather than design. `.button.primary` is (0,2,0) and was never affected, which is why Upload and New always matched.
+
+---
+
 ## [0.31.2] &ndash; 2026-09-02
 
 ### Fixed
