@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.35.2] &ndash; 2026-09-02
+
+### Changed
+- **A link colour per scheme**: `#d4006b` on light, `#ff79aa` on dark, both through `--link` — the dark block redefines the one property and nothing else changes.
+
+### Notes
+Measured: **5.2:1** and **7.3:1**. Both past WCAG AA for body text, and the dark one past AAA. A pink that reads well on near-black is faint on white and the reverse, which is what one value could not do.
+
+---
+
 ## [0.35.1] &ndash; 2026-09-02
 
 ### Changed
