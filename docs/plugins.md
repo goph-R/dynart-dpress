@@ -186,7 +186,10 @@ goes first when two plugins add a field to the same form.
 
 - **Interfaces for the domain services.** The plan promised `ContentServiceInterface`; it does not
   exist, and extracting one touches every constructor. Subclass-and-rebind works meanwhile.
-- **Named layout slots** for the front end. There is one block, `content`.
+- **Named layout slots** for the front end. Superseded in 0.37.0 by *places*: a theme declares
+  them, a menu is assigned to one and blocks are ordered in one. What is still missing is a place
+  *inside* a post, and a way for a block to know which page it is on — see
+  [comments.md](comments.md) §3, which is the first thing to want both.
 - **Event priorities.** The plugin list's order is the ordering.
 - **Composer-installed plugins.** Already possible for anything needing only routes and services:
   name the namespace in `app.scan_namespaces` and the attribute processor finds it. Not worth a
