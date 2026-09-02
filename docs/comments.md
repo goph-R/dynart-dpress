@@ -164,6 +164,10 @@ The order matters, and the middle step is the one that goes wrong.
 
 **Do not migrate by URL if it can be avoided.** It works until the first slug edit.
 
+Whether the post URLs survive the move at all is a separate decision, and a bigger one — see
+[roadmap.md](roadmap.md) §1. Keeping them makes a URL-keyed thread match by accident; an
+identifier-keyed one never cared either way.
+
 ---
 
 ## 7. Third-party JavaScript on a front end that has none
