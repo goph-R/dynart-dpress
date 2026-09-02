@@ -31,6 +31,16 @@ class ThemeService {
     /** Rendered when no theme is set, or the set one has gone missing */
     const FALLBACK = '';
 
+    /**
+     * What the built-in templates render, since they have no `theme.ini` to declare it
+     *
+     * `views/layout.phtml` puts `main` beside the logo and always has. A theme declares its
+     * places in its manifest and the fallback has no manifest, so `places()` came back empty and
+     * the menu editor said a menu had nowhere to render - on a site whose header was rendering
+     * one. Declared here instead of nowhere.
+     */
+    const BUILT_IN_PLACES = ['main' => 'Main'];
+
     private ?array $themes = null;
 
     public function __construct(
@@ -99,8 +109,15 @@ class ThemeService {
      * @return array [place => label]
      */
     public function places(): array {
-        $theme = $this->get($this->active());
-        return $theme === null ? [] : $theme['places'];
+        $active = $this->active();
+        if ($active === self::FALLBACK) {
+            return self::BUILT_IN_PLACES;
+        }
+        $theme = $this->get($active);
+        // `active()` only ever answers with a theme that exists or with the fallback, so the null
+        // is defensive - and whatever renders in that case is the built-in layout. A theme that
+        // exists and declares no places genuinely renders none, and the warning is right to say so.
+        return $theme === null ? self::BUILT_IN_PLACES : $theme['places'];
     }
 
     /**

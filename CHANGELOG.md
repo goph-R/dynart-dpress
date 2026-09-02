@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.27.4] &ndash; 2026-09-02
+
+### Fixed
+- **The menus screen said a menu had nowhere to render, on a site that was rendering one.** A theme declares its places in `theme.ini`; the built-in templates have no `theme.ini`, so with no theme active `ThemeService::places()` came back empty — while `views/layout.phtml` was putting `main` beside the logo, as it always has. `ThemeService::BUILT_IN_PLACES` writes that down, and a theme whose folder has gone missing falls back to it along with the templates. The list's Place column now reads **Main** rather than *main (not in this theme)*, and the editor's select offers it.
+
+### Notes
+The templates and the manifest were two places one fact could live and only one was being read. The warning itself was not wrong — a theme that exists and declares no places really does render a menu nowhere, and it still says so.
+
+---
+
 ## [0.27.3] &ndash; 2026-09-02
 
 ### Fixed
