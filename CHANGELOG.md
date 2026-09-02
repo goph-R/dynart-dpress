@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.30.1] &ndash; 2026-09-02
+
+### Fixed
+- **Admin links are the ink colour, not the browser's blue and then purple.** The dynamic lists had `.dynamic-list td a { color: inherit }` and nothing else did, so the two tree screens and the media editor's file link fell back to the browser default and turned purple as somebody worked down them. One rule covers every screen now, and the list-only one is gone as redundant. `:visited` is stated alongside `a`, because it is the more specific match and would otherwise keep the browser's colour whatever `a` said.
+
+---
+
 ## [0.30.0] &ndash; 2026-09-02
 
 ### Added

@@ -107,6 +107,13 @@ body.admin {
 .admin-nav svg { width: 18px; height: 18px; flex: 0 0 18px; }
 
 .admin-main { flex: 1; min-width: 0; }
+/* Links in a screen are the ink colour, not the browser's blue and then purple. A name in a row
+   is a link because it opens that row, not because it is a destination somewhere else - and a
+   list that turns purple as somebody works down it is reporting their browsing history back to
+   them instead of saying anything about the content. The underline is the affordance.
+   `:visited` needs saying separately: it is a more specific match than `a` and would otherwise
+   keep the browser's colour. The header and the rail are outside `.admin-main` and set their own. */
+.admin-main a, .admin-main a:visited { color: inherit; }
 /* focused after a partial load, so somebody reading with a keyboard or a screen reader carries
    on from the new screen rather than from the top of the document - a move, not a highlight */
 .admin-main:focus { outline: none; }
@@ -214,7 +221,6 @@ button.link { background: none; border: 0; color: var(--muted); cursor: pointer;
 .dynamic-list thead th.sorted.desc button.sort::after { content: ' ↓'; }
 .dynamic-list tbody tr:last-child td { border-bottom: 0; }
 .dynamic-list tbody tr:hover { background: rgba(127, 127, 127, .06); }
-.dynamic-list td a { color: inherit; }
 .dynamic-list .empty, .dynamic-list .no { color: var(--muted); }
 .dynamic-list .yes { color: var(--ok); }
 .dynamic-list .checkbox-column, .dynamic-list .actions-column { width: 1%; white-space: nowrap; }
