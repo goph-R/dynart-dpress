@@ -20,8 +20,15 @@ This is the decision everything else follows from.
 A fenced block is stored as:
 
 ```html
-<pre data-enlighter-language="php"><code class="language-php">echo &quot;hello&quot;;</code></pre>
+<pre class="language-php" data-enlighter-language="php">echo &quot;hello&quot;;</pre>
 ```
+
+**No `<code>` inside a highlighted block**, which is not a stylistic choice. EnlighterJS reads the
+`innerHTML` of the element it matched and unescapes it, so a `<code>` wrapper is not ignored — it
+is *displayed as the first line of the code*, tag and all. Enlighter's documented markup is a
+`<pre>` with the code directly inside, and replacing the whole `<pre>` also keeps the theme's own
+`article pre` styling off a highlighted block. A fence with **no** language keeps `<pre><code>`,
+exactly as before.
 
 and [EnlighterJS](https://enlighterjs.org) colours it in the browser.
 
@@ -33,9 +40,9 @@ level down: a document should say what it *is*, not how it renders today. It wou
 As it is: switching theme changes every page at once, upgrading the highlighter changes every page
 at once, and no stored document is touched by either.
 
-`class="language-php"` stays on the `<code>` as CommonMark writes it. Nothing of ours reads it —
-EnlighterJS reads the attribute on the `<pre>` — but it is what every other tool expects, and a
-document that leaves this CMS should still say what its code is written in.
+`class="language-php"` is on the `<pre>`, as the author wrote it. Nothing of ours reads it —
+EnlighterJS reads the data attribute — but a document that leaves this CMS should still say what
+its code is written in.
 
 ## 2. What it costs, and what it does not
 
@@ -101,10 +108,9 @@ stylesheet and no base underneath it.
 
 ## 5. Upgrading
 
-**Nothing needs re-rendering.** Posts written before this shipped already stored
-`<pre><code class="language-php">`; the attribute the highlighter reads is added by the renderer,
-so those posts do need one `dpress content:rerender` to gain it — and that is the only migration
-there is, ever, for this feature.
+**One `dpress content:rerender`**, once, to give existing posts the attribute the highlighter
+reads. Nothing after that: a theme change and a highlighter upgrade both change every page without
+touching a document.
 
 ## 6. What was deliberately left out
 

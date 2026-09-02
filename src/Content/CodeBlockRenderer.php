@@ -15,7 +15,7 @@ use League\CommonMark\Util\Xml;
  * **The colours are not in here, and are not in `body_html` either.** What this writes is the
  * language, as an attribute:
  *
- *     <pre data-enlighter-language="php"><code class="language-php">…</code></pre>
+ *     <pre class="language-php" data-enlighter-language="php">…</pre>
  *
  * and EnlighterJS colours it in the browser. A server-side highlighter would write a `<span>` per
  * token into the stored document, which is markup about how a thing *looks* living inside the
@@ -24,7 +24,7 @@ use League\CommonMark\Util\Xml;
  * permanent, and the highlighting is entirely presentation.
  *
  * What it costs is a script on pages that have code in them. Only those: see
- * `AbstractController::codeAssets()`.
+ * `AbstractController::withCodeAssets()`.
  */
 class CodeBlockRenderer implements NodeRendererInterface {
 
@@ -70,15 +70,20 @@ class CodeBlockRenderer implements NodeRendererInterface {
         if (!$node instanceof FencedCode) {
             return '';
         }
-        $code = '<code'.$this->languageClass($node).'>'
-            .Xml::escape($node->getLiteral())
-            .'</code>';
+        $literal = Xml::escape($node->getLiteral());
         $language = $this->language($node);
-        // no language, no attribute: a fence with nothing after it is a code block and not a
-        // failed one, and it renders exactly as it did before any of this existed
-        return $language === ''
-            ? '<pre>'.$code.'</pre>'
-            : '<pre data-enlighter-language="'.Xml::escape($language).'">'.$code.'</pre>';
+        // no language, no attribute, and the `<code>` stays: a fence with nothing after it is a
+        // code block and not a failed one, and it renders exactly as it did before any of this
+        if ($language === '') {
+            return '<pre><code>'.$literal.'</code></pre>';
+        }
+        // **No `<code>` when there is a language**, which is not a stylistic choice. EnlighterJS
+        // reads the `innerHTML` of the element it matched and unescapes it, so a `<code>` wrapper
+        // ends up *displayed as the first line of the code*. Its documented markup is a `<pre>`
+        // with the code directly inside, and the whole `<pre>` is replaced when it runs - which
+        // also keeps the theme's own `article pre` styling off a highlighted block.
+        return '<pre'.$this->languageClass($node)
+            .' data-enlighter-language="'.Xml::escape($language).'">'.$literal.'</pre>';
     }
 
     /**
@@ -97,11 +102,11 @@ class CodeBlockRenderer implements NodeRendererInterface {
     }
 
     /**
-     * `class="language-php"` stays on the `<code>`, as CommonMark writes it
+     * `class="language-php"`, as the author wrote it
      *
-     * Nothing of ours needs it - EnlighterJS reads the attribute on the `<pre>` - but it is what
-     * every other tool expects to find, and a document that leaves the CMS should still say what
-     * its code is written in.
+     * On the `<pre>` rather than on a `<code>`, because a highlighted block has no `<code>` - see
+     * `render()`. Nothing of ours reads it; it is there so a document that leaves this CMS still
+     * says what its code is written in.
      */
     protected function languageClass(FencedCode $node): string {
         $words = $node->getInfoWords();

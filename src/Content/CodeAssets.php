@@ -112,7 +112,11 @@ class CodeAssets {
             ."\n".self::PADDING
             ."\n".'<script src="'.htmlspecialchars($this->url('enlighterjs.min.js')).'" defer></script>'
             ."\n".'<script defer>document.addEventListener("DOMContentLoaded",function(){'
-            .'EnlighterJS.init("pre['.self::MARKER.']","code",{indent:4,theme:"'.htmlspecialchars($theme).'"});'
+            // `init(blocks, inline, options)` - the second selector is for **inline** snippets and
+            // has to match nothing. Given `code` it rebuilds every backtick span in somebody's
+            // prose as a code sample, which is not what writing one asks for.
+            .'EnlighterJS.init("pre['.self::MARKER.']","code.enlighter-inline",'
+            .'{indent:4,theme:"'.htmlspecialchars($theme).'"});'
             .'});</script>';
     }
 

@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.34.2] &ndash; 2026-09-02
+
+### Fixed
+- **A highlighted block was showing its own `<code>` tag as the first line of the code.** EnlighterJS reads the `innerHTML` of the element it matched and unescapes it, so the `<code class="language-php">` wrapper was not ignored — it was displayed, tag and all. Its documented markup is a `<pre>` with the code directly inside, and that is what a block with a language renders to now. A fence with **no** language keeps `<pre><code>` exactly as before.
+- **Every inline `` `code` `` span in prose was being rebuilt as a code sample.** `EnlighterJS.init(blocks, inline, options)` — the second selector is for *inline* snippets, and it was `code`. It now matches nothing.
+
+### Notes
+Both were mine, shipped in 0.34.0, and both were found by somebody reading the page rather than by a test. There are tests for each now, and the first one fails against the version that shipped.
+
+`class="language-php"` moved to the `<pre>` with the code, so a document leaving this CMS still says what its code is written in.
+
+**Existing posts need one `dpress content:rerender`.**
+
+---
+
 ## [0.34.1] &ndash; 2026-09-02
 
 ### Fixed
