@@ -50,7 +50,12 @@
         .post-summary h2 a { color: inherit; text-decoration: none; }
         .meta { color: #71717a; font-size: 13px; margin: 0 0 10px; }
         .meta a { color: #71717a; }
-        .featured img { max-width: 100%; height: auto; border-radius: 8px; }
+        /* Nothing an author puts in a document may be wider than the column it is in. A photo
+           straight off a phone is four thousand pixels across, and without this it decides how
+           wide the page is. `height: auto` keeps the shape; `max-width` rather than `width` so a
+           small image stays its own size instead of being blown up to fill. */
+        img { max-width: 100%; height: auto; }
+        .featured img { border-radius: 8px; }
         .tags { margin-top: 20px; }
         .tag { display: inline-block; background: #f4f4f5; border-radius: 999px; padding: 3px 11px;
                font-size: 13px; text-decoration: none; color: #3f3f46; margin: 0 4px 4px 0; }

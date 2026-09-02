@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.31.4] &ndash; 2026-09-02
+
+### Fixed
+- **An image in an article can no longer be wider than the article.** The built-in templates constrained the featured image and nothing else, so a photo straight off a phone decided how wide the page was. `img { max-width: 100%; height: auto }` covers everything a document can contain — `max-width` rather than `width`, so a small image stays its own size instead of being blown up to fill the column. The example theme had the same gap.
+
+---
+
 ## [0.31.3] &ndash; 2026-09-02
 
 ### Fixed
