@@ -56,6 +56,23 @@ class CodeAssets {
      */
     const NONE = 'none';
 
+    /**
+     * Room inside the block, which every theme leaves out
+     *
+     * `.enlighter-default` is the element the theme paints its background on, and it sets
+     * `padding: 0` - so the first line of code sits against the top edge of the colour and the
+     * last against the bottom. Vertical only: the code area under it is a `display: table` and
+     * horizontal padding there fights the line layout.
+     *
+     * Emitted **after** the theme's stylesheet rather than from a layout, for two reasons. Both
+     * selectors are one class, so whichever comes last wins and the theme link is added inside
+     * `</head>` after the layout's own `<style>`. And a theme author should not have to know this
+     * is needed - there is one copy, and it arrives with the thing it corrects.
+     *
+     * The vendored file stays unmodified, which is what keeps the MPL obligation to a notice.
+     */
+    const PADDING = '<style>.enlighter-default{padding:12px 0}</style>';
+
     public function __construct(
         protected RouterInterface $router,
         protected SettingService $settings,
@@ -92,6 +109,7 @@ class CodeAssets {
             return '';
         }
         return '<link rel="stylesheet" href="'.htmlspecialchars($this->url('enlighterjs.'.$theme.'.min.css')).'">'
+            ."\n".self::PADDING
             ."\n".'<script src="'.htmlspecialchars($this->url('enlighterjs.min.js')).'" defer></script>'
             ."\n".'<script defer>document.addEventListener("DOMContentLoaded",function(){'
             .'EnlighterJS.init("pre['.self::MARKER.']","code",{indent:4,theme:"'.htmlspecialchars($theme).'"});'

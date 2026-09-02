@@ -89,6 +89,13 @@ highlighting". A name that is not one of the thirteen is treated as off rather t
 the setting is writable by hand and by a plugin, and a stylesheet path is not something to build
 out of whatever is in a row.
 
+**The block gets its own padding.** Every theme paints the background on `.enlighter-default` and
+sets `padding: 0` there, so the first line of code sits against the top edge of the colour. One
+rule corrects it, emitted straight after the theme's stylesheet — both selectors are a single
+class, so source order decides, and the theme link is added to the page after the layout's own
+`<style>`. It lives in `CodeAssets::PADDING` rather than in a layout so that a theme author does
+not have to know it is needed, and so the vendored file stays unmodified.
+
 Each theme file is self-contained — layout and colours, about 14 KB — so a page loads one
 stylesheet and no base underneath it.
 

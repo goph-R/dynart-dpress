@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.34.1] &ndash; 2026-09-02
+
+### Fixed
+- **A code block has room inside it.** Every EnlighterJS theme paints the background on `.enlighter-default` and sets `padding: 0` there, so the first line of code sat against the top edge of the colour and the last against the bottom. One rule corrects it, emitted straight after the theme's stylesheet — both selectors are a single class, so source order decides it, and the theme link is added after the layout's own `<style>`. Vertical only: the code area beneath is a `display: table` and horizontal padding there fights the line layout.
+
+### Notes
+The correction lives in `CodeAssets` rather than in a layout, so a theme author does not have to know it is needed and there is one copy for all thirteen themes. The vendored file stays unmodified, which keeps the MPL obligation to a notice.
+
+---
+
 ## [0.34.0] &ndash; 2026-09-02
 
 Syntax highlighting.
