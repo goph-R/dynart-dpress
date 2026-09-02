@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.35.3] &ndash; 2026-09-02
+
+### Changed
+- **The dark scheme's link is `#ff79c6`** — Dracula's own pink, so a link and the default code theme agree. **7.5:1**, past WCAG AAA. `#d4006b` stays on light at 5.2:1.
+
+---
+
 ## [0.35.2] &ndash; 2026-09-02
 
 ### Changed

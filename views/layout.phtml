@@ -13,7 +13,7 @@
             color-scheme: light dark;
             /* every link that is a link rather than chrome. One value per scheme, because a
                pink that reads well on near-black is faint on white and the reverse - these are
-               5.2:1 here and 7.3:1 in the dark block, both past WCAG AA. */
+               5.2:1 here and 7.5:1 in the dark block, past WCAG AA and AAA respectively. */
             --link: #d4006b;
         }
         * { box-sizing: border-box; }
@@ -81,7 +81,8 @@
         article pre code { background: none; padding: 0; }
         .links a { color: #3f3f46; }
         @media (prefers-color-scheme: dark) {
-            :root { --link: #ff79aa; }
+            /* Dracula's own pink, so a link and the code theme agree */
+            :root { --link: #ff79c6; }
             body { background: #18181b; color: #e4e4e7; }
             .card { background: #27272a; }
             input[type=text], input[type=password] { background: #18181b; border-color: #3f3f46; }
