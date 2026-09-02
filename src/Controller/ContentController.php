@@ -70,7 +70,7 @@ class ContentController extends AbstractController {
         if ($content === null || !$content->isPost()) {
             $this->app()->sendError(404);
         }
-        return $this->render('dpress:content/single', [
+        return $this->render('dpress:content/single', $this->pagedBody($content, '/post/'.$content->slug) + [
             'title'       => $content->title,
             'content'     => $content,
             'tags'        => $this->taxonomy->tagsOf($content->id),

@@ -34,6 +34,15 @@ class MarkdownRenderer {
     /** The separator, on a line of its own */
     const SEPARATOR = '---';
 
+    /**
+     * What a page break becomes in the stored HTML
+     *
+     * The pages of a body are one column, not a row each: the marker goes into `body_html` and
+     * `ContentPages` splits on it when a page is served. The same bargain a shortcode marker
+     * makes - a document stays one value, and whoever reads it decides what to do with the parts.
+     */
+    const PAGE_MARKER = '<!--dpress-page-->';
+
     private ?ConverterInterface $converter = null;
 
     public function __construct(protected EventServiceInterface $events) {}
@@ -52,19 +61,80 @@ class MarkdownRenderer {
      */
     public function split(string $markdown): array {
         $lines = preg_split('/\R/', $markdown);
-        foreach ($lines as $index => $line) {
-            if ($index === 0) {
-                continue; // a separator on line one is front matter, not a lead break
+        $separators = $this->separatorLines($lines);
+        if ($separators === []) {
+            return ['lead' => rtrim($markdown), 'body' => ''];
+        }
+        $index = $separators[0];
+        return [
+            'lead' => rtrim(join("\n", array_slice($lines, 0, $index))),
+            'body' => ltrim(join("\n", array_slice($lines, $index + 1))),
+        ];
+    }
+
+    /**
+     * Splits a body into its pages
+     *
+     * Every separator after the first one is a page break - the same character doing a second
+     * job, and it reads the way it behaves, since `---` has always meant "and now something
+     * else". A body with no further separator is one page, so nothing already written changes
+     * shape.
+     *
+     * @return string[] at least one, and never an empty one
+     */
+    public function pages(string $body): array {
+        $lines = preg_split('/\R/', $body);
+        // a separator on line 0 of a *body* is a page break like any other: the front matter
+        // reasoning is about the start of a document, and this is already past it
+        $separators = $this->separatorLines($lines, 0);
+        if ($separators === []) {
+            return [trim($body)];
+        }
+        $pages = [];
+        $start = 0;
+        foreach (array_merge($separators, [count($lines)]) as $at) {
+            $page = trim(join("\n", array_slice($lines, $start, $at - $start)));
+            if ($page !== '') {
+                $pages[] = $page;   // `---` right after `---` is a typo, not an empty page
             }
-            if (rtrim($line) !== self::SEPARATOR) {
+            $start = $at + 1;
+        }
+        return $pages === [] ? [''] : $pages;
+    }
+
+    /**
+     * The lines that are a separator and nothing else
+     *
+     * **Fenced code is skipped**, which is the reason this is one method rather than a match at
+     * each call site: a post explaining YAML front matter has `---` inside a code block, and
+     * splitting a document there would tear it in half at the exact place its author was writing
+     * about. The same care the shortcode parser takes by being an inline parser rather than a
+     * regular expression over the markdown.
+     *
+     * @param int $from the first line that may count - 1 for a whole document, where a separator
+     *                  on line 0 is opening front matter rather than a break
+     * @return int[]
+     */
+    protected function separatorLines(array $lines, int $from = 1): array {
+        $found = [];
+        $fence = '';
+        foreach ($lines as $index => $line) {
+            $trimmed = rtrim($line);
+            if ($fence !== '') {
+                if (preg_match('/^\s{0,3}'.$fence.'\s*$/', $trimmed) === 1) {
+                    $fence = '';
+                }
                 continue;
             }
-            return [
-                'lead' => rtrim(join("\n", array_slice($lines, 0, $index))),
-                'body' => ltrim(join("\n", array_slice($lines, $index + 1))),
-            ];
+            if (preg_match('/^\s{0,3}(`{3,}|~{3,})/', $trimmed, $match) === 1) {
+                $fence = $match[1][0] === '`' ? '`{3,}' : '~{3,}';
+                continue;
+            }
+            if ($index >= $from && $trimmed === self::SEPARATOR) {
+                $found[] = $index;
+            }
         }
-        return ['lead' => rtrim($markdown), 'body' => ''];
+        return $found;
     }
 
     public function hasLeadSeparator(string $markdown): bool {
@@ -93,8 +163,26 @@ class MarkdownRenderer {
         $parts = $this->split($markdown);
         return [
             'lead' => $this->render($parts['lead']),
-            'body' => $this->render($parts['body']),
+            'body' => $this->renderPages($parts['body']),
         ];
+    }
+
+    /**
+     * A body, as its pages, joined by the marker
+     *
+     * Each page is rendered on its own rather than the whole body being rendered and cut up
+     * afterwards, because cutting HTML in half is how a `<ul>` ends up with no closing tag. What
+     * it costs is that a reference-style link defined on one page cannot be used on another -
+     * which is the cost the lead/body split has always had, for the same reason.
+     */
+    protected function renderPages(string $body): string {
+        if ($body === '') {
+            return '';
+        }
+        return join(
+            self::PAGE_MARKER,
+            array_map(fn(string $page): string => $this->render($page), $this->pages($body))
+        );
     }
 
     /**

@@ -14,8 +14,12 @@
         <?php if (!empty($featured)): ?>
             <p class="featured"><?= $mediaView->tag($featured, 'medium') ?></p>
         <?php endif ?>
-        <?= $content->lead_html ?>
-        <?php if ($content->hasBody()): ?><?= $content->body_html ?><?php endif ?>
+        <?php if ($show_lead ?? true): ?><?= $content->lead_html ?><?php endif ?>
+        <?= $body_html ?? $content->body_html ?>
+        <?= $this->fetch('dpress:content/pages', [
+            'page' => $page ?? 1, 'page_count' => $page_count ?? 1,
+            'prev_url' => $prev_url ?? '', 'next_url' => $next_url ?? '',
+        ]) ?>
         <?php if (!empty($children)): ?>
             <h2 class="attachments-title">In this section</h2>
             <ul class="attachments">

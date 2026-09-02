@@ -43,10 +43,17 @@ class PageController extends AbstractController {
             $this->app()->sendError(404);
         }
         if (!$isCanonical) {
-            // the page is real but this is not where it lives - one page, one URL
-            $this->app()->redirect($this->content->path($content), [], 301);
+            // the page is real but this is not where it lives - one page, one URL. The page
+            // number travels with the redirect: somebody following an old link to part three of
+            // an article should land on part three, not at the beginning of it.
+            $number = (int)$this->request->get(self::PAGE_PARAM, 1);
+            $this->app()->redirect(
+                $this->content->path($content),
+                $number > 1 ? [self::PAGE_PARAM => $number] : [],
+                301
+            );
         }
-        return $this->render('dpress:content/page', [
+        return $this->render('dpress:content/page', $this->pagedBody($content, $this->content->path($content)) + [
             'title'       => $content->title,
             'content'     => $content,
             'ancestors'   => $this->content->ancestors($content),

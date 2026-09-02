@@ -15,6 +15,8 @@ use Dynart\Dpress\Content\Shortcodes;
 use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Media\MediaView;
 use Dynart\Dpress\Service\MediaService;
+use Dynart\Dpress\Content\ContentPages;
+use Dynart\Dpress\Entity\Content;
 use Dynart\Dpress\Theme\Places;
 use Dynart\Dpress\Service\SettingService;
 
@@ -25,6 +27,9 @@ use Dynart\Dpress\Service\SettingService;
  * changes state belongs in a service, or it is invisible to plugins.
  */
 abstract class AbstractController {
+
+    /** Which page of a long body to serve. A query parameter, so no route has to know about it */
+    const PAGE_PARAM = 'page';
 
     const CONFIG_SITE_NAME = 'dpress.site_name';
     const CONFIG_REGISTRATION_OPEN = 'dpress.registration_open';
@@ -181,6 +186,47 @@ abstract class AbstractController {
      */
     protected function menu(string $place): string {
         return Micro::get(Places::class)->menu($place);
+    }
+
+    /**
+     * The page of a body this request asked for, and the way to the next one
+     *
+     * A body written with more than one `---` is served a page at a time. The variables come back
+     * ready for a template: the HTML of this page, where it is in the sequence, and the two URLs -
+     * empty at each end, so a template asks `if ($prev_url)` rather than doing arithmetic.
+     *
+     * **A page number that does not exist is a 404**, not the first page. `?page=7` of a
+     * three-page post names something that is not there, which is what the status code is for -
+     * and clamping instead would let a crawler index the same post at every number there is.
+     *
+     * The lead is on page one only: it is the opening of the article, not a header repeated
+     * above every part of it.
+     */
+    protected function pagedBody(Content $content, string $route): array {
+        $pages = ContentPages::split($content->body_html);
+        $count = count($pages);
+        $number = (int)$this->request->get(self::PAGE_PARAM, 1);
+        if ($number < 1 || $number > $count) {
+            $this->app()->sendError(404);
+        }
+        return [
+            'body_html'  => $pages[$number - 1],
+            'page'       => $number,
+            'page_count' => $count,
+            'show_lead'  => $number === 1,
+            'prev_url'   => $number > 1 ? $this->pageUrl($route, $number - 1) : '',
+            'next_url'   => $number < $count ? $this->pageUrl($route, $number + 1) : '',
+        ];
+    }
+
+    /**
+     * Page one is the post's own address, with nothing appended
+     *
+     * Two URLs for the same page - `/post/x` and `/post/x?page=1` - is two of everything for
+     * search engines and for anybody sharing a link.
+     */
+    protected function pageUrl(string $route, int $number): string {
+        return $this->router->url($route, $number > 1 ? [self::PAGE_PARAM => $number] : []);
     }
 
     protected function message(string $title, string $message, array $link = []): string {

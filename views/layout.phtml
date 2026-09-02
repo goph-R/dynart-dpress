@@ -111,6 +111,13 @@
         /* an iframe has no intrinsic shape, so it needs one told to it rather than kept */
         .dpress-embed { width: 100%; aspect-ratio: 16 / 9; height: auto; border: 0; display: block; }
         .featured img { border-radius: 8px; }
+        /* Through a body written in pages. A row rather than a stack, with the counter in the
+           middle holding its place whether or not there is a link either side of it - which is
+           why the template renders an empty span at each end rather than nothing. */
+        .page-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+                    margin: 28px 0 4px; padding-top: 16px; border-top: 1px solid #e4e4e7;
+                    font-size: 14px; }
+        .page-count { color: #71717a; font-size: 13px; }
         .tags { margin-top: 20px; }
         /* `:visited` stated as well, and it has to be: `a:visited` is (0,1,1) and `.tag` alone is
            (0,1,0), so the link colour won on every tag somebody had already been to - a cloud
@@ -185,7 +192,7 @@
             .card { background: #27272a; }
             input[type=text], input[type=password] { background: #18181b; border-color: #3f3f46; }
             .links a { color: #a1a1aa; }
-            .post-summary { border-bottom-color: #3f3f46; }
+            .post-summary, .page-nav { border-color: #3f3f46; }
             article pre, article code { background: #18181b; }
             .tag, .tag:visited { background: #3f3f46; color: #e4e4e7; }
             .sidebar .block { background: #27272a; }

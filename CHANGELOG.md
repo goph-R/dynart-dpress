@@ -5,6 +5,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.38.0] &ndash; 2026-09-02
+
+### Added
+- **A body with more than one `---` is served a page at a time**, with *Previous* and *Next* under it, on posts and on pages. The first separator has always ended the lead; every one after it now ends a page — no new syntax, no new column, and nothing to set on the editor.
+- `?page=2`, and **page one is the post's own address with nothing appended**. A number that is not there is a 404 rather than a clamp, so one post cannot be indexed at every number there is.
+- `views/content/pages.phtml`, which a theme can override and which renders nothing at all when there is one page.
+
+### Fixed
+- **A `---` inside a fenced code block is no longer a separator.** A post explaining YAML front matter was cut in half at the exact place its author was writing about — the lead/body split reads the same lines and had the same hole, so both are fixed by one fence-aware scan.
+
+### Notes
+What is stored is still one column: `body_html` with a `<!--dpress-page-->` marker between the pages, cut by `ContentPages::split()` behind a `str_contains` guard — the same guard the shortcodes and the highlighter use, so a site that never breaks a post pays nothing on a page view.
+
+**Each page is rendered on its own**, never one render cut up afterwards, because cutting HTML in half is how a `<ul>` ends up with no closing tag. It costs what the lead/body split already cost: a reference-style link defined on one page cannot be used on another. One good thing falls out of it — the highlighter loads on the page that has the code block and on no other.
+
+The lead is on page one only: it is the opening of the article, not a header repeated above every part of it.
+
+`body_html` is a cache, so run `dpress content:rerender` to break up posts written before this.
+
+---
+
 ## [0.37.1] &ndash; 2026-09-02
 
 ### Fixed

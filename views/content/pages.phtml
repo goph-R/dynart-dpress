@@ -1,0 +1,25 @@
+<?php
+/**
+ * The way through a body that was written in more than one page
+ *
+ * Rendered only when there is more than one, so a post that was never broken up carries no extra
+ * markup at all. Themes override this to change how it looks.
+ *
+ * Expects: $page, $page_count, $prev_url, $next_url.
+ */
+?>
+<?php if (($page_count ?? 1) > 1): ?>
+    <nav class="page-nav" aria-label="Pages of this article">
+        <?php if ($prev_url !== ''): ?>
+            <a class="page-prev" href="<?= esc_attr($prev_url) ?>" rel="prev">&larr; Previous page</a>
+        <?php else: ?>
+            <span></span>
+        <?php endif ?>
+        <span class="page-count">Page <?= (int)$page ?> of <?= (int)$page_count ?></span>
+        <?php if ($next_url !== ''): ?>
+            <a class="page-next" href="<?= esc_attr($next_url) ?>" rel="next">Next page &rarr;</a>
+        <?php else: ?>
+            <span></span>
+        <?php endif ?>
+    </nav>
+<?php endif ?>
