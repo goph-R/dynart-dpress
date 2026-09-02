@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.25.1] &ndash; 2026-09-02
+
+### Fixed
+- **A list with no rows no longer draws a line under whatever is above it.** The footer is always in the markup and carries a top border and its padding, so an empty one is not empty on the screen — it is a rule plus a strip of nothing. It is hidden now when it has neither a record count nor paging to show, which is the rule `.group-actions:empty` already followed. Most visible under the attachments panel, where an empty list leaves only the heading and the Add attachment button.
+
+---
+
 ## [0.25.0] &ndash; 2026-09-02
 
 There is no such thing as an unsaved post.

@@ -567,6 +567,7 @@
             status.style.display = '';
             paging.innerHTML = '';
             recordsLabel.innerHTML = '';
+            showFooterIfItSaysAnything();
         }
 
         function addRow(item, index) {
@@ -786,6 +787,17 @@
                     }
                 });
             }
+            showFooterIfItSaysAnything();
+        }
+
+        /**
+         * An empty footer is not empty on the screen: it has a top border and its padding, so a
+         * list with no rows draws a line under whatever is above it and a strip of nothing below
+         * that. Hidden when it has nothing to say - the same rule `.group-actions:empty` follows.
+         */
+        function showFooterIfItSaysAnything() {
+            footer.style.display = recordsLabel.children.length === 0 && paging.children.length === 0
+                ? 'none' : '';
         }
     }
 
