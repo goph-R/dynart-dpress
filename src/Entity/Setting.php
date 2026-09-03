@@ -78,6 +78,21 @@ class Setting extends Entity {
     const REGISTRATION_OPEN = 'registration_open';
     const POSTS_PER_PAGE = 'posts_per_page';
 
+    /**
+     * The tag that puts a post at the top of the front page
+     *
+     * **A tag rather than a column**, because an author already knows how to tag a post and
+     * un-featuring is removing one - no new screen, no new concept and no migration. A setting
+     * rather than the word `featured` hardcoded, so a Hungarian site can call it `kiemelt`.
+     *
+     * Empty means no featured posts at all, which is what a site that does not want a strip on
+     * its front page should be able to say.
+     */
+    const FEATURED_TAG = 'featured_tag';
+
+    /** What a site gets when it has never said, and the word most sites would have chosen */
+    const DEFAULT_FEATURED_TAG = 'featured';
+
     #[Column(type: Column::TYPE_STRING, size: 100, primaryKey: true, notNull: true)]
     public string $name = '';
 

@@ -6,6 +6,17 @@
     <?php else: ?>
         <?php foreach ($posts as $post): ?>
             <article class="post-summary">
+                <?php // the post's picture, if it has one. `$thumbnails` is keyed by content id
+                      // and cost one query for the whole page - see `thumbnails()` ?>
+                <?php // `aria-hidden` and an empty `alt` because this link and the title below it
+                      // go to the same post: announced twice it is noise, and an image link with
+                      // no accessible name is worse than one that is skipped ?>
+                <?php if (isset($thumbnails[$post['id']])): ?>
+                    <a class="post-thumbnail" tabindex="-1" aria-hidden="true"
+                       href="<?= esc_attr(route_url('/post/'.$post['slug'])) ?>"><?=
+                        $mediaView->tag($thumbnails[$post['id']], 'medium', ['alt' => ''])
+                    ?></a>
+                <?php endif ?>
                 <h2><a href="<?= esc_attr(route_url('/post/'.$post['slug'])) ?>"><?= esc_html($post['title']) ?></a></h2>
                 <p class="meta"><?= esc_html(substr((string)$post['published_at'], 0, 10)) ?></p>
                 <?= $post['lead_html'] ?>

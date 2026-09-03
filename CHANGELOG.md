@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.40.0] &ndash; 2026-09-03
+
+### Added
+- **Featured posts.** Tag a post with whatever `featured_tag` names (`featured` by default) and the front page puts it at the top, as `$featured_posts`, newest first and at most five. A tag rather than a column: an author already knows how to tag a post, un-featuring is removing one, and there is no new screen and no migration behind it.
+- **They are left out of the list below**, through a new `exclude_ids` on the `content_list` query. Pinned at the top *and* repeated four rows down reads as a bug rather than as emphasis.
+- **`$thumbnails` on every listing**, keyed by content id, in **one query for the page** (`MediaService::findByIds()`). A listing row carries `featured_media_id` and not the item, so a theme that wanted a picture on a card had the id and nothing to do with it; the built-in list template prints one now too.
+- **Numbered pagination** on a body written in pages - `1 2 3 4 5` rather than only two arrows, from a new `page_urls`. On a seven page article "Next" alone means reading four pages to reach the fifth.
+- `$site_description` reaches a template. It has been a setting, and editable, since settings existed, and no template could print it.
+- `ContentService::findByTag()` takes listing options, so a tag can be ordered and limited like anything else.
+
+### Notes
+All of this is what porting a real design asked for, and it arrived in that order: the gopherlab.net theme is thumbnails-first on its front page and could not be built without them.
+
+**`$featured_posts`, not `$featured`** - a single post's template has had `$featured` for its own picture since there were templates, and one name meaning two things is a bug a theme author writes once and debugs twice.
+
 ## [0.39.0] &ndash; 2026-09-03
 
 ### Added

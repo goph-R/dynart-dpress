@@ -154,14 +154,30 @@ Set on every render, so a theme's templates never look anything up:
 | `$layout`, `$layout_kind` | which layout, and what kind of page it is |
 | `$places` | `render($place)`, `menu($place)`, `blocks($place)` |
 | `$theme` | `url($file)` for this theme's assets |
-| `$site_name`, `$site_logo`, `$site_icon` | the branding, resolved and ready to print |
+| `$site_name`, `$site_description`, `$site_logo`, `$site_icon` | the branding, resolved and ready to print |
 | `$main_menu` | the `main` place's menu, already rendered |
 | `$current_user`, `$registration_open` | for the header |
 | `$title` | the page's own title, per render |
 
 Content templates add their own: `$content`, `$posts`, `$tags`, `$categories`, `$attachments`,
-`$featured`, `$mediaView`, and the paging set (`$body_html`, `$page`, `$page_count`, `$show_lead`,
-`$prev_url`, `$next_url`).
+`$mediaView`, and the paging set (`$body_html`, `$page`, `$page_count`, `$show_lead`, `$prev_url`,
+`$next_url`, `$page_urls`).
+
+Two of those are what a card-shaped listing needs, and both cost one query for the whole page:
+
+- **`$thumbnails`**, on every listing, keyed by **content** id — `$thumbnails[$post['id']]`, or
+  nothing. A row carries `featured_media_id` and not the item, so without this a theme that wants
+  a picture on a card has the id and nothing to do with it. A post with no picture and a post
+  whose picture was deleted are both simply absent, so `isset()` is the whole check.
+- **`$featured_posts`**, on the front page only: the posts tagged with whatever `featured_tag` names,
+  newest first, at most five. They are **left out of `$posts`**, because pinned at the top and
+  repeated four rows down reads as a bug rather than as emphasis. An empty setting, a tag nobody
+  has used, or no tag of that name at all all mean the same thing - no strip - so a theme asks
+  `if ($featured !== [])` and nothing else.
+
+It is `$featured_posts` and not `$featured` on purpose: a single post's template has had
+`$featured` for **its own picture** since there were templates, and one name meaning two things is
+a bug a theme author writes once and debugs twice.
 
 ---
 

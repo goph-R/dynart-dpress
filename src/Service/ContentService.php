@@ -76,8 +76,13 @@ class ContentService {
         return (int)$this->queryExecutor->findAllCount($this->queries->create('content_list', $context));
     }
 
-    public function findByTag(int $tagId): array {
-        return $this->queryExecutor->findAll($this->queries->create('content_by_tag', ['tag_id' => $tagId]));
+    /**
+     * @param array $options `max` and `offset`, and `order_by` / `order_dir`, like any listing
+     */
+    public function findByTag(int $tagId, array $options = []): array {
+        return $this->queryExecutor->findAll(
+            $this->queries->create('content_by_tag', $options + ['tag_id' => $tagId])
+        );
     }
 
     public function findByCategory(int $categoryId): array {

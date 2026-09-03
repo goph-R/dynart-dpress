@@ -19,6 +19,7 @@
         <?= $this->fetch('dpress:content/pages', [
             'page' => $page ?? 1, 'page_count' => $page_count ?? 1,
             'prev_url' => $prev_url ?? '', 'next_url' => $next_url ?? '',
+            'page_urls' => $page_urls ?? [],
         ]) ?>
         <?php if (!empty($tags)): ?>
             <p class="tags">

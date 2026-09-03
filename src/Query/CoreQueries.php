@@ -170,7 +170,9 @@ class CoreQueries {
         $query->addInnerJoin([ContentTag::class, 'ct'], '`ct`.`content_id` = '.$this->safeTable(Content::class).'.`id`');
         $query->addCondition('`ct`.`tag_id` = :tagId', [':tagId' => $context['tag_id'] ?? 0]);
         $this->onlyPublished($query);
-        $query->addOrderBy('published_at', 'desc');
+        // through the same helper as every other listing, so `max` works here too - which is what
+        // a featured strip needs, since it wants the five newest and not the whole tag
+        $this->applyListOptions($query, $context, ['published_at' => 'desc']);
         return $query;
     }
 
@@ -298,6 +300,18 @@ class CoreQueries {
                 $query->addCondition('`parent_id` is null');
             } else {
                 $query->addCondition('`parent_id` = :parentId', [':parentId' => $context['parent_id']]);
+            }
+        }
+        if (!empty($context['exclude_ids'])) {
+            // the front page's featured strip shows these above the list, and pinned *and*
+            // repeated four rows down reads as a bug rather than as emphasis.
+            //
+            // One condition each rather than one `not in`, because `nextParamName()` only sees a
+            // name once it is bound - asking for several before adding anything hands back the
+            // same name every time. `<>` ANDed is what `not in` means anyway.
+            foreach (array_unique(array_map('intval', $context['exclude_ids'])) as $id) {
+                $name = $query->nextParamName('excludeId');
+                $query->addCondition('`id` <> '.$name, [$name => $id]);
             }
         }
         if (!empty($context['search'])) {

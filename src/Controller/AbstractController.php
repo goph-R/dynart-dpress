@@ -76,6 +76,16 @@ abstract class AbstractController {
         return (string)Micro::get(SettingService::class)->get(Setting::SITE_NAME, 'dpress');
     }
 
+    /**
+     * The site's tagline, or ''
+     *
+     * A setting since settings existed, editable on the settings screen since that screen existed,
+     * and reachable by no template until a theme wanted to print it under the site's name.
+     */
+    protected function siteDescription(): string {
+        return trim((string)Micro::get(SettingService::class)->get(Setting::SITE_DESCRIPTION, ''));
+    }
+
     protected function registrationOpen(): bool {
         return Micro::get(SettingService::class)->getBool(Setting::REGISTRATION_OPEN, false);
     }
@@ -156,6 +166,7 @@ abstract class AbstractController {
         $this->view->set('theme', Micro::get(ThemeAssets::class));
         $this->view->set('current_user', $this->currentUser());
         $this->view->set('site_name', $this->siteName());
+        $this->view->set('site_description', $this->siteDescription());
         $this->view->set('site_logo', $this->siteLogo());
         $this->view->set('site_icon', $this->siteIcon());
         $this->view->set('registration_open', $this->registrationOpen());
@@ -165,6 +176,47 @@ abstract class AbstractController {
         $this->view->set('places', Micro::get(Places::class));
         $html = Micro::get(Shortcodes::class)->expand($this->view->fetch($template, $variables));
         return $this->withCodeAssets($html);
+    }
+
+    /**
+     * The picture for each row of a listing, keyed by the row's id
+     *
+     * A listing row is an **array** and carries `featured_media_id`, not the item itself - so a
+     * theme that wants a card with a picture on it has the id and nothing to do with it. This is
+     * the missing half, in **one query for the whole page**: `$thumbnails[$post['id']]`, or
+     * nothing, which is what a template should ask anyway since a post need not have a picture.
+     *
+     * Given to `content/list` by every listing, so a theme's own list template gets it too.
+     *
+     * @param array[] $rows listing rows, as `findAll()` answers with
+     * @return array<int, \Dynart\Dpress\Entity\Media> keyed by **content** id, not media id
+     */
+    protected function thumbnails(array $rows): array {
+        return $this->mapThumbnails(
+            $rows, Micro::get(MediaService::class)->findByIds(array_column($rows, 'featured_media_id'))
+        );
+    }
+
+    /**
+     * Which row gets which picture, once the pictures have been fetched
+     *
+     * Split from the fetch so the mapping can be tested without a database behind it - and the
+     * mapping is where the two interesting cases live: a post with no picture and a post whose
+     * picture has been deleted both come out **absent**, so `isset()` is the whole of the check a
+     * template writes.
+     *
+     * @param array<int, \Dynart\Dpress\Entity\Media> $media keyed by media id
+     * @return array<int, \Dynart\Dpress\Entity\Media> keyed by content id
+     */
+    protected function mapThumbnails(array $rows, array $media): array {
+        $found = [];
+        foreach ($rows as $row) {
+            $id = $row['featured_media_id'] ?? null;
+            if ($id !== null && isset($media[(int)$id])) {
+                $found[(int)$row['id']] = $media[(int)$id];
+            }
+        }
+        return $found;
     }
 
     /**
@@ -256,6 +308,11 @@ abstract class AbstractController {
             'show_lead'  => $number === 1,
             'prev_url'   => $number > 1 ? $this->pageUrl($route, $number - 1) : '',
             'next_url'   => $number < $count ? $this->pageUrl($route, $number + 1) : '',
+            // every page's address, so a theme can print `1 2 3 4 5` rather than only two arrows.
+            // Built here because the route is the controller's - a template has no way to make one
+            'page_urls'  => array_map(
+                fn(int $n): string => $this->pageUrl($route, $n), range(1, max(1, $count))
+            ),
         ];
     }
 

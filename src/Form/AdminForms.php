@@ -251,6 +251,9 @@ class AdminForms {
             'registration_open' => ['type' => 'checkbox', 'label' => 'Registration', 'required' => false,
                                     'text' => 'Anybody may create an account'],
             'posts_per_page'    => ['type' => 'text', 'label' => 'Posts per page', 'required' => false],
+            'featured_tag'      => ['type' => 'text', 'label' => 'Featured tag', 'required' => false,
+                                    'description' => 'Posts with this tag go to the top of the front page, '
+                                        .'and are left out of the list below it. Empty for none.'],
             'code_theme'        => ['type' => 'select', 'label' => 'Code theme', 'required' => false,
                                     'options' => $context['code_themes'] ?? [],
                                     'description' => 'Colours the fenced code blocks. Off loads no script at all.'],

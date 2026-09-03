@@ -38,6 +38,7 @@ class SettingsAdminController extends AbstractAdminController {
         Setting::SITE_ICON => 'media',
         Setting::REGISTRATION_OPEN => 'bool',
         Setting::POSTS_PER_PAGE => 'int',
+        Setting::FEATURED_TAG => 'string',
         Setting::CODE_THEME => 'string',
     ];
 

@@ -60,6 +60,31 @@ class MediaService {
         return $media instanceof Media ? $media : null;
     }
 
+    /**
+     * Several items at once, keyed by id
+     *
+     * **One query for a listing.** A front page of twenty posts each showing its picture is twenty
+     * primary-key lookups done the obvious way, and the obvious way is what a theme author will
+     * write if nothing else is offered. A deleted item is left out rather than returned: a picture
+     * somebody put in the bin should leave the page, the same rule the logo follows.
+     *
+     * @param int[] $ids
+     * @return array<int, Media>
+     */
+    public function findByIds(array $ids): array {
+        $ids = array_values(array_filter(array_unique(array_map('intval', $ids))));
+        if ($ids === []) {
+            return [];
+        }
+        $found = [];
+        foreach ($this->em->findByIds(Media::class, $ids) as $media) {
+            if ($media instanceof Media && !$media->isDeleted()) {
+                $found[$media->id] = $media;
+            }
+        }
+        return $found;
+    }
+
     public function findByPath(string $path): ?Media {
         $id = $this->db->fetchOne(
             'select `id` from '.$this->em->safeTableName(Media::class).' where `path` = :path',

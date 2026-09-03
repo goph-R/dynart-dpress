@@ -5,19 +5,32 @@
  * Rendered only when there is more than one, so a post that was never broken up carries no extra
  * markup at all. Themes override this to change how it looks.
  *
- * Expects: $page, $page_count, $prev_url, $next_url.
+ * Numbers as well as arrows, because on a seven page article "Next" alone means somebody who
+ * wants part five reads four pages to get there - and the number they are on has to be a
+ * `<span>` rather than a link to itself.
+ *
+ * Expects: $page, $page_count, $prev_url, $next_url, $page_urls.
  */
 ?>
 <?php if (($page_count ?? 1) > 1): ?>
     <nav class="page-nav" aria-label="Pages of this article">
         <?php if ($prev_url !== ''): ?>
-            <a class="page-prev" href="<?= esc_attr($prev_url) ?>" rel="prev">&larr; Previous page</a>
+            <a class="page-prev" href="<?= esc_attr($prev_url) ?>" rel="prev">&larr; Previous</a>
         <?php else: ?>
             <span></span>
         <?php endif ?>
-        <span class="page-count">Page <?= (int)$page ?> of <?= (int)$page_count ?></span>
+        <span class="page-numbers">
+            <?php foreach (($page_urls ?? []) as $index => $url): ?>
+                <?php $number = $index + 1 ?>
+                <?php if ($number === (int)$page): ?>
+                    <span class="page-number current" aria-current="page"><?= $number ?></span>
+                <?php else: ?>
+                    <a class="page-number" href="<?= esc_attr($url) ?>"><?= $number ?></a>
+                <?php endif ?>
+            <?php endforeach ?>
+        </span>
         <?php if ($next_url !== ''): ?>
-            <a class="page-next" href="<?= esc_attr($next_url) ?>" rel="next">Next page &rarr;</a>
+            <a class="page-next" href="<?= esc_attr($next_url) ?>" rel="next">Next &rarr;</a>
         <?php else: ?>
             <span></span>
         <?php endif ?>

@@ -44,10 +44,13 @@ class ContentController extends AbstractController {
         if ($tag === null) {
             $this->app()->sendError(404);
         }
+        $posts = $this->content->findByTag($tag->id);
         return $this->render('dpress:content/list', [
             'title' => 'Tagged '.$tag->name,
             'heading' => 'Tagged “'.$tag->name.'”',
-            'posts' => $this->content->findByTag($tag->id),
+            'posts' => $posts,
+            'thumbnails' => $this->thumbnails($posts),
+            'mediaView' => $this->mediaView,
         ], 'archive');
     }
 
@@ -57,10 +60,13 @@ class ContentController extends AbstractController {
         if ($category === null) {
             $this->app()->sendError(404);
         }
+        $posts = $this->content->findByCategory($category->id);
         return $this->render('dpress:content/list', [
             'title' => $category->name,
             'heading' => $category->name,
-            'posts' => $this->content->findByCategory($category->id),
+            'posts' => $posts,
+            'thumbnails' => $this->thumbnails($posts),
+            'mediaView' => $this->mediaView,
         ], 'archive');
     }
 
