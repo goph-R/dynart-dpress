@@ -47,6 +47,29 @@ class UserService {
 
     // --- Reading ---
 
+    /**
+     * Several users at once, keyed by id
+     *
+     * For a listing: twenty posts by three people is three names, and twenty primary-key lookups
+     * done the obvious way. The same bargain `MediaService::findByIds()` makes one row over.
+     *
+     * @param int[] $ids
+     * @return array<int, User>
+     */
+    public function findByIds(array $ids): array {
+        $ids = array_values(array_filter(array_unique(array_map('intval', $ids))));
+        if ($ids === []) {
+            return [];
+        }
+        $found = [];
+        foreach ($this->em->findByIds(User::class, $ids) as $user) {
+            if ($user instanceof User) {
+                $found[$user->id] = $user;
+            }
+        }
+        return $found;
+    }
+
     public function findById(int $id): ?User {
         $user = $this->em->findById(User::class, $id);
         return $user instanceof User ? $user : null;

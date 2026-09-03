@@ -93,6 +93,16 @@ class Setting extends Entity {
     /** What a site gets when it has never said, and the word most sites would have chosen */
     const DEFAULT_FEATURED_TAG = 'featured';
 
+    /**
+     * How a date is written on a page, and which clock it is written against
+     *
+     * The two belong together. Every timestamp is stored UTC, so a format on its own prints UTC -
+     * and a post published at half past midnight in Budapest then shows the previous day to
+     * everybody. See `Dates`.
+     */
+    const DATE_FORMAT = 'date_format';
+    const TIMEZONE = 'timezone';
+
     #[Column(type: Column::TYPE_STRING, size: 100, primaryKey: true, notNull: true)]
     public string $name = '';
 

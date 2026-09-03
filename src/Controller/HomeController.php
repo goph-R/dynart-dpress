@@ -61,6 +61,7 @@ class HomeController extends AbstractController {
             // theme author writes once and debugs twice
             'featured_posts'  => $featured,
             'thumbnails'      => $this->thumbnails(array_merge($posts, $featured)),
+            'authors'         => $this->authors(array_merge($posts, $featured)),
             'mediaView'       => $this->mediaView,
         ], 'home');
     }

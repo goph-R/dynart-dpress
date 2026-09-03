@@ -251,6 +251,13 @@ class AdminForms {
             'registration_open' => ['type' => 'checkbox', 'label' => 'Registration', 'required' => false,
                                     'text' => 'Anybody may create an account'],
             'posts_per_page'    => ['type' => 'text', 'label' => 'Posts per page', 'required' => false],
+            'date_format'       => ['type' => 'text', 'label' => 'Date format', 'required' => false,
+                                    'description' => 'PHP date letters. `Y-m-d` is 2026-01-06, '
+                                        .'`F j, Y` is January 6, 2026.'],
+            'timezone'          => ['type' => 'select', 'label' => 'Timezone', 'required' => false,
+                                    'options' => $context['timezones'] ?? [],
+                                    'description' => 'Times are stored in UTC. This is the clock '
+                                        .'they are written against on a page.'],
             'featured_tag'      => ['type' => 'text', 'label' => 'Featured tag', 'required' => false,
                                     'description' => 'Posts with this tag go to the top of the front page, '
                                         .'and are left out of the list below it. Empty for none.'],

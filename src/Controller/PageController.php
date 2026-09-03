@@ -56,6 +56,7 @@ class PageController extends AbstractController {
         return $this->render('dpress:content/page', $this->pagedBody($content, $this->content->path($content)) + [
             'title'       => $content->title,
             'content'     => $content,
+            'author'      => $this->authorOf($content),
             'ancestors'   => $this->content->ancestors($content),
             'children'    => $this->content->findChildren($content->id),
             'attachments' => $this->media->attachmentsOf($content->id),

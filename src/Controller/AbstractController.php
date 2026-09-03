@@ -21,6 +21,8 @@ use Dynart\Dpress\Theme\Places;
 use Dynart\Dpress\Theme\ThemeAssets;
 use Dynart\Dpress\Dpress;
 use Dynart\Dpress\Service\SettingService;
+use Dynart\Dpress\Service\UserService;
+use Dynart\Dpress\Content\Dates;
 
 /**
  * What every CMS controller needs
@@ -164,6 +166,7 @@ abstract class AbstractController {
         $this->view->set('layout', $this->layoutFor($kind));
         $this->view->set('layout_kind', $kind);
         $this->view->set('theme', Micro::get(ThemeAssets::class));
+        $this->view->set('dates', Micro::get(Dates::class));
         $this->view->set('current_user', $this->currentUser());
         $this->view->set('site_name', $this->siteName());
         $this->view->set('site_description', $this->siteDescription());
@@ -217,6 +220,44 @@ abstract class AbstractController {
             }
         }
         return $found;
+    }
+
+    /**
+     * Who wrote each row of a listing, keyed by the row's id
+     *
+     * The other half of `thumbnails()`, and the same bargain: a row carries `author_id` and not a
+     * name, so *"by gopher"* under a title was not something a template could write. **One query
+     * for the page** - twenty posts by three people is three names.
+     *
+     * A name rather than the user, because that is all a byline is, and handing a template a
+     * `User` hands it an email address and a password hash to print by accident. An account
+     * deleted since is simply absent, which a template asks about the same way it asks about a
+     * missing picture.
+     *
+     * @param array[] $rows listing rows, as `findAll()` answers with
+     * @return array<int, string> keyed by content id
+     */
+    protected function authors(array $rows): array {
+        $users = Micro::get(UserService::class)->findByIds(array_column($rows, 'author_id'));
+        $found = [];
+        foreach ($rows as $row) {
+            $id = $row['author_id'] ?? null;
+            if ($id !== null && isset($users[(int)$id])) {
+                $found[(int)$row['id']] = $users[(int)$id]->name;
+            }
+        }
+        return $found;
+    }
+
+    /**
+     * The one author of one piece of content, or '' - the single post's half of `authors()`
+     */
+    protected function authorOf(Content $content): string {
+        if ($content->author_id === null) {
+            return '';
+        }
+        $user = Micro::get(UserService::class)->findById((int)$content->author_id);
+        return $user === null ? '' : $user->name;
     }
 
     /**

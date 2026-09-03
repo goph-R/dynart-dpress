@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.41.0] &ndash; 2026-09-03
+
+### Added
+- **A date format setting, and a timezone beside it.** `date_format` takes PHP's date letters (`F j, Y` is *January 6, 2026*), `timezone` is a select of every zone PHP knows. The two arrive together on purpose: every timestamp is stored UTC, so a format on its own prints the UTC day - and a post published at half past midnight in Budapest was then dated the day before, for everybody.
+- `$dates` in every template - `format()`, `iso()` and `tag()`, which writes the whole `<time datetime="...">` element so the printed date can read however the site likes while the attribute still says what it means.
+- **`$authors` on every listing and `$author` on a post**, so a byline is something a template can write. Keyed by content id, **one query for the page**: twenty posts by three people is three names. A name rather than the `User`, because handing a template the entity hands it an email address to print by accident.
+- `UserService::findByIds()`.
+
+### Notes
+A bad timezone falls back to UTC rather than throwing - a settings screen can be typed into, and a clock setting that is a typo should show the wrong hours rather than an error page on every URL the site has. The same bargain a missing theme makes.
+
 ## [0.40.2] &ndash; 2026-09-03
 
 ### Added

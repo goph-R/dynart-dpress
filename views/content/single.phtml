@@ -3,7 +3,8 @@
     <article>
         <h1><?= esc_html($content->title) ?></h1>
         <p class="meta">
-            <?= esc_html(substr((string)$content->published_at, 0, 10)) ?>
+            <?php if (($author ?? '') !== ''): ?>by <?= esc_html($author) ?> &mdash; <?php endif ?>
+            <?= $dates->tag($content->published_at) ?>
             <?php if (!$content->isPublished()): ?><strong>&middot; draft</strong><?php endif ?>
             <?php foreach ($categories as $category): ?>
                 &middot; <a href="<?= esc_attr(route_url('/category/'.$category['slug'])) ?>"><?= esc_html($category['name']) ?></a>

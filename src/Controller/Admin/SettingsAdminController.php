@@ -39,6 +39,8 @@ class SettingsAdminController extends AbstractAdminController {
         Setting::REGISTRATION_OPEN => 'bool',
         Setting::POSTS_PER_PAGE => 'int',
         Setting::FEATURED_TAG => 'string',
+        Setting::DATE_FORMAT => 'string',
+        Setting::TIMEZONE => 'string',
         Setting::CODE_THEME => 'string',
     ];
 
@@ -62,6 +64,20 @@ class SettingsAdminController extends AbstractAdminController {
         return 'settings';
     }
 
+    /**
+     * Every timezone PHP knows, as a select
+     *
+     * A select rather than a text field because the value is not free text - a typo silently falls
+     * back to UTC and the site's dates are a few hours wrong in a way nobody would think to check.
+     * The list is long, and a long list somebody scrolls beats a short one that is missing theirs.
+     *
+     * @return array [identifier => identifier]
+     */
+    protected function timezoneOptions(): array {
+        $zones = \DateTimeZone::listIdentifiers();
+        return array_combine($zones, $zones);
+    }
+
     #[Route('GET', '/admin/settings')]
     #[Route('POST', '/admin/settings')]
     public function index(): string {
@@ -72,6 +88,7 @@ class SettingsAdminController extends AbstractAdminController {
             // `none` rather than '': an empty setting is read as absent and answers with the
             // default, so "off" has to be a word
             'code_themes' => [CodeAssets::NONE => 'No highlighting'] + CodeAssets::THEMES,
+            'timezones' => $this->timezoneOptions(),
             'values' => $values,
             // the thumbnail the field shows for what is already chosen, rendered here because a
             // template has no business asking a service what a media id looks like

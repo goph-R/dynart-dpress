@@ -18,7 +18,12 @@
                     ?></a>
                 <?php endif ?>
                 <h2><a href="<?= esc_attr(route_url('/post/'.$post['slug'])) ?>"><?= esc_html($post['title']) ?></a></h2>
-                <p class="meta"><?= esc_html(substr((string)$post['published_at'], 0, 10)) ?></p>
+                <p class="meta">
+                    <?php if (isset($authors[$post['id']])): ?>
+                        by <?= esc_html($authors[$post['id']]) ?> &mdash;
+                    <?php endif ?>
+                    <?= $dates->tag($post['published_at']) ?>
+                </p>
                 <?= $post['lead_html'] ?>
             </article>
         <?php endforeach ?>

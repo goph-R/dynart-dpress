@@ -50,6 +50,7 @@ class ContentController extends AbstractController {
             'heading' => 'Tagged “'.$tag->name.'”',
             'posts' => $posts,
             'thumbnails' => $this->thumbnails($posts),
+            'authors' => $this->authors($posts),
             'mediaView' => $this->mediaView,
         ], 'archive');
     }
@@ -66,6 +67,7 @@ class ContentController extends AbstractController {
             'heading' => $category->name,
             'posts' => $posts,
             'thumbnails' => $this->thumbnails($posts),
+            'authors' => $this->authors($posts),
             'mediaView' => $this->mediaView,
         ], 'archive');
     }
@@ -79,6 +81,7 @@ class ContentController extends AbstractController {
         return $this->render('dpress:content/single', $this->pagedBody($content, '/post/'.$content->slug) + [
             'title'       => $content->title,
             'content'     => $content,
+            'author'      => $this->authorOf($content),
             'tags'        => $this->taxonomy->tagsOf($content->id),
             'categories'  => $this->taxonomy->categoriesOf($content->id),
             'attachments' => $this->media->attachmentsOf($content->id),

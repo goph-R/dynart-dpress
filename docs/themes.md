@@ -158,6 +158,7 @@ Set on every render, so a theme's templates never look anything up:
 | `$main_menu` | the `main` place's menu, already rendered |
 | `$current_user`, `$registration_open` | for the header |
 | `$title` | the page's own title, per render |
+| `$dates` | `format()`, `iso()` and `tag()` for a stored timestamp |
 
 Content templates add their own: `$content`, `$posts`, `$tags`, `$categories`, `$attachments`,
 `$mediaView`, and the paging set (`$body_html`, `$page`, `$page_count`, `$show_lead`, `$prev_url`,
@@ -169,6 +170,10 @@ Two of those are what a card-shaped listing needs, and both cost one query for t
   nothing. A row carries `featured_media_id` and not the item, so without this a theme that wants
   a picture on a card has the id and nothing to do with it. A post with no picture and a post
   whose picture was deleted are both simply absent, so `isset()` is the whole check.
+- **`$authors`**, on every listing, keyed by content id — a name, or nothing. Same reason as
+  `$thumbnails`: a row carries `author_id` and not a name. A single post gets `$author` instead,
+  as a plain string. So a byline is
+  `<?php if (isset($authors[$post['id']])): ?>by <?= esc_html($authors[$post['id']]) ?><?php endif ?>`.
 - **`$featured_posts`**, on the front page only: the posts tagged with whatever `featured_tag` names,
   newest first, at most five. They are **left out of `$posts`**, because pinned at the top and
   repeated four rows down reads as a bug rather than as emphasis. An empty setting, a tag nobody
@@ -181,7 +186,25 @@ a bug a theme author writes once and debugs twice.
 
 ---
 
-## 6. What a theme cannot do
+## 6. Dates
+
+**Never print `substr($row['published_at'], 0, 10)`.** Timestamps are stored UTC, so those ten
+characters are the *UTC* day — a post published at half past midnight in Budapest shows the day
+before, to everybody. `$dates` reads the site's `timezone` and `date_format` settings:
+
+```php
+<?= $dates->tag($post['published_at']) ?>          <!-- <time datetime="...">January 6, 2026</time> -->
+<?= esc_html($dates->format($post['published_at'])) ?>   <!-- just the text -->
+<?= esc_html($dates->format($post['published_at'], 'Y')) ?>  <!-- a format of the theme's own -->
+```
+
+`tag()` is what to reach for: the printed date reads however the site set it, and the `datetime`
+attribute still says what it means to a feed, a reader or a search engine. Nothing stored gives
+`''` back rather than a date in 1970, so a draft prints nothing.
+
+---
+
+## 7. What a theme cannot do
 
 - **Not the admin.** `dpress_admin:` is registered as not themeable. A theme replacing the admin
   layout is not a restyled page, it is somebody locked out of their own site.

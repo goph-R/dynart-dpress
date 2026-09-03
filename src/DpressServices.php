@@ -103,6 +103,7 @@ use Dynart\Dpress\Service\TaxonomyService;
 use Dynart\Dpress\Theme\Places;
 use Dynart\Dpress\Theme\ThemeService;
 use Dynart\Dpress\Theme\ThemeAssets;
+use Dynart\Dpress\Content\Dates;
 use Dynart\Dpress\Service\RoleService;
 use Dynart\Dpress\Service\SchemaService;
 use Dynart\Dpress\Service\UserService;
@@ -222,6 +223,7 @@ class DpressServices {
         Micro::add(SettingService::class);
         Micro::add(ThemeService::class);
         Micro::add(ThemeAssets::class);
+        Micro::add(Dates::class);
         Micro::add(PluginService::class);
         Micro::add(MenuService::class);
         Micro::add(Blocks::class);
