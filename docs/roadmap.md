@@ -62,9 +62,11 @@ setting says so, `ContentService::path()` answering with the same shape, and the
   the blog only ever used post-name permalinks, the shape above covers everything and no redirect
   table is needed. Worth checking before assuming.
 
-**This is also the answer to the comments question**: with the URL preserved, a Disqus thread keyed
-on the URL still matches, and one keyed on an identifier never cared. See
-[comments.md](comments.md) §3.
+**The comments turned out not to be part of this.** The blog's Disqus threads are keyed
+`573 https://gopherlab.net/?p=573` — the WordPress post id, not the permalink — so they follow the
+id across and are indifferent to what the URL becomes. See [comments.md](comments.md) §6, step 2.
+That leaves this decision resting on backlinks and search rankings alone, which is still reason
+enough, but it is one argument rather than two.
 
 ---
 

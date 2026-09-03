@@ -18,6 +18,8 @@ use Dynart\Dpress\Service\MediaService;
 use Dynart\Dpress\Content\ContentPages;
 use Dynart\Dpress\Entity\Content;
 use Dynart\Dpress\Theme\Places;
+use Dynart\Dpress\Theme\ThemeAssets;
+use Dynart\Dpress\Dpress;
 use Dynart\Dpress\Service\SettingService;
 
 /**
@@ -30,6 +32,11 @@ abstract class AbstractController {
 
     /** Which page of a long body to serve. A query parameter, so no route has to know about it */
     const PAGE_PARAM = 'page';
+
+    /**
+     * What every front-end template falls back to when the theme names no layout of its own
+     */
+    const LAYOUT = Dpress::VIEW_NAMESPACE.':layout';
 
     const CONFIG_SITE_NAME = 'dpress.site_name';
     const CONFIG_REGISTRATION_OPEN = 'dpress.registration_open';
@@ -143,7 +150,10 @@ abstract class AbstractController {
      *
      * A page with no shortcode in it pays for one `str_contains` - see `Shortcodes`.
      */
-    protected function render(string $template, array $variables = []): string {
+    protected function render(string $template, array $variables = [], string $kind = ''): string {
+        $this->view->set('layout', $this->layoutFor($kind));
+        $this->view->set('layout_kind', $kind);
+        $this->view->set('theme', Micro::get(ThemeAssets::class));
         $this->view->set('current_user', $this->currentUser());
         $this->view->set('site_name', $this->siteName());
         $this->view->set('site_logo', $this->siteLogo());
@@ -155,6 +165,36 @@ abstract class AbstractController {
         $this->view->set('places', Micro::get(Places::class));
         $html = Micro::get(Shortcodes::class)->expand($this->view->fetch($template, $variables));
         return $this->withCodeAssets($html);
+    }
+
+    /**
+     * The layout for a kind of page, if the theme has one, and the ordinary layout if it has not
+     *
+     * A front page and a post being read are not the same document: one is a wide list of things
+     * to open, the other is a column of prose with what belongs beside it. So a theme may write
+     * `layout-home.phtml` next to its `layout.phtml`, and a template renders through whichever it
+     * gets - the name is a **variable** in the template rather than a literal, which is the whole
+     * change. Nine templates used to say `dpress:layout` out loud, so a theme wanting a second
+     * layout had to override all nine to alter one string.
+     *
+     * **A theme adds a layout by dropping the file in**, the same promise a theme itself makes and
+     * a plugin after it: `View::exists()` resolves through the theme folder first, so a kind with
+     * no file behind it quietly comes back to the one layout. That is what makes it free to name
+     * more kinds than any theme uses - `archive`, `page` and `auth` cost a theme nothing until it
+     * writes one.
+     *
+     * The kind reaches a template too, as `$layout_kind`, because a theme that wants one layout
+     * and two shapes of it wants a class on the body rather than a second file.
+     *
+     * A kind becomes part of a path, so it is matched rather than trusted. Controllers are where
+     * kinds come from, but a plugin ships controllers too.
+     */
+    protected function layoutFor(string $kind): string {
+        if (preg_match('/^[a-z0-9_-]+$/', $kind) !== 1) {
+            return self::LAYOUT;
+        }
+        $named = self::LAYOUT.'-'.$kind;
+        return $this->view->exists($named) ? $named : self::LAYOUT;
     }
 
     /**
@@ -234,6 +274,6 @@ abstract class AbstractController {
             'title'   => $title,
             'message' => $message,
             'link'    => $link,
-        ]);
+        ], 'auth');
     }
 }

@@ -200,7 +200,10 @@
         }
     </style>
 </head>
-<body>
+<?php // what kind of page this is, for a theme that wants one layout and two shapes of it rather
+      // than two files. `home`, `archive`, `post`, `page`, `auth` - and '' for anything a plugin
+      // renders without saying. ?>
+<body class="<?= esc_attr($layout_kind ?? '') ?>">
 <header>
     <a class="brand" href="<?= esc_attr(route_url('/')) ?>">
         <?php if (!empty($site_logo)): ?>

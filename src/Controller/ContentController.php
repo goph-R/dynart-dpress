@@ -48,7 +48,7 @@ class ContentController extends AbstractController {
             'title' => 'Tagged '.$tag->name,
             'heading' => 'Tagged “'.$tag->name.'”',
             'posts' => $this->content->findByTag($tag->id),
-        ]);
+        ], 'archive');
     }
 
     #[Route('GET', '/category/?')]
@@ -61,7 +61,7 @@ class ContentController extends AbstractController {
             'title' => $category->name,
             'heading' => $category->name,
             'posts' => $this->content->findByCategory($category->id),
-        ]);
+        ], 'archive');
     }
 
     #[Route('GET', '/post/?')]
@@ -79,7 +79,7 @@ class ContentController extends AbstractController {
             'featured'    => $content->featured_media_id !== null
                 ? $this->media->findById($content->featured_media_id) : null,
             'mediaView'   => $this->mediaView,
-        ]);
+        ], 'post');
     }
 
     /**

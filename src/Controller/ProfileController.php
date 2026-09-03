@@ -70,6 +70,6 @@ class ProfileController extends AbstractController {
             'title' => 'Your profile',
             'saved' => $saved,
             'user'  => $user,
-        ]);
+        ], 'auth');
     }
 }

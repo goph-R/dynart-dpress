@@ -7,7 +7,7 @@ namespace Dynart\Dpress;
  */
 class Dpress {
 
-    const VERSION = '0.38.0';
+    const VERSION = '0.39.0';
 
     /** The file that marks the root of a dpress installation */
     const CONFIG_FILE_NAME = 'dpress.ini';
@@ -27,6 +27,16 @@ class Dpress {
      * somebody locked out of their own site.
      */
     const ADMIN_VIEW_NAMESPACE = 'dpress_admin';
+
+    /**
+     * The active theme's own folder, for the templates that are the theme's own
+     *
+     * `dpress:` is for **overrides** - a theme puts `dpress/content/single.phtml` in its folder
+     * and replaces the CMS's. This is for everything else a theme writes: the header two layouts
+     * share, a card partial, a footer. Registered by `ThemeService::apply()` and only while a
+     * theme is active, which is the only time anything can ask for it.
+     */
+    const THEME_VIEW_NAMESPACE = 'theme';
 
     /**
      * An absolute path inside the package

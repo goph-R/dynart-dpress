@@ -35,6 +35,6 @@ class HomeController extends AbstractController {
                 'type' => Content::TYPE_POST,
                 'published_only' => true,
             ]),
-        ]);
+        ], 'home');
     }
 }

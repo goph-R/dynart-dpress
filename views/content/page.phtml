@@ -1,4 +1,4 @@
-<?php $this->useLayout('dpress:layout') ?>
+<?php $this->useLayout($layout ?? 'dpress:layout') ?>
 <?php $this->startBlock('content') ?>
     <?php if (!empty($ancestors)): ?>
         <nav class="breadcrumb">

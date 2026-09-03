@@ -8,6 +8,7 @@ use Dynart\Micro\Micro;
 use Dynart\Micro\ResponseInterface;
 use Dynart\Dpress\Controller\AbstractController;
 use Dynart\Dpress\Plugin\PluginService;
+use Dynart\Dpress\Theme\ThemeAssets;
 
 /**
  * Serves the admin's own JavaScript and CSS out of the package
@@ -102,6 +103,29 @@ class AssetController extends AbstractController {
             $this->app()->sendError(404);
         }
         $this->sendFile($path, self::PLUGIN_TYPES[$extension]);
+        return '';
+    }
+
+    /**
+     * A file out of the active theme's `assets/` folder
+     *
+     * On the **front end**, like the highlighter above it and unlike a plugin's: this is the
+     * stylesheet of the site itself, and it is the one thing after the highlighter that every
+     * visitor loads. It is here because the serving is identical - a file with no data in it, an
+     * allowlist, and headers that let it be cached forever.
+     *
+     * `ThemeAssets::file()` holds the whole rule about what may be served and from where, so the
+     * answer to "can this URL read something it should not" is one testable method rather than a
+     * controller.
+     */
+    #[AllowAnonymous]
+    #[Route('GET', ThemeAssets::ROUTE.'?')]
+    public function themeAsset(string $file): string {
+        $asset = Micro::get(ThemeAssets::class)->file($file);
+        if ($asset === null) {
+            $this->app()->sendError(404);
+        }
+        $this->sendFile($asset['path'], $asset['type']);
         return '';
     }
 

@@ -5,6 +5,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.39.0] &ndash; 2026-09-03
+
+### Added
+- **A theme may have a layout per kind of page.** A front page and a post being read are not the same document, so a theme writes `layout-home.phtml` beside its `layout.phtml` and the front page renders through it. Five kinds are named — `home`, `archive`, `post`, `page`, `auth` — and **having the file is the registration**: a kind with no template behind it falls back to the one layout, so naming five costs a theme nothing until it wants a second.
+- `$layout_kind` in every front-end template, printed as a class on `<body>` by the built-in layout — for a theme that wants one layout and two shapes of it rather than two files.
+- **A theme's own `assets/` folder, served at `/assets/theme/<file>`**, through `$theme->url('style.css')`. Cache-busted by the theme's version from `theme.ini` rather than the CMS's, immutable headers, an allowlist that covers fonts and pictures as well as CSS, and the active theme's files only — the name is not in the URL.
+- **`theme:`, a namespace for the templates that are the theme's own** rather than overrides of the CMS's — `theme:partial/head`, so two layouts can share one header without a theme claiming a name under `dpress:` for a file the CMS does not ship.
+- [docs/themes.md](docs/themes.md).
+
+### Fixed
+- The example theme printed `$footer_menu`, a variable nothing has ever set, so a menu assigned to the `footer` place it declares rendered nowhere. It renders `$places->render('footer')` now, like every other place.
+
+### Notes
+**A place only one layout renders is a place that only appears there** — `sidebar` beside a post and not on the front page, `home_top` on the front page and nowhere else. That is the cheap version of block visibility rules, with nothing to configure and no grammar to design, and it arrives as a consequence of two layouts rather than as a feature. What it will not express is a condition finer than which layout.
+
+Nine templates used to name `dpress:layout` outright, so a theme wanting a second layout had to override all nine to alter one string. `AbstractController::render()` now takes the kind and the templates render through a variable.
+
+---
+
 ## [0.38.0] &ndash; 2026-09-02
 
 ### Added

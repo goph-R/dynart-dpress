@@ -5,6 +5,7 @@ namespace Dynart\Dpress\Theme;
 use Dynart\Micro\ConfigInterface;
 use Dynart\Micro\EventServiceInterface;
 use Dynart\Micro\ViewInterface;
+use Dynart\Dpress\Dpress;
 use Dynart\Dpress\DpressException;
 use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Service\SettingService;
@@ -144,7 +145,16 @@ class ThemeService {
      */
     public function apply(): void {
         $name = $this->active();
-        $this->view->setTheme($name === self::FALLBACK ? '' : $this->path().'/'.$name);
+        if ($name === self::FALLBACK) {
+            $this->view->setTheme('');
+            return;
+        }
+        $this->view->setTheme($this->path().'/'.$name);
+        // and a namespace of its own, for the templates that are the theme's rather than
+        // overrides of the CMS's. Two layouts want one header between them, and without this the
+        // only way to write that partial is to call it `dpress:something` - a theme claiming a
+        // name in the CMS's namespace for a file the CMS does not have and would not recognise.
+        $this->view->addFolder(Dpress::THEME_VIEW_NAMESPACE, $this->path().'/'.$name);
     }
 
     /**

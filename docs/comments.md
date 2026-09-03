@@ -148,10 +148,26 @@ The order matters, and the middle step is the one that goes wrong.
 1. **Before touching anything**, export from Disqus (Admin → Community → Export). If the WordPress
    site never used Disqus, its comments are inside the WordPress WXR export, and Disqus imports
    that file directly — do that first, on the old site, while the old URLs still resolve.
-2. **Write down the identifiers the old site used.** This is the step to do slowly. The WordPress
-   Disqus plugin has historically written `<post id> <guid>` — e.g. `123 http://old.example.com/?p=123`
-   — but that has changed across versions, and a site that never used the plugin will have threads
-   keyed on URL instead. **Read your own export and see**, rather than trusting this paragraph.
+2. **Write down the identifiers the old site used.** This was the step to do slowly, and for
+   gopherlab.net it is already done: the Disqus admin shows identifiers of the form
+
+   ```
+   573 https://gopherlab.net/?p=573
+   ```
+
+   which is the WordPress plugin's `<post id> <guid>`. Two things follow, and the first is the
+   good news.
+
+   **The threads are keyed on the WordPress post id, not on the URL** — so they do not care what
+   the post's address becomes. The migration needs the old id carried across, and nothing else.
+   That id is in the WXR export against every post, so it can come over with the content rather
+   than being collected by hand: the map is one number per post, not a CSV somebody assembles.
+
+   **Copy the identifier as exported; never rebuild it from the id.** The second half is the
+   WordPress *guid*, which is stored at publish time and never updated — so a post written before
+   the site moved to HTTPS carries `http://`, and one written before a domain change carries the
+   old host. `"$id https://gopherlab.net/?p=$id"` would be right for most of the archive and
+   silently wrong for the oldest posts, which are exactly the ones with the comments on them.
 3. **Import into dpress**, so every post has its new id.
 4. **Fill `disqus_thread`** — old identifier against new content id. A CLI command,
    `disqus:map -file map.csv`, taking `old_identifier,new_slug` and resolving slugs to ids, with a
@@ -164,9 +180,11 @@ The order matters, and the middle step is the one that goes wrong.
 
 **Do not migrate by URL if it can be avoided.** It works until the first slug edit.
 
-Whether the post URLs survive the move at all is a separate decision, and a bigger one — see
-[roadmap.md](roadmap.md) §1. Keeping them makes a URL-keyed thread match by accident; an
-identifier-keyed one never cared either way.
+**And the URL question is now genuinely separate.** [roadmap.md](roadmap.md) §1 listed the
+comments as one of the things riding on whether post URLs survive the move. Step 2 settles it:
+these threads are identifier-keyed, so they never cared. What still rides on the URL is backlinks
+and search rankings, which is reason enough on its own — but the comments are no longer an
+argument in it either way.
 
 ---
 

@@ -1,4 +1,4 @@
-<?php $this->useLayout('dpress:layout') ?>
+<?php $this->useLayout($layout ?? 'dpress:layout') ?>
 <?php $this->startBlock('content') ?>
     <h1><?= esc_html($heading ?? $site_name) ?></h1>
     <?php if (empty($posts)): ?>

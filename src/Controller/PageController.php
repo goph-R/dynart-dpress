@@ -62,7 +62,7 @@ class PageController extends AbstractController {
             'featured'    => $content->featured_media_id !== null
                 ? $this->media->findById($content->featured_media_id) : null,
             'mediaView'   => $this->mediaView,
-        ]);
+        ], 'page');
     }
 
     protected function maySeeDrafts(): bool {

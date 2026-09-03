@@ -61,7 +61,7 @@ class AuthController extends AbstractController {
                 }
             }
         }
-        return $this->render('dpress:auth/login', ['form' => $form, 'title' => 'Log in']);
+        return $this->render('dpress:auth/login', ['form' => $form, 'title' => 'Log in'], 'auth');
     }
 
     /**
@@ -137,7 +137,7 @@ class AuthController extends AbstractController {
                 $form->addError($e->getMessage());
             }
         }
-        return $this->render('dpress:auth/register', ['form' => $form, 'title' => 'Register']);
+        return $this->render('dpress:auth/register', ['form' => $form, 'title' => 'Register'], 'auth');
     }
 
     /**
@@ -170,7 +170,7 @@ class AuthController extends AbstractController {
                 'If that address belongs to an account, a password reset link is on its way.'
             );
         }
-        return $this->render('dpress:auth/forgot-password', ['form' => $form, 'title' => 'Forgotten password']);
+        return $this->render('dpress:auth/forgot-password', ['form' => $form, 'title' => 'Forgotten password'], 'auth');
     }
 
     #[Route('BOTH', '/reset-password')]
@@ -198,7 +198,7 @@ class AuthController extends AbstractController {
                 }
             }
         }
-        return $this->render('dpress:auth/reset-password', ['form' => $form, 'title' => 'Choose a new password']);
+        return $this->render('dpress:auth/reset-password', ['form' => $form, 'title' => 'Choose a new password'], 'auth');
     }
 
     protected function sendPasswordResetMail(string $email, string $token): void {
