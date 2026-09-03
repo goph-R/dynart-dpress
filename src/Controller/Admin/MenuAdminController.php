@@ -246,7 +246,9 @@ class MenuAdminController extends AbstractAdminController {
                 // rather than `esc_html`, which is a *view* helper and is not loaded out here - the
                 // two are the same call, and this is the side of the fence that has to say so.
                 'target_html' => htmlspecialchars($this->describeTarget($row))
-                    .($url === null ? '<small class="form-error">not rendered - its target is gone</small>' : ''),
+                    .($url === null
+                        ? '<small class="form-error">not rendered - '.$this->whyNotRendered($row).'</small>'
+                        : ''),
                 // what makes the row stand out: the item is in the menu and renders nowhere
                 'class'    => $url === null ? 'broken' : '',
                 'url'      => $url,
@@ -293,8 +295,14 @@ class MenuAdminController extends AbstractAdminController {
         $menu = $this->found($this->menus->findMenu((int)$id));
         $form = $this->forms->create(AdminForms::MENU_ITEM, $this->itemContext($menu, null));
         if ($form->process()) {
-            $form->handle(fn($form) => $this->menus->addItem($menu, $this->itemData($form->values())));
-            $this->done('/admin/menus/items/'.$menu->id, 'Added.');
+            $data = $this->itemData($form->values());
+            $problem = $this->itemProblem($data);
+            if ($problem !== null) {
+                $form->addError($problem);
+            } else {
+                $form->handle(fn($form) => $this->menus->addItem($menu, $data));
+                $this->done('/admin/menus/items/'.$menu->id, 'Added.');
+            }
         }
         return $this->itemEditor($menu, $form, null);
     }
@@ -307,8 +315,14 @@ class MenuAdminController extends AbstractAdminController {
         $menu = $this->found($this->menus->findMenu($item->menu_id));
         $form = $this->forms->create(AdminForms::MENU_ITEM, $this->itemContext($menu, $item));
         if ($form->process()) {
-            $form->handle(fn($form) => $this->menus->updateItem($item, $this->itemData($form->values())));
-            $this->done('/admin/menus/items/'.$menu->id, 'Saved.');
+            $data = $this->itemData($form->values());
+            $problem = $this->itemProblem($data);
+            if ($problem !== null) {
+                $form->addError($problem);
+            } else {
+                $form->handle(fn($form) => $this->menus->updateItem($item, $data));
+                $this->done('/admin/menus/items/'.$menu->id, 'Saved.');
+            }
         }
         return $this->itemEditor($menu, $form, $item);
     }
@@ -393,18 +407,77 @@ class MenuAdminController extends AbstractAdminController {
      */
     protected function itemData(array $values): array {
         $type = (string)($values['target_type'] ?? MenuItem::TARGET_CONTENT);
-        $target = (string)($values['target_id'] ?? '');
-        $targetId = null;
-        if ($target !== '') {
-            $targetId = (int)ltrim($target, 'ct');
-        }
         return [
             'label'       => (string)($values['label'] ?? ''),
             'target_type' => in_array($type, MenuItem::TARGETS, true) ? $type : MenuItem::TARGET_CONTENT,
-            'target_id'   => $type === MenuItem::TARGET_URL || $type === MenuItem::TARGET_HOME ? null : $targetId,
+            'target_id'   => $this->targetId($type, (string)($values['target_id'] ?? '')),
             'url'         => (string)($values['url'] ?? ''),
             'parent_id'   => ($values['parent_id'] ?? '') === '' ? null : (int)$values['parent_id'],
             'position'    => (int)($values['position'] ?? 0),
         ];
+    }
+
+    /**
+     * The id out of a target value, but only if its kind is the kind that was chosen
+     *
+     * The select carries the kind in the value - `12` is content, `c12` a category, `t12` a tag -
+     * and the kind was *also* chosen in "Points at". Two fields can disagree, and they did:
+     * `ltrim($target, 'ct')` on a tag under a category type gave `12` and the item then pointed at
+     * category 12, silently, at a URL nobody had chosen. So a value whose prefix does not match
+     * the type is **no target at all**, which `itemProblem()` then refuses out loud.
+     */
+    /**
+     * Why an item renders nowhere, in the words that say what to do about it
+     *
+     * *"Its target is gone"* was the only answer, and it is the wrong one for the common case:
+     * an item that never had a target reads as one whose post somebody deleted, which sends you
+     * looking through the bin for something that was never there.
+     */
+    protected function whyNotRendered(array $row): string {
+        if ($row['target_type'] === MenuItem::TARGET_URL) {
+            return 'it has no address';
+        }
+        return $row['target_id'] === null ? 'nothing is chosen for it to point at' : 'its target is gone';
+    }
+
+    protected function targetId(string $type, string $value): ?int {
+        $expected = [
+            MenuItem::TARGET_CONTENT  => '',
+            MenuItem::TARGET_CATEGORY => 'c',
+            MenuItem::TARGET_TAG      => 't',
+        ];
+        if ($value === '' || !array_key_exists($type, $expected)) {
+            return null;   // home and an external address point at nothing in the library
+        }
+        $prefix = $expected[$type];
+        if ($prefix !== '' && !str_starts_with($value, $prefix)) {
+            return null;
+        }
+        $id = $prefix === '' ? $value : substr($value, strlen($prefix));
+        return ctype_digit($id) ? (int)$id : null;
+    }
+
+    /**
+     * Why this item could never render, or null when it can
+     *
+     * **The form lets you describe an item that cannot work**: five kinds in one select, a target
+     * in another and an address in a third, and nothing said when they disagree. Leave "Points at"
+     * on its default and type an address - which is the obvious way to add an external link - and
+     * what got saved was a post link with no post, reported afterwards as *"its target is gone"*.
+     * It was never there.
+     *
+     * Refused at the form rather than thrown from the service, because this is somebody filling in
+     * a form wrong and the answer to that is the form again with the reason on it.
+     */
+    protected function itemProblem(array $data): ?string {
+        if ($data['target_type'] === MenuItem::TARGET_URL) {
+            return trim((string)$data['url']) === ''
+                ? 'An external address needs an address. Fill in Address, or choose something else in Points at.'
+                : null;
+        }
+        if ($data['target_type'] === MenuItem::TARGET_HOME || $data['target_id'] !== null) {
+            return null;
+        }
+        return 'Choose a Target of that kind, or set Points at to "An external address" and fill in Address.';
     }
 }

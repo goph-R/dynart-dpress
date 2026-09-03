@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.40.1] &ndash; 2026-09-03
+
+### Fixed
+- **A menu item that is only an external address now renders.** The editor asks the kind in one select and the thing in another, and nothing checked that they agreed - so leaving *Points at* on its default and filling in *Address*, which is the obvious way to add an external link, saved a post link with no post. It is refused now, with the reason and what to do about it.
+- **A target of the wrong kind no longer becomes the wrong target.** The select carries its kind in the value (`12`, `c12`, `t12`) and `ltrim($value, 'ct')` stripped that regardless of the kind chosen, so a tag picked under *A category* pointed the item at the category with that id - silently, at a URL nobody had chosen.
+- **"Not rendered - its target is gone" told you the wrong thing** for an item that never had a target, sending you looking through the bin for a post that was never there. An item with nothing chosen, one whose target was deleted, and an external address with no address now read differently.
+
 ## [0.40.0] &ndash; 2026-09-03
 
 ### Added

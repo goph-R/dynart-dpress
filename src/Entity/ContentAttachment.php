@@ -25,10 +25,10 @@ class ContentAttachment extends Entity {
 
     protected static string $eventName = 'content_attachment';
 
-    #[Column(type: Column::TYPE_INT, primaryKey: true, notNull: true, foreignKey: [Content::class, 'id'])]
+    #[Column(type: Column::TYPE_INT, notNull: true, primaryKey: true, foreignKey: [Content::class, 'id'])]
     public int $content_id = 0;
 
-    #[Column(type: Column::TYPE_INT, primaryKey: true, notNull: true, foreignKey: [Media::class, 'id'])]
+    #[Column(type: Column::TYPE_INT, notNull: true, primaryKey: true, foreignKey: [Media::class, 'id'])]
     public int $media_id = 0;
 
     #[Column(type: Column::TYPE_INT, notNull: true, default: 0)]
