@@ -76,15 +76,23 @@ class ThemeAssets {
      *
      * A theme's template is only ever rendered while that theme is active, so the empty string is
      * for a caller that is not a theme.
+     *
+     * @param bool $versioned false for a file **named** after its own contents - a font, above
+     *   all. A `url()` inside the stylesheet carries no version, because a stylesheet cannot know
+     *   one; so a `<link rel=preload>` built with a version is a *different URL* from the one the
+     *   `@font-face` then asks for, and the browser downloads the font twice while the preload
+     *   helps nothing. The two have to agree, and the one that cannot change is the CSS.
      */
-    public function url(string $file): string {
+    public function url(string $file, bool $versioned = true): string {
         $theme = $this->themes->get($this->themes->active());
         if ($theme === null) {
             return '';
         }
-        return Micro::get(RouterInterface::class)->url(
-            self::ROUTE.$file, ['v' => $theme['version'] !== '' ? $theme['version'] : '0']
-        );
+        $params = [];
+        if ($versioned) {
+            $params['v'] = $theme['version'] !== '' ? $theme['version'] : '0';
+        }
+        return Micro::get(RouterInterface::class)->url(self::ROUTE.$file, $params);
     }
 
     /**

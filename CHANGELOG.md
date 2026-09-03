@@ -5,6 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.40.2] &ndash; 2026-09-03
+
+### Added
+- `ThemeAssets::url($file, versioned: false)`, for an asset **named** after its own contents. A font is the case: a `url()` inside a stylesheet carries no version because a stylesheet cannot know one, so a `<link rel="preload">` built with `?v=` is a different URL from the one `@font-face` then asks for - the browser downloads the font twice and the preload helps nothing.
+
 ## [0.40.1] &ndash; 2026-09-03
 
 ### Fixed
