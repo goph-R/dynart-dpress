@@ -47,7 +47,7 @@ class Content extends Entity {
 
     const STATUSES = [self::STATUS_DRAFT, self::STATUS_PUBLISHED];
 
-    #[Column(type: Column::TYPE_INT, primaryKey: true, autoIncrement: true, notNull: true)]
+    #[Column(type: Column::TYPE_INT, notNull: true, autoIncrement: true, primaryKey: true)]
     public int $id = 0;
 
     #[Column(type: Column::TYPE_STRING, size: 20, notNull: true, default: self::TYPE_POST)]
@@ -59,7 +59,7 @@ class Content extends Entity {
     #[Column(type: Column::TYPE_INT, index: true)]
     public ?int $parent_id = null;
 
-    #[Column(type: Column::TYPE_INT, notNull: true, index: true, foreignKey: [User::class, 'id'])]
+    #[Column(type: Column::TYPE_INT, notNull: true, foreignKey: [User::class, 'id'], index: true)]
     public int $author_id = 0;
 
     /**
