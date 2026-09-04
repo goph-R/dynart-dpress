@@ -5,6 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.52.1] &ndash; 2026-09-04
+
+### Fixed
+- **A paragraph under a video sat flush against it.** The `video` shortcode writes its element straight into the content rather than inside a paragraph, and neither an `iframe` nor a `<video>` has a margin of its own - so there was nothing for the spacing to come from. `.dpress-video` has one now.
+
 ## [0.52.0] &ndash; 2026-09-04
 
 ### Added
