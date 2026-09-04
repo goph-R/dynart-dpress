@@ -5,6 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.44.1] &ndash; 2026-09-04
+
+### Changed
+- **A tree table now sits in a box of its own, like a dynamic list.** The two are the same furniture and read as two different things: a list ran edge to edge in its panel while the menu items, the categories and the blocks were inset by the panel's 22px. The `tree` partial brings its own `.tree-list` box the way a list does, so the three screens stopped wrapping it in a `.panel`, and rows gained the hover a list has. On the blocks screen each place is named above its box rather than inside it, so every table on the page starts at the same edge.
+
 ## [0.44.0] &ndash; 2026-09-04
 
 ### Added

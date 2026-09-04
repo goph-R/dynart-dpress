@@ -19,14 +19,12 @@
         <?php endif ?>
     </div>
 
-    <div class="panel">
-        <?= $this->fetch('dpress_admin:tree', [
-            'rows'       => $categories,
-            'columns'    => $columns,
-            'rowActions' => $row_actions,
-            'move_url'   => $move_url,
-            'drag_icon'  => $drag_icon,
-            'empty'      => 'No categories yet.',
-        ]) ?>
-    </div>
+    <?= $this->fetch('dpress_admin:tree', [
+        'rows'       => $categories,
+        'columns'    => $columns,
+        'rowActions' => $row_actions,
+        'move_url'   => $move_url,
+        'drag_icon'  => $drag_icon,
+        'empty'      => 'No categories yet.',
+    ]) ?>
 <?php $this->endBlock() ?>

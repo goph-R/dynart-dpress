@@ -17,14 +17,12 @@
         <a class="button" href="<?= esc_attr($back_url) ?>">Back</a>
     </div>
 
-    <div class="panel">
-        <?= $this->fetch('dpress_admin:tree', [
-            'rows'       => $items,
-            'columns'    => $columns,
-            'rowActions' => $row_actions,
-            'move_url'   => $move_url,
-            'drag_icon'  => $drag_icon,
-            'empty'      => 'This menu has no items yet.',
-        ]) ?>
-    </div>
+    <?= $this->fetch('dpress_admin:tree', [
+        'rows'       => $items,
+        'columns'    => $columns,
+        'rowActions' => $row_actions,
+        'move_url'   => $move_url,
+        'drag_icon'  => $drag_icon,
+        'empty'      => 'This menu has no items yet.',
+    ]) ?>
 <?php $this->endBlock() ?>

@@ -381,6 +381,17 @@ table.plain th, table.plain td { text-align: left; padding: 8px 14px; border-bot
 table.plain th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 table.plain tr:last-child td { border-bottom: 0; }
 table.plain .actions-column { text-align: right; white-space: nowrap; }
+/* A tree table lives in a box of its own, the same one a dynamic list gets, rather than inside
+   a padded panel: the two are the same furniture and read as two different things when one's
+   rows run edge to edge and the other is inset by 22px. */
+.tree-list { background: var(--panel); border-radius: var(--radius); overflow: hidden; }
+.tree-list .form-description { margin: 0; padding: 14px; }
+.tree-list tbody tr:hover { background: rgba(127, 127, 127, .06); }
+/* the blocks screen names each place above its table; inside a panel that heading had the
+   panel's own padding above it, and out here it needs its own */
+.tree-list-title { font-size: 15px; margin: 22px 0 10px; color: var(--muted); }
+.page-head + .tree-list-title { margin-top: 0; }
+
 table.tree-table tr.broken td { background: rgba(220, 38, 38, .06); }
 table.tree-table .form-error { display: block; }
 

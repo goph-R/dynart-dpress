@@ -26,6 +26,10 @@ $columns = $columns ?? [];
 $rowActions = $rowActions ?? [];
 $moveUrl = (string)($move_url ?? '');
 ?>
+<?php // The box is the partial's, not the screen's: a dynamic list brings its own and these
+      // two are the same furniture, so a tree inside a padded `.panel` had its rows inset by
+      // 22px while a list beside it ran edge to edge. ?>
+<div class="tree-list">
 <?php if (empty($rows)): ?>
     <p class="form-description"><?= esc_html($empty ?? 'Nothing here yet.') ?></p>
 <?php else: ?>
@@ -113,3 +117,4 @@ $moveUrl = (string)($move_url ?? '');
         </tbody>
     </table>
 <?php endif ?>
+</div>

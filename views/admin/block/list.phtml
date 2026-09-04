@@ -18,17 +18,17 @@
     </div>
 
     <?php foreach ($tables as $table): ?>
-        <div class="panel">
-            <h2 class="panel-title"><?= esc_html($table['label']) ?></h2>
-            <?= $this->fetch('dpress_admin:tree', [
-                'rows'       => $table['rows'],
-                'columns'    => $columns,
-                'rowActions' => $row_actions,
-                'move_url'   => $table['move_url'],
-                'drag_icon'  => $drag_icon,
-                'flat'       => true,
-                'empty'      => $table['empty'],
-            ]) ?>
-        </div>
+        <?php // the place is named above its box rather than inside it, so the rows of every
+              // table on the screen start at the same edge ?>
+        <h2 class="tree-list-title"><?= esc_html($table['label']) ?></h2>
+        <?= $this->fetch('dpress_admin:tree', [
+            'rows'       => $table['rows'],
+            'columns'    => $columns,
+            'rowActions' => $row_actions,
+            'move_url'   => $table['move_url'],
+            'drag_icon'  => $drag_icon,
+            'flat'       => true,
+            'empty'      => $table['empty'],
+        ]) ?>
     <?php endforeach ?>
 <?php $this->endBlock() ?>
