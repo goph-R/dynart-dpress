@@ -97,17 +97,7 @@ class ContentController extends AbstractController {
             );
             return '';
         }
-        return $this->render('dpress:content/single', $this->pagedBody($content, $this->content->publicPath($content)) + [
-            'title'       => $content->title,
-            'content'     => $content,
-            'author'      => $this->authorOf($content),
-            'tags'        => $this->taxonomy->tagsOf($content->id),
-            'categories'  => $this->taxonomy->categoriesOf($content->id),
-            'attachments' => $this->media->attachmentsOf($content->id),
-            'featured'    => $content->featured_media_id !== null
-                ? $this->media->findById($content->featured_media_id) : null,
-            'mediaView'   => $this->mediaView,
-        ], 'post');
+        return $this->renderContent($content);
     }
 
     /**

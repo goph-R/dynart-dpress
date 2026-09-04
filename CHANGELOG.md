@@ -5,6 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.47.1] &ndash; 2026-09-04
+
+### Fixed
+- **A post at the root was rendered with the page template.** 0.47.0 taught the catch-all to find a post and then handed it to `dpress:content/page` anyway, so a post reached at `/<slug>` lost its byline, its categories and its tags, and gained the featured image a post template may deliberately leave out. Both routes go through one `renderContent()` now: the kind of the content decides the template, never the route that reached it.
+
 ## [0.47.0] &ndash; 2026-09-04
 
 ### Added

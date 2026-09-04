@@ -15,7 +15,7 @@ use Dynart\Dpress\Service\ContentService;
 use Dynart\Dpress\Service\MediaService;
 
 /**
- * Pages at their own paths
+ * Whatever lives at the root: every page, and posts when they live there too
  *
  * The catch-all is matched **after** every exact and segment route, so this only sees a path
  * nothing else claimed. That ordering is in the router itself rather than in registration
@@ -43,27 +43,17 @@ class PageController extends AbstractController {
             $this->app()->sendError(404);
         }
         if (!$isCanonical) {
-            // the page is real but this is not where it lives - one page, one URL. The page
-            // number travels with the redirect: somebody following an old link to part three of
-            // an article should land on part three, not at the beginning of it.
+            // it is real but this is not where it lives - one piece of content, one URL. The
+            // page number travels with the redirect: somebody following an old link to part
+            // three of an article should land on part three, not at the beginning of it.
             $number = (int)$this->request->get(self::PAGE_PARAM, 1);
             $this->app()->redirect(
-                $this->content->path($content),
+                $this->content->publicPath($content),
                 $number > 1 ? [self::PAGE_PARAM => $number] : [],
                 301
             );
         }
-        return $this->render('dpress:content/page', $this->pagedBody($content, $this->content->path($content)) + [
-            'title'       => $content->title,
-            'content'     => $content,
-            'author'      => $this->authorOf($content),
-            'ancestors'   => $this->content->ancestors($content),
-            'children'    => $this->content->findChildren($content->id),
-            'attachments' => $this->media->attachmentsOf($content->id),
-            'featured'    => $content->featured_media_id !== null
-                ? $this->media->findById($content->featured_media_id) : null,
-            'mediaView'   => $this->mediaView,
-        ], 'page');
+        return $this->renderContent($content);
     }
 
     protected function maySeeDrafts(): bool {

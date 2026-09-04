@@ -15,6 +15,7 @@ use Dynart\Dpress\Content\Shortcodes;
 use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Media\MediaView;
 use Dynart\Dpress\Service\MediaService;
+use Dynart\Dpress\Service\TaxonomyService;
 use Dynart\Dpress\Content\ContentPages;
 use Dynart\Dpress\Entity\Content;
 use Dynart\Dpress\Theme\Places;
@@ -342,6 +343,41 @@ abstract class AbstractController {
      * The lead is on page one only: it is the opening of the article, not a header repeated
      * above every part of it.
      */
+    /**
+     * A piece of content as its own page, whichever kind it is and whichever route reached it
+     *
+     * Two routes end here: `/post/<slug>`, and the catch-all that serves whatever lives at the
+     * root - which since posts could live there is posts as well as pages. They were two nearly
+     * identical lists of view variables in two controllers, and the moment the catch-all started
+     * answering for a post it rendered one with the **page** template: no byline, no categories,
+     * no tags, and a featured image the post template had deliberately left out. One method, so
+     * a post is a post wherever it was reached from.
+     */
+    protected function renderContent(Content $content): string {
+        $contents = Micro::get(ContentService::class);
+        $media = Micro::get(MediaService::class);
+        $common = $this->pagedBody($content, $contents->publicPath($content)) + [
+            'title'       => $content->title,
+            'content'     => $content,
+            'author'      => $this->authorOf($content),
+            'attachments' => $media->attachmentsOf($content->id),
+            'featured'    => $content->featured_media_id !== null
+                ? $media->findById($content->featured_media_id) : null,
+            'mediaView'   => Micro::get(MediaView::class),
+        ];
+        if ($content->isPage()) {
+            return $this->render('dpress:content/page', $common + [
+                'ancestors' => $contents->ancestors($content),
+                'children'  => $contents->findChildren($content->id),
+            ], 'page');
+        }
+        $taxonomy = Micro::get(TaxonomyService::class);
+        return $this->render('dpress:content/single', $common + [
+            'tags'       => $taxonomy->tagsOf($content->id),
+            'categories' => $taxonomy->categoriesOf($content->id),
+        ], 'post');
+    }
+
     protected function pagedBody(Content $content, string $route, array $extra = []): array {
         $pages = ContentPages::split($content->body_html);
         $count = count($pages);
