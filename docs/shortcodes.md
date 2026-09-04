@@ -6,8 +6,8 @@
 {{ video('media#10') }}
 ```
 
-A registered name, optional arguments, and whatever HTML the handler returns. Two ship - `video`
-and `icon`; everything else comes from a plugin.
+A registered name, optional arguments, and whatever HTML the handler returns. Three ship -
+`video`, `icon` and `br`; everything else comes from a plugin.
 
 ---
 
@@ -199,7 +199,30 @@ Awesome needs its `url()`s rewritten from `../webfonts/fa-solid-900.woff2` to th
 `exists()` rather than an unconditional `<link>`, so a theme works with or without one instead of
 asking every site that never installed one for a 404 on every page.
 
-## 9. What was deliberately left out
+## 9. `br`
+
+```markdown
+| Links                                    | Picture              |
+|------------------------------------------|----------------------|
+| [One](post#1){{ br }}[Two](post#37)      | ![A shot](media#14)  |
+```
+
+Markdown has two line breaks already - two trailing spaces, and a trailing backslash - and both
+need the line to **end**. A table cell cannot end a line: the whole row is one, so a cell is inline
+content with no way to break it. GFM's own answer is `<br>` in the cell, and raw HTML is stripped
+here, so this is that break spelled as a shortcode rather than by opening HTML back up.
+
+It writes `<br />`, the form CommonMark itself emits for a hard break, so a document does not end up
+with two spellings of one thing. It takes no arguments, and ignores any it is given: there is no way
+to write it wrong.
+
+**Outside a table it is the wrong tool.** Two trailing spaces are markdown - every editor and every
+other renderer reads them - and a blank line is what separates paragraphs. This is for the one place
+that has no alternative.
+
+---
+
+## 10. What was deliberately left out
 
 - **Theme shortcodes.** A theme is data and templates; a shortcode is code. A theme that wants one
   ships a companion plugin.

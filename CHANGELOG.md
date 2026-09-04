@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.52.0] &ndash; 2026-09-04
+
+### Added
+- **A `br` shortcode**, for the one place markdown cannot write a line break. Markdown has two already - two trailing spaces and a trailing backslash - and both need the line to **end**, which a table cell cannot do: the whole row is one line, so a cell is inline content with no way to break it. GFM's answer is `<br>` in the cell, and raw HTML is stripped here, so this is that break spelled as a shortcode rather than by opening HTML back up.
+
+  ```markdown
+  | [One](post#1){{ br }}[Two](post#37) | ![A shot](media#14) |
+  ```
+
+### Notes
+It writes `<br />`, the form CommonMark itself emits for a hard break, so a document does not end up with two spellings of one thing. No arguments, and any it is given are ignored: there is no way to write it wrong.
+
+**Outside a table it is the wrong tool** - two trailing spaces are markdown, read by every editor and every other renderer, and a blank line is what separates paragraphs. `docs/shortcodes.md` §9 says so where somebody reaching for it will read it.
+
+A table cell was already able to hold links and an image, including `post#1` and `media#14` references; what it could not hold is a break between them.
+
 ## [0.51.0] &ndash; 2026-09-04
 
 ### Added
