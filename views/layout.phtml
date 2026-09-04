@@ -111,12 +111,14 @@
         /* an iframe has no intrinsic shape, so it needs one told to it rather than kept */
         .dpress-embed { width: 100%; aspect-ratio: 16 / 9; height: auto; border: 0; display: block; }
         .featured img { border-radius: 8px; }
-        /* Through a body written in pages. A row rather than a stack, with the counter in the
-           middle holding its place whether or not there is a link either side of it - which is
-           why the template renders an empty span at each end rather than nothing. */
-        .page-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        /* Through a body written in pages. A row rather than a stack, and Next pins itself to
+           the right with `margin-left: auto` rather than the row using `space-between` - which
+           needed an empty element holding the left slot open, and an empty element still takes
+           a `gap` with it, so page one began with a blank step before the `1`. */
+        .page-nav { display: flex; align-items: center; gap: 12px;
                     margin: 28px 0 4px; padding-top: 16px; border-top: 1px solid #e4e4e7;
                     font-size: 14px; }
+        .page-next { margin-left: auto; }
         .page-count { color: #71717a; font-size: 13px; }
         .tags { margin-top: 20px; }
         /* `:visited` stated as well, and it has to be: `a:visited` is (0,1,1) and `.tag` alone is

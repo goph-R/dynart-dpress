@@ -14,10 +14,12 @@
 ?>
 <?php if (($page_count ?? 1) > 1): ?>
     <nav class="page-nav" aria-label="Pages of this article">
+        <?php // No placeholder when there is no Previous. It was there to hold the left slot of a
+              // `space-between` row open, and an empty element still takes a `gap` with it - so
+              // page one began with a blank step before the `1`. The stylesheets pin Next to the
+              // right themselves now, which they had to anyway for the last page. ?>
         <?php if ($prev_url !== ''): ?>
             <a class="page-prev" href="<?= esc_attr($prev_url) ?>" rel="prev">&larr; Previous</a>
-        <?php else: ?>
-            <span></span>
         <?php endif ?>
         <span class="page-numbers">
             <?php foreach (($page_urls ?? []) as $index => $url): ?>
@@ -31,8 +33,6 @@
         </span>
         <?php if ($next_url !== ''): ?>
             <a class="page-next" href="<?= esc_attr($next_url) ?>" rel="next">Next &rarr;</a>
-        <?php else: ?>
-            <span></span>
         <?php endif ?>
     </nav>
 <?php endif ?>

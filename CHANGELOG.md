@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.49.1] &ndash; 2026-09-04
+
+### Changed
+- **The pager no longer starts page one with a blank step.** It rendered an empty `<span>` where *Previous* would be, to hold the left slot of a `space-between` row open - and an empty element still takes a `gap` with it, so the `1` began one step in from where the words start. The placeholders are gone and the built-in stylesheet pins *Next* to the right with `margin-left: auto`, which it needed anyway for the last page.
+- **The "&larr; All posts" link under a post is gone**, from the built-in templates and the gopherlab theme alike. Every site here has a menu, and a second way home at the foot of every article is furniture rather than navigation.
+
 ## [0.49.0] &ndash; 2026-09-04
 
 ### Added
