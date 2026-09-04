@@ -3,6 +3,7 @@
 namespace Dynart\Dpress\Block;
 
 use Dynart\Micro\ViewInterface;
+use Dynart\Dpress\Content\MarkdownRenderer;
 use Dynart\Dpress\Entity\Block;
 
 /**
@@ -35,7 +36,27 @@ class KofiBlock {
      */
     const LIGHT_ABOVE = 0.6;
 
-    public function __construct(protected ViewInterface $view) {}
+    public function __construct(
+        protected ViewInterface $view,
+        protected MarkdownRenderer $markdown,
+    ) {}
+
+    /**
+     * The description is markdown, rendered here rather than on the page
+     *
+     * The same bargain as a post and as the markdown block: the text somebody typed is the
+     * truth, the HTML beside it is a cache of it, and a page view prints the cache. Which is
+     * also why `dpress content:rerender` comes through here - a `media#14` or a `post#3` in the
+     * description resolves at render time, and a block holding the old URL after the site moved
+     * would be the one thing on the page still pointing at the old address.
+     */
+    public function prepare(array $settings): array {
+        $settings['description_html'] = $this->markdown->render(
+            trim((string)($settings['description'] ?? ''))
+        );
+        return $settings;
+    }
+
 
     public function render(Block $block, array $settings): string {
         $page = $this->page((string)($settings['page'] ?? ''));
@@ -48,11 +69,27 @@ class KofiBlock {
         return $this->view->fetch('dpress:block/kofi', [
             'url'         => 'https://ko-fi.com/'.$page,
             'text'        => trim((string)($settings['text'] ?? '')) ?: self::DEFAULT_TEXT,
-            'description' => trim((string)($settings['description'] ?? '')),
+            'description' => $this->description($settings),
             'color'       => $color,
             'ink'         => $this->ink($color, (string)($settings['text_color'] ?? '')),
             'icon'        => self::ICON,
         ]);
+    }
+
+    /**
+     * The description as HTML
+     *
+     * `prepare()` wrote it when the block was saved. A block saved before it did has no cache to
+     * print, and the honest thing to show then is the words themselves rather than nothing - it
+     * catches up the next time the block is saved, or on `dpress content:rerender`.
+     */
+    protected function description(array $settings): string {
+        $html = trim((string)($settings['description_html'] ?? ''));
+        if ($html !== '') {
+            return $html;
+        }
+        $text = trim((string)($settings['description'] ?? ''));
+        return $text === '' ? '' : '<p>'.htmlspecialchars($text, ENT_QUOTES).'</p>';
     }
 
     /**

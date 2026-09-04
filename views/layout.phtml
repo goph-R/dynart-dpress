@@ -90,6 +90,10 @@
            and a class cannot carry a value somebody typed - everything that is the same on every
            one of them is here. */
         .kofi-description { margin: 0 0 10px; }
+        /* markdown, so it arrives with paragraphs of its own - they must not add a gap at
+           either end of the box that is already spacing it */
+        .kofi-description > :first-child { margin-top: 0; }
+        .kofi-description > :last-child { margin-bottom: 0; }
         .kofi-button {
             display: inline-flex; align-items: center; gap: 8px;
             padding: 9px 16px; border-radius: 999px; text-decoration: none;

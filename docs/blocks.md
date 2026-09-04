@@ -35,7 +35,8 @@ rendered*, and putting it back is one select.
 
 Five boxes: the **page name** - the bit after `ko-fi.com` in the address, and the whole address
 is accepted too - the **button text**, the **button colour**, the **button text
-colour**, and an optional line of **description** above it.
+colour**, and an optional **description** above it, which is markdown - the same toolbar and the same
+`media#14` and `post#3` references as anywhere else, rendered when the block is saved.
 
 It is a link and an image, and that is the whole of it: no iframe, no script, and nothing
 loaded at all on a page that does not have the block. Ko-fi's own widget is an iframe with a

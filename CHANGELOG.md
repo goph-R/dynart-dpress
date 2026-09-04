@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.55.0] &ndash; 2026-09-05
+
+### Changed
+- **The Ko-fi description is markdown.** The same toolbar and the same `media#14` and `post#3` references as anywhere else, and **rendered when the block is saved** rather than on the page - the bargain a post and the markdown block already make, which is also why `dpress content:rerender` comes through it.
+
+### Notes
+A block saved before this shows its words escaped in a paragraph rather than nothing, and catches up the next time it is saved or on a re-render. `MarkdownBlock`'s own docblock said a Ko-fi button was the case it was asked for; there is a block for that now, so it says something else.
+
 ## [0.54.0] &ndash; 2026-09-05
 
 ### Added

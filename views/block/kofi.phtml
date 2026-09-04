@@ -10,8 +10,10 @@
  * beside it doing the announcing: "image, Ko-fi, link, Buy me a coffee" says it twice.
  */
 ?>
+<?php // markdown, rendered when the block was saved - a `div` and not a `p`, because what
+      // comes back already has paragraphs of its own ?>
 <?php if ($description !== ''): ?>
-    <p class="kofi-description"><?= esc_html($description) ?></p>
+    <div class="kofi-description"><?= $description ?></div>
 <?php endif ?>
 <a class="kofi-button" href="<?= esc_attr($url) ?>" target="_blank" rel="noopener"
    style="background: <?= esc_attr($color) ?>; color: <?= esc_attr($ink) ?>;">

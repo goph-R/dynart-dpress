@@ -8,9 +8,10 @@ use Dynart\Dpress\Entity\Block;
 /**
  * Whatever somebody wants to write, beside the content
  *
- * The Ko-fi button is the case this was asked for, and it is a picture inside a link:
+ * A Ko-fi button was the case this was asked for, and there is a block of its own for that now -
+ * but the example is still the one worth reading, because a picture inside a link is:
  *
- *     [![Buy me a coffee](media#14)](https://ko-fi.com/gopher)
+ *     [![Sponsor me](media#14)](https://example.com/sponsor)
  *
  * which is worth pointing at, because it is three of this CMS's rules meeting. The image is
  * `media#14`, so no path to a file is stored and moving the site cannot break it. It is markdown,

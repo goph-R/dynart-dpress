@@ -347,8 +347,9 @@ class DpressServices {
             ],
         ],
         'kofi' => [
-            'title'  => 'Ko-fi button',
-            'render' => [KofiBlock::class, 'render'],
+            'title'   => 'Ko-fi button',
+            'render'  => [KofiBlock::class, 'render'],
+            'prepare' => [KofiBlock::class, 'prepare'],
             'fields' => [
                 'page'  => ['type' => 'text', 'label' => 'Page name or ID',
                             'description' => 'The bit after ko-fi.com in the address:'
@@ -364,8 +365,9 @@ class DpressServices {
                             'required' => false,
                             'description' => 'A hex value. Empty and it picks black or white'
                                 .' by itself, whichever can be read on the colour above.'],
-                'description' => ['type' => 'textarea', 'label' => 'Description', 'required' => false,
-                            'description' => 'A line above the button. Optional.'],
+                'description' => ['type' => 'markdown', 'label' => 'Description',
+                            'required' => false,
+                            'description' => 'Above the button, and it is markdown - the same toolbar, the same `media#14` and `post#3` references as anywhere else. Optional.'],
             ],
         ],
     ];
