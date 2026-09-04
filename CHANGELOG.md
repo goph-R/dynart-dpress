@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.48.0] &ndash; 2026-09-04
+
+### Added
+- **A bare `http://` or `https://` in prose becomes a link**, and the `autolink` setting turns it off. On by default, which is the opposite of how a new setting usually arrives: somebody writing a URL in a sentence already meant a link, and making them write it twice is a tax on the common case. Off is for a site that quotes URLs as examples, where linking them is a nuisance.
+- `docs/autolinks.md`.
+
+### Notes
+**Never inside code** - not a fenced block, not an indented one, not a code span. That holds because of where the feature is plugged in rather than because of a check it performs: an inline parser does not run inside code, the same reason `**bold**` stays four asterisks in there. It has a test of its own precisely because nothing in the class would fail if that stopped being true.
+
+CommonMark's own autolinker does three things rather than one, and this does the first. A bare `www.` host is a guess about what was meant, and an email address written as a fact about somebody becoming a clickable `mailto:` is a decision the author did not make - so `HttpAutolinkParser` is the library's parser with a narrower idea of where it may start. Both are a small change if a site wants them; neither is a default.
+
+**Applied when a document is rendered**, so changing the setting wants `dpress content:rerender` behind it - the same rule as the post URL shape, and for the same reason.
+
 ## [0.47.1] &ndash; 2026-09-04
 
 ### Fixed

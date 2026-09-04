@@ -37,6 +37,7 @@ class SettingsAdminController extends AbstractAdminController {
         Setting::SITE_LOGO => 'media',
         Setting::SITE_ICON => 'media',
         Setting::REGISTRATION_OPEN => 'bool',
+        Setting::AUTOLINK => 'bool',
         Setting::POSTS_PER_PAGE => 'int',
         Setting::POST_PATH => 'string',
         Setting::FEATURED_TAG => 'string',

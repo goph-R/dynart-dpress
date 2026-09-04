@@ -122,6 +122,19 @@ class Setting extends Entity {
 
     const POST_PATHS = [self::POST_PATH_PREFIXED, self::POST_PATH_ROOT];
 
+    /**
+     * Whether a bare `http://` or `https://` in prose becomes a link
+     *
+     * **On unless a site says otherwise**, which is the opposite of how a new setting usually
+     * arrives: somebody writing a URL in a sentence already meant a link, and making them
+     * write it twice is a tax on the common case. Off is for a site that quotes URLs as
+     * examples - a page about writing markdown - where linking them is a nuisance.
+     *
+     * It is applied when a document is rendered, so changing it wants `dpress
+     * content:rerender` behind it.
+     */
+    const AUTOLINK = 'autolink';
+
     const DATE_FORMAT = 'date_format';
     const TIMEZONE = 'timezone';
 
