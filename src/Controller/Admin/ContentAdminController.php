@@ -8,6 +8,7 @@ use Dynart\Micro\JwtAuthInterface;
 use Dynart\Micro\RequestInterface;
 use Dynart\Micro\RouterInterface;
 use Dynart\Micro\ViewInterface;
+use Dynart\Dpress\Content\Dates;
 use Dynart\Dpress\Entity\Content;
 use Dynart\Dpress\Form\AdminForms;
 use Dynart\Dpress\Form\FormFactory;
@@ -47,6 +48,7 @@ class ContentAdminController extends AbstractAdminController {
         protected MediaService $media,
         protected MediaView $mediaView,
         protected UserService $users,
+        protected Dates $dates,
     ) {
         parent::__construct($view, $router, $request, $config, $jwtAuth, $forms, $list);
     }
@@ -212,7 +214,10 @@ class ContentAdminController extends AbstractAdminController {
         $content = $this->found($this->content->findById((int)$id));
         $this->assertType($content, $type);
         $form = $this->forms->create(AdminForms::CONTENT, $this->editorContext($type, $content));
-        if ($form->process()) {
+        // The date is checked before anything is written. Half a save - the text stored and the
+        // date refused - is a worse answer than none, and `done()` redirects, so a message put
+        // on the form after the save is a message nobody ever sees.
+        if ($form->process() && $this->publishedAtIsReadable($form)) {
             // read before the save, which is what turns an auto-draft into a draft
             $wasAutoDraft = $content->isAutoDraft();
             $form->handle(function ($form) use ($content) {
@@ -221,7 +226,7 @@ class ContentAdminController extends AbstractAdminController {
                 $this->applyTaxonomy($content, $values);
                 return $content;
             });
-            $this->applyStatus($content, $form->values(), $type);
+            $this->applyPublication($content, $form, $type);
             $this->done('/admin/content/'.$type, $wasAutoDraft ? 'Created.' : 'Saved.');
         }
         return $this->editor($type, $form, $content);
@@ -287,7 +292,27 @@ class ContentAdminController extends AbstractAdminController {
     }
 
     /**
-     * Publishes or unpublishes, when the editor asked for it and may
+     * Whether the Published box can be read, saying so on the field when it cannot
+     *
+     * A plain text box rather than a date picker, because writing `1999-01-02` is faster than
+     * four clicks - which means a typo is possible, and a typo has to come back as a sentence
+     * about that box rather than as a date somewhere near the one that was meant.
+     */
+    protected function publishedAtIsReadable($form): bool {
+        $typed = trim((string)($form->values()['published_at'] ?? ''));
+        if ($typed === '' || $this->dates->parse($typed) !== null) {
+            return true;
+        }
+        $form->addFieldError('published_at', 'Write it as 1999-01-02, or 1999-01-02 14:30 with a time.');
+        return false;
+    }
+
+    /**
+     * Publishes, unpublishes or re-dates, when the editor asked for it and may
+     *
+     * The third case is the one the select cannot express: a post that is already published
+     * and whose date moved. That is what importing an old post is - published today, dated
+     * years ago - and the archive, the ordering and the byline all read off `published_at`.
      *
      * **The status is not an update field.** `ContentService::update()` deliberately ignores it,
      * because becoming visible is not the same kind of change as a corrected typo: it sets
@@ -299,17 +324,23 @@ class ContentAdminController extends AbstractAdminController {
      * offered to somebody who cannot publish, so anything arriving here without it was not
      * typed into a form this admin rendered.
      */
-    protected function applyStatus(?Content $content, array $values, string $type): void {
+    protected function applyPublication(?Content $content, $form, string $type): void {
+        $values = $form->values();
         if (!$content instanceof Content
             || !array_key_exists('status', $values)
             || !$this->can(Permissions::forContent($type, 'publish'))) {
             return;
         }
+        $publishedAt = $this->dates->parse((string)($values['published_at'] ?? ''));
         $change = $this->statusChange($content->status, (string)$values['status']);
         if ($change === 'publish') {
-            $this->content->publish($content);
+            $this->content->publish($content, $publishedAt);
         } else if ($change === 'unpublish') {
             $this->content->unpublish($content);
+        } else if ($publishedAt !== null) {
+            // already published, and the date moved - the one case the status select
+            // cannot express, and the whole reason a post can be imported with its own date
+            $this->content->setPublishedAt($content, $publishedAt);
         }
     }
 
@@ -345,6 +376,10 @@ class ContentAdminController extends AbstractAdminController {
             // the thumbnail the field shows for what is already chosen. Rendered here because a
             // template has no business asking a service what a media id looks like.
             'featured_preview' => $this->featuredPreview($content),
+            // in the site's timezone and in the shape the field accepts back, so what is shown
+            // is what would be saved again if nobody touched it
+            'published_input' => $this->dates->input($content?->published_at),
+
         ];
         if ($type === Content::TYPE_PAGE) {
             $context['pages'] = $this->pageOptions($content);

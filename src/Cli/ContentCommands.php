@@ -5,6 +5,7 @@ namespace Dynart\Dpress\Cli;
 use Dynart\Micro\CliOutput;
 use Dynart\Micro\CliOutputInterface;
 use Dynart\Dpress\DpressException;
+use Dynart\Dpress\Content\Dates;
 use Dynart\Dpress\Entity\Content;
 use Dynart\Dpress\Service\ContentHistoryService;
 use Dynart\Dpress\Service\BlockService;
@@ -26,12 +27,14 @@ class ContentCommands extends AbstractCommands {
         protected ContentHistoryService $history,
         protected UserService $users,
         protected BlockService $blocks,
+        protected Dates $dates,
     ) {
         parent::__construct($output);
     }
 
     /**
-     * `dpress content:create -title "Hello" -author admin@example.com [-type page] [-file body.md] [-publish]`
+     * `dpress content:create -title "Hello" -author admin@example.com [-type page] [-file body.md]`
+     * `                       [-publish [-date 1999-01-02]]`
      */
     public function create(array $params = []): int {
         $title = $this->param($params, 'title');
@@ -46,6 +49,15 @@ class ContentCommands extends AbstractCommands {
         if ($markdown === null) {
             return $this->fail('Could not read the -file.');
         }
+        $publishedAt = $this->publishedAt($params);
+        if ($publishedAt === false) {
+            return $this->fail('Write -date as 1999-01-02, or 1999-01-02 14:30 with a time.');
+        }
+        // a date on a draft is a date nothing reads, and saying so beats writing one that
+        // silently does nothing
+        if ($publishedAt !== null && !$this->flag($params, 'publish')) {
+            return $this->fail('A -date needs -publish: only published content has a date.');
+        }
         try {
             $content = $this->content->create([
                 'type'     => $this->param($params, 'type', Content::TYPE_POST),
@@ -53,11 +65,28 @@ class ContentCommands extends AbstractCommands {
                 'slug'     => $this->param($params, 'slug'),
                 'markdown' => $markdown,
                 'status'   => $this->flag($params, 'publish') ? Content::STATUS_PUBLISHED : Content::STATUS_DRAFT,
+                'published_at' => $publishedAt,
             ], $author->id);
         } catch (DpressException $e) {
             return $this->fail($e->getMessage());
         }
         return $this->success("Created {$content->type} #{$content->id} at /{$content->slug} ({$content->status}).");
+    }
+
+    /**
+     * The `-date` option as a stored UTC timestamp
+     *
+     * Three answers rather than two: a date, `null` for no `-date` at all, and `false` for one
+     * that cannot be read - which has to stop the command rather than quietly meaning "now".
+     *
+     * @return string|null|false
+     */
+    protected function publishedAt(array $params): string|null|false {
+        $typed = trim($this->param($params, 'date'));
+        if ($typed === '') {
+            return null;
+        }
+        return $this->dates->parse($typed) ?? false;
     }
 
     /**
@@ -90,7 +119,10 @@ class ContentCommands extends AbstractCommands {
     }
 
     /**
-     * `dpress content:publish -id 1 [-unpublish]`
+     * `dpress content:publish -id 1 [-date 1999-01-02] [-unpublish]`
+     *
+     * `-date` is the moment the post says it went out, in the site's timezone. It is what a
+     * migration needs: a post written in 2014 is published today and dated then.
      */
     public function publish(array $params = []): int {
         $content = $this->content->findById((int)($params['id'] ?? 0));
@@ -101,7 +133,16 @@ class ContentCommands extends AbstractCommands {
             $this->content->unpublish($content);
             return $this->success("#{$content->id} is a draft again.");
         }
-        $this->content->publish($content);
+        $publishedAt = $this->publishedAt($params);
+        if ($publishedAt === false) {
+            return $this->fail('Write -date as 1999-01-02, or 1999-01-02 14:30 with a time.');
+        }
+        // already published and given a date is a re-dating, which `publish()` returns from
+        if ($content->isPublished() && $publishedAt !== null) {
+            $this->content->setPublishedAt($content, $publishedAt);
+            return $this->success("#{$content->id} is dated {$content->published_at} UTC.");
+        }
+        $this->content->publish($content, $publishedAt);
         return $this->success("#{$content->id} is published.");
     }
 

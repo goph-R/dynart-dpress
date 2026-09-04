@@ -95,7 +95,7 @@ class DpressCliApp extends CliApp {
         'content:create' => [
             'callable' => [ContentCommands::class, 'create'],
             'description' => 'Create a post or a page',
-            'params' => ['title', 'author', 'type', 'slug', 'file', 'markdown'],
+            'params' => ['title', 'author', 'type', 'slug', 'file', 'markdown', 'date'],
             'flags' => ['publish'],
             'needsConfig' => true,
         ],
@@ -108,7 +108,7 @@ class DpressCliApp extends CliApp {
         'content:publish' => [
             'callable' => [ContentCommands::class, 'publish'],
             'description' => 'Publish content, or take it back to draft with -unpublish',
-            'params' => ['id'],
+            'params' => ['id', 'date'],
             'flags' => ['unpublish'],
             'needsConfig' => true,
         ],

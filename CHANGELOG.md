@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.43.0] &ndash; 2026-09-04
+
+### Added
+- **A published date you can set.** A *Published* box in the editor, beside Status and behind the same permission, holding a plain `1999-01-02` - or `1999-01-02 14:30` when the time matters, which for two posts on the same day it does. **This is what a migration needs**: a post written in 2014 is published today and dated then, and the archive, the ordering and the byline all read that one column.
+- `-date` on `content:create` (with `-publish`) and on `content:publish`, so a scripted import can carry the dates across.
+- `Dates::parse()` and `Dates::input()` - a typed date to stored UTC and back, in the site's timezone, since that is the clock the person typing is looking at.
+- `ContentService::setPublishedAt()` and the `content:rescheduled` event.
+
+### Notes
+A text box rather than a date picker: writing a date is faster than four clicks. Which means a typo is possible, so a date that cannot be read **stops the save** and comes back as a sentence about that box, with what was typed still in it. `strtotime()` is deliberately not used - it has an opinion about which half of `02/01/1999` is the month and reads trailing rubbish as a modifier, so a typo would have become a date somewhere near the one that was meant, silently.
+
+The date is a publishing decision rather than an edit, which is why it sits with `publish()` rather than being another field `update()` writes: the public queries ask for `published_at <= now`, so dating a post forward hides it. `content:rescheduled` is a separate event from `content:published` for the same reason a re-date is not a publication - a listener that mails or pings a feed must not do it all again for a corrected date.
+
 ## [0.42.0] &ndash; 2026-09-04
 
 ### Changed

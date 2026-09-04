@@ -34,6 +34,17 @@ class Dates {
     /** The format an attribute wants, whatever the site's own format is */
     const ISO = 'c';
 
+    /** How every timestamp in the database is written */
+    const STORED = 'Y-m-d H:i:s';
+
+    /**
+     * What a date typed into the admin may look like, plainest first
+     *
+     * The `!` resets the fields the format does not mention, so `1999-01-02` is midnight rather
+     * than midnight-with-today's-seconds-attached.
+     */
+    const INPUT_FORMATS = ['!Y-m-d', '!Y-m-d H:i', '!Y-m-d H:i:s'];
+
     private ?DateTimeZone $zone = null;
 
     public function __construct(protected SettingService $settings) {}
@@ -104,6 +115,56 @@ class Dates {
             $this->zone = new DateTimeZone(self::DEFAULT_TIMEZONE);
         }
         return $this->zone;
+    }
+
+    /**
+     * A date somebody typed, as a stored UTC timestamp
+     *
+     * `1999-01-02`, or with a time after it when the time matters - which for posts brought over
+     * from another blog it does: two published on the same day have to keep the order they were
+     * in. Read in the **site's** timezone, because that is the clock the person typing is looking
+     * at, and written back as UTC like everything else in the database.
+     *
+     * Deliberately not `strtotime()`. It has an opinion about which half of `02/01/1999` is the
+     * month, and it reads trailing rubbish as a modifier rather than refusing it - so a typo
+     * becomes a date somewhere near the one that was meant, silently. A field whose whole job is
+     * to be exact is not the place for a parser that guesses.
+     *
+     * @return string|null null when it cannot be read, so the caller can say so rather than
+     *                     storing a moment nobody chose
+     */
+    public function parse(?string $typed): ?string {
+        $typed = trim((string)$typed);
+        if ($typed === '') {
+            return null;
+        }
+        foreach (self::INPUT_FORMATS as $format) {
+            $moment = DateTimeImmutable::createFromFormat($format, $typed, $this->timezone());
+            // `createFromFormat` takes `1999-13-45` and rolls it into 2000, so whether it was
+            // really that date is a question only the warnings answer
+            $errors = DateTimeImmutable::getLastErrors();
+            if ($moment !== false && empty($errors['warning_count']) && empty($errors['error_count'])) {
+                return $moment->setTimezone(new DateTimeZone(self::DEFAULT_TIMEZONE))->format(self::STORED);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * The reverse: a stored moment as the field it was typed into should show it
+     *
+     * Exactly what round-trips, which is why the time is left off when there is none. A date typed
+     * as `1999-01-02` comes back as `1999-01-02` rather than having grown an `00:00:00` nobody
+     * wrote, and a moment that does have a time keeps its seconds - shown to the minute, saving
+     * would quietly round them away.
+     */
+    public function input(?string $stored): string {
+        $moment = $this->moment($stored);
+        if ($moment === null) {
+            return '';
+        }
+        $local = $moment->setTimezone($this->timezone());
+        return $local->format($local->format('H:i:s') === '00:00:00' ? 'Y-m-d' : self::STORED);
     }
 
     /**

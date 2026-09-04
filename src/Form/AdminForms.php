@@ -88,6 +88,12 @@ class AdminForms {
                     Content::STATUS_DRAFT     => 'Draft',
                     Content::STATUS_PUBLISHED => 'Published',
                 ]],
+                // Beside the status and behind the same permission, because it is the same
+                // decision: the public queries ask for `published_at <= now`, so a date is
+                // as much a say in whether this is visible as the select above it.
+                'published_at' => ['type' => 'text', 'label' => 'Published', 'required' => false,
+                                   'description' => 'Like 1999-01-02, or 1999-01-02 14:30 when'
+                                       .' the time matters. Empty means the moment it is published.'],
             ], false);
         }
 
@@ -120,6 +126,7 @@ class AdminForms {
                 'markdown' => $content->markdown,
                 'slug'     => $content->slug,
                 'status'   => $content->status,
+                'published_at' => $context['published_input'] ?? '',
                 'featured_media_id' => (string)($content->featured_media_id ?? ''),
                 'parent_id' => (string)($content->parent_id ?? ''),
                 'tags'      => $context['tags'] ?? '',

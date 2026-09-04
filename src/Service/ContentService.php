@@ -30,6 +30,16 @@ class ContentService {
     const EVENT_PUBLISHED = 'content:published';
     const EVENT_UNPUBLISHED = 'content:unpublished';
 
+    /**
+     * The date moved on something already published, which is not a fresh publication
+     *
+     * A separate event because `content:published` means "this just went out" - a listener that
+     * mails, pings a feed or warms a cache would do it all again for a corrected date, and
+     * correcting the date is what importing an old post is.
+     */
+    const EVENT_RESCHEDULED = 'content:rescheduled';
+
+
     public function __construct(
         protected EntityManager $em,
         protected Database $db,
@@ -407,6 +417,29 @@ class ContentService {
         $content->updated_at = $this->now();
         $this->em->save($content);
         $this->emitBoth($content, self::EVENT_PUBLISHED, 'published');
+    }
+
+    /**
+     * Moves the moment a published post says it went out
+     *
+     * What a migration needs: a post written in 2014 and brought over today is published now and
+     * dated then, and the archive, the ordering and the byline all read off `published_at`.
+     *
+     * A publishing decision rather than an edit, so it sits here beside `publish()` rather than
+     * being another field `update()` writes - **the date is what decides whether a published post
+     * is visible at all**, since the public queries ask for `published_at <= now`. Dating one
+     * forward hides it until then, which is scheduling, and is the same act as unpublishing it.
+     *
+     * @param string $publishedAt a stored UTC timestamp, as `Dates::parse()` returns
+     */
+    public function setPublishedAt(Content $content, string $publishedAt): void {
+        if (!$content->isPublished() || $content->published_at === $publishedAt) {
+            return;
+        }
+        $content->published_at = $publishedAt;
+        $content->updated_at = $this->now();
+        $this->em->save($content);
+        $this->emitBoth($content, self::EVENT_RESCHEDULED, 'rescheduled');
     }
 
     public function unpublish(Content $content): void {
