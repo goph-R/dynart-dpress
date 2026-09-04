@@ -20,6 +20,7 @@ use Dynart\Dpress\Entity\Content;
 use Dynart\Dpress\Theme\Places;
 use Dynart\Dpress\Theme\ThemeAssets;
 use Dynart\Dpress\Dpress;
+use Dynart\Dpress\Service\ContentService;
 use Dynart\Dpress\Service\SettingService;
 use Dynart\Dpress\Service\UserService;
 use Dynart\Dpress\Content\Dates;
@@ -167,6 +168,12 @@ abstract class AbstractController {
         $this->view->set('layout_kind', $kind);
         $this->view->set('theme', Micro::get(ThemeAssets::class));
         $this->view->set('dates', Micro::get(Dates::class));
+        // The prefix a post URL is built from, because where a post lives is a setting and a
+        // template has no way to read one. `route_url($post_path.$row['slug'])` in a listing,
+        // and a theme that forgets it still works - the other shape answers with a 301 - it
+        // just makes every link on the page a redirect.
+        $this->view->set('post_path', Micro::get(ContentService::class)->postsAtRoot() ? '/' : '/post/');
+
         $this->view->set('current_user', $this->currentUser());
         $this->view->set('site_name', $this->siteName());
         $this->view->set('site_description', $this->siteDescription());

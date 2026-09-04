@@ -38,6 +38,7 @@ class SettingsAdminController extends AbstractAdminController {
         Setting::SITE_ICON => 'media',
         Setting::REGISTRATION_OPEN => 'bool',
         Setting::POSTS_PER_PAGE => 'int',
+        Setting::POST_PATH => 'string',
         Setting::FEATURED_TAG => 'string',
         Setting::DATE_FORMAT => 'string',
         Setting::TIMEZONE => 'string',
@@ -89,6 +90,12 @@ class SettingsAdminController extends AbstractAdminController {
             // default, so "off" has to be a word
             'code_themes' => [CodeAssets::NONE => 'No highlighting'] + CodeAssets::THEMES,
             'timezones' => $this->timezoneOptions(),
+            // spelled out rather than left as `post`/`root`: what somebody is choosing is an
+            // address, so the address is what the select should say
+            'post_paths' => [
+                Setting::POST_PATH_PREFIXED => '/post/the-slug',
+                Setting::POST_PATH_ROOT     => '/the-slug',
+            ],
             'values' => $values,
             // the thumbnail the field shows for what is already chosen, rendered here because a
             // template has no business asking a service what a media id looks like

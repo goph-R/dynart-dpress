@@ -72,13 +72,32 @@ class ContentController extends AbstractController {
         ], 'archive');
     }
 
+    /**
+     * A post under `/post/<slug>`
+     *
+     * Kept answering whatever `post_path` says, because a site that has moved its posts to the
+     * root still has every old address written down somewhere it cannot edit. It **301s** to
+     * wherever the post lives now, which is the same rule a page has always followed for a
+     * path that is not its own: one piece of content, one address, and the other one points
+     * at it.
+     */
     #[Route('GET', '/post/?')]
     public function post(string $slug): string {
         $content = $this->content->findBySlug($slug, !$this->maySeeDrafts());
         if ($content === null || !$content->isPost()) {
             $this->app()->sendError(404);
         }
-        return $this->render('dpress:content/single', $this->pagedBody($content, '/post/'.$content->slug) + [
+        if ($this->content->postsAtRoot()) {
+            // the page number travels with it, the way it does for a page that has moved
+            $number = (int)$this->request->get(self::PAGE_PARAM, 1);
+            $this->app()->redirect(
+                $this->content->publicPath($content),
+                $number > 1 ? [self::PAGE_PARAM => $number] : [],
+                301
+            );
+            return '';
+        }
+        return $this->render('dpress:content/single', $this->pagedBody($content, $this->content->publicPath($content)) + [
             'title'       => $content->title,
             'content'     => $content,
             'author'      => $this->authorOf($content),

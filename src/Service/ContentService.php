@@ -10,6 +10,7 @@ use Dynart\Dpress\Content\MarkdownRenderer;
 use Dynart\Dpress\Content\Slugger;
 use Dynart\Dpress\DpressException;
 use Dynart\Dpress\Entity\Content;
+use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Query\QueryFactory;
 
 /**
@@ -50,6 +51,7 @@ class ContentService {
         protected Slugger $slugger,
         protected TaxonomyService $taxonomy,
         protected MediaService $media,
+        protected SettingService $settings,
     ) {}
 
     // --- Reading ---
@@ -143,12 +145,38 @@ class ContentService {
     /**
      * Where this piece of content lives on the site
      *
-     * Posts are chronological and live under `/post/`; pages are hierarchical and live at their
-     * own path. That difference in *routing* is the whole reason the two share one table - it
-     * belongs here rather than in a second entity.
+     * Pages are hierarchical and live at their own path. Posts are chronological, and where
+     * they live is the `post_path` setting: under `/post/`, or at the root beside the pages.
+     * That difference in *routing* is the whole reason the two share one table - it belongs
+     * here rather than in a second entity.
      */
     public function publicPath(Content $content): string {
-        return $content->isPage() ? $this->path($content) : '/post/'.$content->slug;
+        if ($content->isPage()) {
+            return $this->path($content);
+        }
+        return $this->postPath($content->slug);
+    }
+
+    /**
+     * Where a post lives, from its slug alone
+     *
+     * A listing has rows and not entities, and a post needs nothing but its slug to be found -
+     * unlike a page, whose path is its ancestors as well.
+     */
+    public function postPath(string $slug): string {
+        return $this->postsAtRoot() ? '/'.$slug : '/post/'.$slug;
+    }
+
+    /**
+     * Whether a post lives at `/<slug>` rather than under `/post/`
+     *
+     * Anything the setting does not name is the prefixed shape, which is the one that was
+     * always there: a typo in a setting must not put every post on the site at an address
+     * nothing answers.
+     */
+    public function postsAtRoot(): bool {
+        return $this->settings->get(Setting::POST_PATH, Setting::POST_PATH_PREFIXED)
+            === Setting::POST_PATH_ROOT;
     }
 
     /**
@@ -167,10 +195,13 @@ class ContentService {
             return [null, true];
         }
         $content = $this->findBySlug(end($segments), $publishedOnly);
-        if ($content === null || !$content->isPage()) {
+        // A post answers here only when it lives at the root. The slug is unique across both
+        // types, so there is nothing to disambiguate - the question is only whether this is
+        // where the post is supposed to be.
+        if ($content === null || (!$content->isPage() && !$this->postsAtRoot())) {
             return [null, true];
         }
-        return [$content, $this->path($content) === '/'.join('/', $segments)];
+        return [$content, $this->publicPath($content) === '/'.join('/', $segments)];
     }
 
     // --- Writing ---

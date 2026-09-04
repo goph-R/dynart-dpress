@@ -267,6 +267,9 @@ class AdminForms {
             'registration_open' => ['type' => 'checkbox', 'label' => 'Registration', 'required' => false,
                                     'text' => 'Anybody may create an account'],
             'posts_per_page'    => ['type' => 'text', 'label' => 'Posts per page', 'required' => false],
+            'post_path'         => ['type' => 'select', 'label' => 'Post addresses', 'required' => false,
+                                    'options' => $context['post_paths'] ?? [],
+                                    'description' => 'Where a post lives. The other shape keeps answering either way, with a redirect, so changing this breaks no link anybody has written down. Run `dpress content:rerender` afterwards: a link written inside a post was resolved when it was saved, so it holds the old shape until it is rendered again.'],
             'date_format'       => ['type' => 'text', 'label' => 'Date format', 'required' => false,
                                     'description' => 'PHP date letters. `Y-m-d` is 2026-01-06, '
                                         .'`F j, Y` is January 6, 2026.'],

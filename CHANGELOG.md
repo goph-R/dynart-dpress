@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.47.0] &ndash; 2026-09-04
+
+### Added
+- **Posts can live at `/<slug>`.** The `post_path` setting is `/post/the-slug` (the default, and what every dpress site has had until now) or `/the-slug`. A blog moving from WordPress has its posts at the root, and only the second shape carries its addresses across - which is what a move actually costs, since backlinks and search rankings point at the old ones.
+- `ContentService::postsAtRoot()` and `postPath()`; `$post_path` in every template, so a listing builds a post link without knowing which shape is in force.
+
+### Changed
+- `/post/<slug>` now **301s** to wherever the post lives, keeping the page number. It is the same rule a page has always followed for a path that is not its own: one piece of content, one address, and the other one points at it. So the setting is safe to change in either direction.
+
+### Notes
+Nothing had to be added to the schema. `Content::$slug` was already unique across posts and pages - one flat namespace, by design - so a root-level URL has exactly one answer and there is nothing to disambiguate. `findByPath()` was rejecting a post on purpose, and that rejection was the whole restriction.
+
+**Run `dpress content:rerender` after changing it.** A link written inside a post - `post#42` - is resolved when the post is saved and the finished URL is what sits in `body_html`, so until every body is rendered again the links between posts hold the old shape. They still work, as redirects, which is exactly the sort of thing nobody notices for a year.
+
+A slug still cannot be a route: a post slugged `login` is unreachable at the root. That is not new - a *page* slugged `login` has always been - but it is worth knowing before choosing this shape.
+
 ## [0.46.1] &ndash; 2026-09-04
 
 ### Fixed

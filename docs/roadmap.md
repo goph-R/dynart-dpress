@@ -1,21 +1,28 @@
 # What is planned, and what each one has to decide first
 
-**Status: planned.** Written against 0.38.0, after a look at the blog that is moving here. None of
-it is built. It is written down so tomorrow starts with decisions rather than with guessing.
+**Written against 0.38.0**, after a look at the blog that is moving here, so that the work would
+start with decisions rather than with guessing. Two of the four are built since.
 
-Four things, and they are not equal: **the first one blocks importing posts** and the other three
-are additions that can land in any order afterwards.
-
-| | | Blocks what |
+| | | Status |
 |---|---|---|
-| 1 | Where a post lives — the URL | copying anything across |
-| 2 | A recent posts block | nothing |
-| 3 | Featured posts, by tag | nothing |
-| 4 | A weight, for ordering posts by hand | nothing |
+| 1 | Where a post lives — the URL | **built in 0.47.0**, as the `post_path` setting |
+| 2 | A recent posts block | planned |
+| 3 | Featured posts, by tag | **built in 0.39.0**, as the listing rather than as a block |
+| 4 | A weight, for ordering posts by hand | planned |
 
 ---
 
 ## 1. Where a post lives
+
+> **Built in 0.47.0.** `post_path` is a setting: `/post/<slug>` (the default, and what every
+> dpress site had before) or `/<slug>`. The section below is what it was decided from, kept
+> because the reasoning is the same one anybody weighing the two shapes has to do.
+>
+> It went exactly as sketched: `findByPath()` stopped rejecting a post, `publicPath()` answers
+> with the shape the setting names, and `/post/<slug>` **301s** to wherever the post lives now,
+> so the old address is a redirect and not a dead end. One thing the sketch did not mention -
+> a link written *inside* a post was resolved when it was saved, so `dpress content:rerender`
+> is part of the switch.
 
 The blog's posts are at the root with a trailing slash:
 `https://gopherlab.net/internet-dosbox-x-windows-3-11/`. Here is what dpress does with that shape
@@ -56,8 +63,9 @@ setting says so, `ContentService::path()` answering with the same shape, and the
 - **Which shape**: `/post/<slug>` (today) or `/<slug>` (WordPress's, and the blog's). Only the
   second preserves the existing URLs.
 - **Trailing slash**: accept both and 301 to one, or accept both and treat them as the same page.
-  Accept-and-301 is consistent with what pages do now, and it is one rule rather than two URLs for
-  one thing.
+  **Still open.** Both answer today, for posts and pages alike, which is two URLs for one thing -
+  and the blog that is moving here wrote its links *with* the slash, so this is no longer
+  hypothetical.
 - **Old URLs that are not just this**: date-based permalinks, `?p=123`, an old feed address. If
   the blog only ever used post-name permalinks, the shape above covers everything and no redirect
   table is needed. Worth checking before assuming.
@@ -164,9 +172,10 @@ argument for doing them first.
 
 ## 6. To answer tomorrow
 
-- **Post URLs**: `/<slug>` and keep every existing link, or `/post/<slug>` and redirect? (This one
-  first — it blocks the import.)
-- Does the blog use anything but post-name permalinks?
+- ~~**Post URLs**~~ — answered: both, as a setting, and `/post/<slug>` redirects to whichever is
+  in force. gopherlab is on `/<slug>`.
+- Does the blog use anything but post-name permalinks? **Still worth checking** - date-based
+  permalinks or `?p=123` would need a redirect table, which none of this provides.
 - **Featured**: the listing, or a block with visibility rules?
 - Is the tag name `featured`, or a setting?
 - **Weight**: a tiebreaker above the date, or the whole order?

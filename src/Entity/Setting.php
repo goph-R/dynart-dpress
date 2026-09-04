@@ -100,6 +100,28 @@ class Setting extends Entity {
      * and a post published at half past midnight in Budapest then shows the previous day to
      * everybody. See `Dates`.
      */
+    /**
+     * Where a post lives: under `/post/` or at the root of the site
+     *
+     * A pair of URLs for one post is what a move costs, so this is a **site** decision and
+     * not a preference: every backlink, every search result and every link anybody ever wrote
+     * points at one shape. `post` is what dpress has always done and stays the default, so an
+     * upgrade moves nothing; `root` is what WordPress does, and what a blog coming from one
+     * needs if its addresses are to survive the move.
+     *
+     * It is safe to change either way: `/post/<slug>` keeps answering with a **301** to
+     * wherever the post lives now, so the old addresses are redirects rather than dead ends.
+     */
+    const POST_PATH = 'post_path';
+
+    /** `/post/<slug>` - the default, and what every dpress site has had until now */
+    const POST_PATH_PREFIXED = 'post';
+
+    /** `/<slug>` - one flat namespace, which the globally unique slug already guarantees */
+    const POST_PATH_ROOT = 'root';
+
+    const POST_PATHS = [self::POST_PATH_PREFIXED, self::POST_PATH_ROOT];
+
     const DATE_FORMAT = 'date_format';
     const TIMEZONE = 'timezone';
 

@@ -13,11 +13,11 @@
                       // no accessible name is worse than one that is skipped ?>
                 <?php if (isset($thumbnails[$post['id']])): ?>
                     <a class="post-thumbnail" tabindex="-1" aria-hidden="true"
-                       href="<?= esc_attr(route_url('/post/'.$post['slug'])) ?>"><?=
+                       href="<?= esc_attr(route_url($post_path.$post['slug'])) ?>"><?=
                         $mediaView->tag($thumbnails[$post['id']], 'medium', ['alt' => ''])
                     ?></a>
                 <?php endif ?>
-                <h2><a href="<?= esc_attr(route_url('/post/'.$post['slug'])) ?>"><?= esc_html($post['title']) ?></a></h2>
+                <h2><a href="<?= esc_attr(route_url($post_path.$post['slug'])) ?>"><?= esc_html($post['title']) ?></a></h2>
                 <p class="meta">
                     <?php if (isset($authors[$post['id']])): ?>
                         by <?= esc_html($authors[$post['id']]) ?> &mdash;
