@@ -116,4 +116,16 @@ class ThemeAssets {
         $path = $this->themes->path().'/'.$active.'/'.self::FOLDER.'/'.$name;
         return is_file($path) ? ['path' => $path, 'type' => self::TYPES[$extension]] : null;
     }
+
+    /**
+     * Whether the active theme has this asset
+     *
+     * For a template that wants to link something **optional** - a theme that works with or
+     * without an icon set, say, where the alternative is a `<link>` to a 404 on every page of
+     * every site that never installed one. The same rule `file()` serves by, so a template
+     * cannot be told yes about a file the route would then refuse.
+     */
+    public function exists(string $file): bool {
+        return $this->file($file) !== null;
+    }
 }

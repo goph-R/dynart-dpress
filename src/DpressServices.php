@@ -38,6 +38,7 @@ use Dynart\Dpress\Content\InternalLinks;
 use Dynart\Dpress\Content\LinkTargetResolverInterface;
 use Dynart\Dpress\Content\LinkTargets;
 use Dynart\Dpress\Content\MarkdownRenderer;
+use Dynart\Dpress\Content\Shortcode\IconShortcode;
 use Dynart\Dpress\Content\Shortcode\VideoShortcode;
 use Dynart\Dpress\Content\ShortcodeRenderer;
 use Dynart\Dpress\Block\Blocks;
@@ -211,6 +212,7 @@ class DpressServices {
         Micro::add(CodeBlockRenderer::class);
         Micro::add(ShortcodeRenderer::class);
         Micro::add(VideoShortcode::class);
+        Micro::add(IconShortcode::class);
         Micro::add(Slugger::class);
         Micro::add(TreeOrder::class);
         Micro::add(ContentService::class);
@@ -304,6 +306,7 @@ class DpressServices {
      */
     const SHORTCODES = [
         'video' => [[VideoShortcode::class, 'render'], Shortcodes::BLOCK],
+        'icon'  => [[IconShortcode::class, 'render'], Shortcodes::INLINE],
     ];
 
     /**

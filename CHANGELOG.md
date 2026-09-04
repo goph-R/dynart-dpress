@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.51.0] &ndash; 2026-09-04
+
+### Added
+- **An `icon` shortcode.** `{{ icon('star') }}`, `{{ icon('rust', style='brands') }}`, and `label=` for one that carries the meaning rather than decorating a word. It exists because **raw HTML in a post is stripped** - `<i class="fa-solid fa-star">` renders as a gap - and that strip is what stops a compromised account putting a script on every page. So the way through is a shortcode, and it is a lookup table rather than a hole: the name is matched against `[a-z0-9-]+` and the style against a list, because a post must not be able to name a class somebody else's stylesheet defines.
+- `ThemeAssets::exists()`, for a template linking something optional - a theme that works with or without an icon set, instead of asking every site that never installed one for a 404 on every page.
+
+### Notes
+**The CMS ships no icons.** The shortcode writes classes and nothing else; whether anything appears is a question about the theme's stylesheet. An icon set is a design decision with a licence attached, and a CMS bundling one makes that decision for every site that ever uses it. Font Awesome's class names are the vocabulary because they are the ones an author looks up.
+
+**Silent unless it is given a label**: `aria-hidden` by default, `role="img"` with one. An icon beside a word that already says the same thing is decoration, and a screen reader announcing "star star" is worse than one that says it once.
+
+Installing a set: the theme asset folder is flat, so Font Awesome needs its `url()`s rewritten from `../webfonts/fa-solid-900.woff2` to the bare file name. See `docs/shortcodes.md` §8.1.
+
 ## [0.50.0] &ndash; 2026-09-04
 
 ### Fixed
