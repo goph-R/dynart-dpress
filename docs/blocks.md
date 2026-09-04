@@ -29,11 +29,36 @@ rendered*, and putting it back is one select.
 | Tag cloud | The tags in use, sized by how much they are used. `limit` keeps the most used ones. |
 | Category list | The categories, nested the way they are nested. |
 | Markdown | Whatever you write. |
+| Ko-fi button | A link to a Ko-fi page, with their cup on it. |
 
-**The markdown block is the general one.** A Ko-fi button is a picture inside a link:
+### Ko-fi
+
+Four boxes: the **page name** - the bit after `ko-fi.com` in the address, and the whole address
+is accepted too - the **button text**, a **hex colour**, and an optional line of **description**
+above it.
+
+It is a link and an image, and that is the whole of it: no iframe, no script, and nothing
+loaded at all on a page that does not have the block. Ko-fi's own widget is an iframe with a
+script in it. The one third-party request left is the cup, an image on their CDN.
+
+The colour is validated as six hex digits rather than escaped, because it goes into a `style`
+attribute - what has to be impossible is a settings box naming a *declaration*. Anything
+unreadable falls back to Ko-fi's own blue, so a mistyped colour looks like Ko-fi rather than
+looking broken. **The text on the button turns black or white by itself**, whichever can be
+read on the colour chosen: a pale brand colour would otherwise get white text nobody can read,
+and nothing would tell the site owner that is what happened.
+
+The page name is validated the same way and for the same reason - it goes into an `href`.
+A name that is not one renders **nothing**, rather than a button pointing at `ko-fi.com` and
+asking the reader which of several million pages was meant.
+
+### Markdown
+
+**The markdown block is the general one**, and a picture inside a link is a good example of what
+that buys:
 
 ```markdown
-[![Buy me a coffee](media#14)](https://ko-fi.com/yourname)
+[![Sponsor me](media#14)](https://example.com/sponsor)
 ```
 
 which is worth reading twice, because it is three of this CMS's rules meeting. The image is

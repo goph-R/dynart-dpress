@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.53.0] &ndash; 2026-09-04
+
+### Added
+- **A Ko-fi block.** Four boxes - the page name, the button text, a hex colour and an optional description - and it renders a link with their cup on it. **No iframe and no script**, which is what their own widget is, and nothing loaded at all on a page that does not have the block. The one third-party request left is the cup, an image on their CDN.
+- Styles for it in the built-in layout.
+
+### Notes
+The page name and the colour are **validated rather than escaped**, because one goes into an `href` and the other into a `style`: escaping stops a value breaking out of its quotes, and what has to be impossible is a settings box naming a declaration or an address of its own. The whole `ko-fi.com/...` address is accepted as well as the bare name, because the field asks for the bit after the slash and somebody will paste what is in front of them.
+
+**The text turns black or white by itself**, by relative luminance, whichever can be read on the colour chosen. A pale brand colour would otherwise get white text nobody can read, and nothing would tell the site owner that is what happened. An unreadable colour falls back to Ko-fi's own blue, and a page name that is not one renders nothing at all rather than a button pointing at `ko-fi.com` and asking the reader which page was meant.
+
+`docs/blocks.md` used a Ko-fi button as its example of what the markdown block is for. It is a different example now.
+
 ## [0.52.1] &ndash; 2026-09-04
 
 ### Fixed
