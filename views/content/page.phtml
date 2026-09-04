@@ -1,5 +1,7 @@
 <?php $this->useLayout($layout ?? 'dpress:layout') ?>
 <?php $this->startBlock('content') ?>
+<?php // says this page is not saved; renders nothing when it is not a preview ?>
+<?= $this->fetch('dpress:content/preview-bar', ['preview' => $preview ?? false]) ?>
     <?php if (!empty($ancestors)): ?>
         <nav class="breadcrumb">
             <a href="<?= esc_attr(route_url('/')) ?>">Home</a>

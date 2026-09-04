@@ -204,7 +204,31 @@ attribute still says what it means to a feed, a reader or a search engine. Nothi
 
 ---
 
-## 7. What a theme cannot do
+## 7. The preview bar
+
+The editor has a **Preview** button that posts the boxes and renders them through the theme,
+saving nothing. So a theme that replaces `content/single.phtml` or `content/page.phtml` is what
+a preview looks like, and it has to say so — a page that reads exactly like the live one, with
+unsaved words on it, is a good way to publish something by accident.
+
+One line at the top of each, and the CMS draws it:
+
+```php
+<?php $this->startBlock('content') ?>
+<?= $this->fetch('dpress:content/preview-bar', ['preview' => $preview ?? false]) ?>
+```
+
+Unconditional on purpose: the partial renders **nothing at all** unless `$preview` is set, so
+there is no flag for a template to get wrong. It carries its own inline styles rather than
+asking for a class, because it has to look like itself in a stylesheet it has never met — put a
+`content/preview-bar.phtml` in the theme to replace it.
+
+A theme that leaves the line out still gets a preview; it just looks like the live page, and the
+only thing saying otherwise is the `/admin/...` address in a new tab.
+
+---
+
+## 8. What a theme cannot do
 
 - **Not the admin.** `dpress_admin:` is registered as not themeable. A theme replacing the admin
   layout is not a restyled page, it is somebody locked out of their own site.

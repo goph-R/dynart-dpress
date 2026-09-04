@@ -1,0 +1,21 @@
+<?php
+/**
+ * The bar that says this page is not the page anybody else can see
+ *
+ * Rendered into the *theme's* article, which knows nothing about it, so it carries its own styles
+ * rather than asking every theme for a class. That is the one place inline styles are the right
+ * answer: this has to look like itself in a stylesheet it has never met.
+ *
+ * Renders nothing at all unless `$preview` is set, so a template can fetch it unconditionally.
+ */
+if (empty($preview)) {
+    return;
+}
+?>
+<div style="position: fixed; inset: 0 0 auto 0; z-index: 2147483647;
+            background: #b45309; color: #fff; padding: 10px 16px; text-align: center;
+            font: 700 14px/1.4 system-ui, sans-serif; box-shadow: 0 1px 6px rgba(0,0,0,.35);">
+    Preview &mdash; nothing here is saved. Close this tab and press Save to keep it.
+</div>
+<?php // so the bar does not sit on top of whatever the theme put at the very top of the page ?>
+<div style="height: 40px;" aria-hidden="true"></div>

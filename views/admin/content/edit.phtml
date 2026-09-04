@@ -6,13 +6,21 @@
         <?php if (!empty($view_url)): ?>
             <a class="button" href="<?= esc_attr($view_url) ?>" target="_blank" rel="noopener">View</a>
         <?php endif ?>
+        <?php // A submit button for the editor form, standing outside it: `form` names the form
+              // it belongs to, `formaction` sends it somewhere else and `formtarget` opens that
+              // in a new tab. So the boxes travel exactly as Save would send them, with no
+              // second copy of the fields and no JavaScript - and this page stays as it is. ?>
+        <?php if (!empty($preview_url)): ?>
+            <button type="submit" class="button" form="content-form"
+                    formaction="<?= esc_attr($preview_url) ?>" formtarget="_blank">Preview</button>
+        <?php endif ?>
         <?php if (!empty($history_url)): ?>
             <a class="button" href="<?= esc_attr($history_url) ?>">History</a>
         <?php endif ?>
         <a class="button" href="<?= esc_attr($back_url) ?>">Back</a>
     </div>
     <div class="panel">
-        <form method="post">
+        <form method="post" id="content-form">
             <?= $form->fetch() ?>
             <div class="form-actions">
                 <button type="submit" class="primary">Save</button>

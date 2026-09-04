@@ -9,6 +9,7 @@ use Dynart\Micro\RequestInterface;
 use Dynart\Micro\RouterInterface;
 use Dynart\Micro\ViewInterface;
 use Dynart\Dpress\Content\Dates;
+use Dynart\Dpress\Content\Slugger;
 use Dynart\Dpress\Entity\Content;
 use Dynart\Dpress\Form\AdminForms;
 use Dynart\Dpress\Form\FormFactory;
@@ -49,6 +50,7 @@ class ContentAdminController extends AbstractAdminController {
         protected MediaView $mediaView,
         protected UserService $users,
         protected Dates $dates,
+        protected Slugger $slugger,
     ) {
         parent::__construct($view, $router, $request, $config, $jwtAuth, $forms, $list);
     }
@@ -233,6 +235,126 @@ class ContentAdminController extends AbstractAdminController {
     }
 
     /**
+     * The editor's boxes as the page they would make, saving none of it
+     *
+     * Posted from the editor form by a submit button with `formaction`, so the values arrive
+     * exactly as Save would send them - no second copy of the fields and no JavaScript. What comes
+     * back is the **theme's** page, rendered from a `Content` that lives for one request and is
+     * never handed to the entity manager.
+     *
+     * Saving first and then looking would have been simpler, and it is wrong for the case that
+     * matters: on a *published* post it would put the unsaved edits live, which is the opposite of
+     * a preview. It would also write a revision every time somebody peeked.
+     *
+     * **No CSRF token, on purpose.** `Form::process()` mints a fresh one into the session every
+     * time it runs, so checking it here would spend the token printed on the editor page that is
+     * still open behind this new tab, and the next Save would be refused as a forgery. Leaving it
+     * out is safe because there is nothing for a forged request to do: this writes nothing, and
+     * the renderer strips HTML, so there is no state change and no script to reflect. The
+     * permission is the guard.
+     */
+    #[Route('POST', '/admin/content/?/preview/?')]
+    public function preview(string $type, string $id): string {
+        $this->enter($type, 'update');
+        $stored = $this->found($this->content->findById((int)$id));
+        $this->assertType($stored, $type);
+        // `csrf: false` so `process()` leaves the editor's token where it is - see above
+        $form = $this->forms->create(AdminForms::CONTENT, $this->editorContext($type, $stored), false);
+        $form->process(); // the result is ignored: previewing half a post is the whole point
+        $values = $form->values();
+        $content = $this->previewOf($stored, $values);
+        $common = [
+            'preview'     => true,
+            'title'       => $content->title,
+            'content'     => $content,
+            'author'      => $this->authorOf($content),
+            // attaching is an immediate write, so what is stored is what the editor is showing
+            'attachments' => $this->media->attachmentsOf($stored->id),
+            'featured'    => $content->featured_media_id !== null
+                ? $this->media->findById($content->featured_media_id) : null,
+            'mediaView'   => $this->mediaView,
+            // the whole body rather than one page of it: the page links would have to be GETs of a
+            // route that only answers POST, and a preview full of dead links is worse than one
+            // with the breaks not drawn. They are there to see the moment it is saved.
+            'body_html'   => $content->body_html,
+            'page'        => 1, 'page_count' => 1, 'show_lead' => true,
+            'prev_url'    => '', 'next_url' => '', 'page_urls' => [],
+        ];
+        if ($content->isPage()) {
+            return $this->render('dpress:content/page', $common + [
+                // from the stored row rather than from the posted parent: nothing has checked the
+                // new one for a cycle, and `ancestors()` walking a loop would not come back
+                'ancestors' => $this->content->ancestors($stored),
+                'children'  => $this->content->findChildren($stored->id),
+            ], 'page');
+        }
+        return $this->render('dpress:content/single', $common + [
+            'tags'       => $this->previewTags($values),
+            'categories' => $this->previewCategories($values),
+        ], 'post');
+    }
+
+    /**
+     * The stored row with the posted boxes laid over it, rendered and not saved
+     *
+     * A clone rather than the row itself, so nothing later in the request can save the edited
+     * copy by accident. The **id stays the stored one**, which is what lets the media, the
+     * attachments and the author still resolve.
+     *
+     * `parent_id` is deliberately not copied: moving a page changes its ancestors, nothing here
+     * has checked the new parent for a cycle, and walking a loop does not come back.
+     */
+    protected function previewOf(Content $stored, array $values): Content {
+        $content = clone $stored;
+        $data = $this->contentData($values);
+        if (array_key_exists('title', $data)) {
+            $content->title = trim($data['title']);
+        }
+        if (array_key_exists('markdown', $data)) {
+            $content->markdown = (string)$data['markdown'];
+        }
+        if (array_key_exists('featured_media_id', $data)) {
+            $content->featured_media_id = $data['featured_media_id'];
+        }
+        $this->content->renderInto($content);
+        return $content;
+    }
+
+    /**
+     * The categories ticked right now, whether or not the tick has been saved
+     */
+    protected function previewCategories(array $values): array {
+        $chosen = array_map('strval', (array)($values['categories'] ?? []));
+        return array_values(array_filter(
+            $this->taxonomy->categories(), fn($row) => in_array((string)$row['id'], $chosen, true)
+        ));
+    }
+
+    /**
+     * The tags typed into the box, matched against the ones that exist
+     *
+     * A name nobody has used yet has no row and so no slug - it gets one made the way
+     * `findOrCreateTag()` would, so the chip reads right. Its link is a 404 until the post is
+     * saved and the tag really made, which is exactly the truth about a tag that is not there.
+     */
+    protected function previewTags(array $values): array {
+        $typed = array_filter(array_map('trim', explode(',', (string)($values['tags'] ?? ''))));
+        if ($typed === []) {
+            return [];
+        }
+        $existing = [];
+        foreach ($this->taxonomy->tags() as $row) {
+            $existing[mb_strtolower($row['name'])] = $row;
+        }
+        $tags = [];
+        foreach ($typed as $name) {
+            $tags[] = $existing[mb_strtolower($name)]
+                ?? ['name' => $name, 'slug' => $this->slugger->slugify($name)];
+        }
+        return $tags;
+    }
+
+    /**
      * What the attachments panel under the editor needs
      *
      * Attaching is an immediate write, the same as every other row action in the admin - keeping
@@ -284,7 +406,13 @@ class ContentAdminController extends AbstractAdminController {
             'form'    => $form,
             'content' => $content,
             'back_url' => $this->router->url('/admin/content/'.$type),
-            'view_url' => $content->isPublished() ? $this->router->url($this->content->publicPath($content)) : '',
+            // A saved post, draft or published alike: the front end already serves an unpublished
+            // one to anybody who may edit posts, so hiding the button was the only thing keeping a
+            // draft out of sight. An auto-draft holds nothing yet, so there is genuinely nothing to
+            // look at - that is what Preview is for.
+            'view_url' => $isNew ? '' : $this->router->url($this->content->publicPath($content)),
+            'preview_url' => $this->router->url('/admin/content/'.$type.'/preview/'.$content->id),
+
             // one revision saying an empty row was made is not a history worth offering
             'history_url' => !$isNew && $this->can(Permissions::CONTENT_HISTORY)
                 ? $this->router->url('/admin/content/'.$type.'/history/'.$content->id) : '',

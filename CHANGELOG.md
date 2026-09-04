@@ -5,6 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.44.0] &ndash; 2026-09-04
+
+### Added
+- **Preview.** A button beside *View* in the editor that opens what is in the boxes right now, rendered through the theme, **saving none of it**. It is a submit button carrying `formaction` and `formtarget`, so the values travel exactly as Save would send them - no second copy of the fields and no JavaScript - and the editor page is left as it was.
+- A `preview-bar` partial, drawn at the top of a preview so a page of unsaved words is never mistaken for the live one. Themes that replace `content/single.phtml` want one line for it, see `docs/themes.md` §7.
+
+### Changed
+- **The View button now shows for a draft**, not only for a published post. The front end has always served an unpublished post to anybody holding `post.update` - `maySeeDrafts()` has been there all along - so hiding the button was the only thing keeping a draft out of sight. A never-saved auto-draft still has no button, because it holds nothing; that is what Preview is for.
+
+### Notes
+Saving first and looking after would have been a tenth of the work and is wrong for the case that matters: on a **published** post it would put the unsaved edits live, which is the opposite of a preview. It would also write a revision every time somebody peeked. So the preview builds a `Content` that lives for one request and never reaches the entity manager.
+
+**The preview route checks the permission and not a CSRF token**, deliberately. `Form::process()` mints a fresh token into the session every time it runs, so checking one here would spend the token printed on the editor page still open behind the new tab, and the next Save would be refused as a forgery. It is safe to leave out only because this route writes nothing and the markdown renderer strips HTML: there is no state to change and no script to reflect.
+
 ## [0.43.0] &ndash; 2026-09-04
 
 ### Added
