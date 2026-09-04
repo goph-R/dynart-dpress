@@ -157,9 +157,9 @@ class DpressCliApp extends CliApp {
         ],
         'media:purge' => [
             'callable' => [MediaCommands::class, 'purge'],
-            'description' => 'Delete the file itself, breaking every revision that shows it',
+            'description' => 'Delete the file itself, or the whole bin with -all',
             'params' => ['id'],
-            'flags' => ['confirm'],
+            'flags' => ['confirm', 'all'],
             'needsConfig' => true,
         ],
         'media:sanitize' => [

@@ -109,11 +109,19 @@ class MediaCommands extends AbstractCommands {
     }
 
     /**
-     * `dpress media:purge -id 1 -confirm`
+     * `dpress media:purge -id 1 -confirm`, or `dpress media:purge -all -confirm`
      *
      * The one operation that actually removes bytes, so it asks to be meant.
+     *
+     * `-all` is a flag rather than a `media:purge-all` of its own, because the command names
+     * here are `group:action` with no punctuation in the action - and because the CLI already
+     * says which of two things a command is doing with a flag: `media:delete -restore`,
+     * `content:publish -unpublish`.
      */
     public function purge(array $params = []): int {
+        if ($this->flag($params, 'all')) {
+            return $this->purgeBin($params);
+        }
         $media = $this->media->findById((int)($params['id'] ?? 0));
         if ($media === null) {
             return $this->fail('No media with that -id.');
@@ -132,8 +140,64 @@ class MediaCommands extends AbstractCommands {
             $this->output->writeLine('Add -confirm if that is what you want.');
             return 1;
         }
-        $this->media->purge($media);
-        return $this->success("Purged #{$media->id}. The file is gone.");
+        $cleared = $this->media->purge($media);
+        return $this->success("Purged #{$media->id}. The file is gone."
+            .($cleared > 0 ? " $cleared post(s) lost their featured image." : ''));
+    }
+
+    /**
+     * `-all`: **empties the bin**, and nothing else
+     *
+     * `media:delete` is what puts something in the bin, so this only ever removes files somebody
+     * has already said they are finished with - which is what makes an all-at-once version of the
+     * most destructive command in the CMS a reasonable thing to have at all. To be rid of a file
+     * that is not in the bin, delete it first, or name it with `-id`.
+     */
+    protected function purgeBin(array $params): int {
+        $rows = $this->binned();
+        if ($rows === []) {
+            $this->output->writeLine('The bin is empty.');
+            return 0;
+        }
+        if (!$this->flag($params, 'confirm')) {
+            $this->output->setColor(CliOutput::YELLOW);
+            $this->output->writeLine('This deletes the files themselves, not just the library entries.');
+            $this->output->setColor(null);
+            foreach ($rows as $row) {
+                $this->output->writeLine("  #{$row['id']}  {$row['path']}");
+            }
+            $this->output->writeLine('');
+            $this->output->writeLine(count($rows).' item(s) in the bin. Every revision of every post that');
+            $this->output->writeLine('shows one of these will break, including old ones.');
+            $this->output->writeLine('');
+            $this->output->writeLine('Add -confirm if that is what you want.');
+            return 1;
+        }
+        $purged = 0;
+        $cleared = 0;
+        foreach ($rows as $row) {
+            $media = $this->media->findById((int)$row['id']);
+            if ($media === null) {
+                continue;
+            }
+            $cleared += $this->media->purge($media);
+            $purged++;
+        }
+        return $this->success("Purged $purged item(s)."
+            .($cleared > 0 ? " $cleared post(s) lost their featured image." : ''));
+    }
+
+    /**
+     * Everything in the bin
+     *
+     * `with_deleted` widens the list to *both*, which is right for a screen showing a bin toggle
+     * and wrong here, so the ones that are still in the library are dropped again.
+     */
+    protected function binned(): array {
+        return array_values(array_filter(
+            $this->media->findAll(['with_deleted' => true]),
+            fn(array $row): bool => !empty($row['deleted_at'])
+        ));
     }
 
     /**

@@ -9,6 +9,7 @@ use Dynart\Micro\Entities\Database;
 use Dynart\Micro\Entities\EntityManager;
 use Dynart\Micro\Entities\QueryExecutor;
 use Dynart\Dpress\DpressException;
+use Dynart\Dpress\Entity\Content;
 use Dynart\Dpress\Entity\ContentAttachment;
 use Dynart\Dpress\Entity\Media;
 use Dynart\Dpress\Media\ImageProcessor;
@@ -332,16 +333,52 @@ class MediaService {
      * **This is the operation that breaks history**: an old revision referencing this item will
      * point at a file that is no longer there. Nothing calls it by accident - the CLI asks for
      * confirmation first.
+     *
+     * Everything pointing at the row has to let go before it can be deleted, and there are two
+     * things that do: an attachment, and a post using it as its featured image. Both are
+     * foreign keys, so missing either is not a stale reference - it is the database refusing
+     * the delete with an integrity error, which is a true thing to say about the schema and a
+     * useless answer to somebody clearing out a library.
+     *
+     * @return int how many pieces of content lost their featured image
      */
-    public function purge(Media $media): void {
+    public function purge(Media $media): int {
         $path = $media->path;
         foreach (array_keys($this->images->presets()) as $preset) {
             $this->storage->delete($this->storage->derivativePath($path, $preset));
         }
         $this->storage->delete($path);
         $this->detachAll($media->id);
+        $cleared = $this->clearFeatured($media->id);
         $this->em->deleteById(Media::class, $media->id);
         $this->events->emit(self::EVENT_PURGED, [$media]);
+        return $cleared;
+    }
+
+    /**
+     * Takes this item off every post that had it as its featured image
+     *
+     * One statement rather than a save each, for two reasons. `ContentService` is built on this
+     * service, so reaching back the other way would be a cycle. And a purge is a **library**
+     * operation rather than an edit of every post that happened to use the picture: no revision
+     * is written and `updated_at` does not move, because nobody edited anything. `EVENT_PURGED`
+     * is what a cache or a feed listens to.
+     *
+     * @return int how many rows lost their featured image
+     */
+    protected function clearFeatured(int $mediaId): int {
+        $table = $this->em->safeTableName(Content::class);
+        $count = (int)$this->db->fetchOne(
+            'select count(1) from '.$table.' where `featured_media_id` = :id', [':id' => $mediaId]
+        );
+        if ($count > 0) {
+            $this->db->query(
+                'update '.$table.' set `featured_media_id` = null where `featured_media_id` = :id',
+                [':id' => $mediaId],
+                true
+            );
+        }
+        return $count;
     }
 
     // --- Derivatives ---

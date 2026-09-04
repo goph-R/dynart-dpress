@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.50.0] &ndash; 2026-09-04
+
+### Fixed
+- **Purging a picture that was a post's featured image failed** with a foreign key error out of the database rather than doing anything. Two things hold a reference to a media row - an attachment and a featured image - and only the attachments were being released. Both are foreign keys, so the missing one was not a stale pointer left behind but the delete being refused outright. The posts that used it now lose their featured image, and the command says how many did.
+
+### Added
+- **`dpress media:purge -all -confirm`**, which empties the bin. `media:delete` is what puts something in it, so this only ever removes files somebody has already said they are finished with - which is what makes an all-at-once version of the most destructive command in the CMS reasonable to have at all. Without `-confirm` it lists what it would delete and stops.
+
+### Notes
+A flag rather than a `media:purge-all` of its own: command names here are `group:action` with no punctuation in the action - there is a test for it - and the CLI already says which of two things a command is doing with a flag, as `media:delete -restore` and `content:publish -unpublish` do.
+
+Clearing the featured image is **one statement, not a save per post**. `ContentService` is built on `MediaService`, so reaching back the other way would be a cycle; and a purge is a library operation rather than an edit of every post that happened to use the picture, so no revision is written and `updated_at` does not move. `media:purged` is what a cache or a feed listens to.
+
 ## [0.49.1] &ndash; 2026-09-04
 
 ### Changed
