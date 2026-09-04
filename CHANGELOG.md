@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.42.0] &ndash; 2026-09-04
+
+### Changed
+- **"Points at" now decides what the rest of the menu item editor offers.** Choose *A category* and Target lists the categories; choose *A tag* and it lists the tags. Before, one select held every post, page, category and tag at once whatever kind was chosen - and *Address* sat there under all five kinds, which is how filling it in while Points at still said *A post or page* became the obvious way to add an external link and saved a post link with no post. A kind that points at nothing in this site hides Target; only an external address offers Address. Nothing is cleared by looking elsewhere - the fields are hidden, not emptied, so a kind chosen by mistake and put back finds what was typed.
+- **A target option says which kind it is**: `content:12`, `category:3`, `tag:7`, in the same words `target_type` already used. The old `12` / `c12` / `t12` encoding needed a rule of its own to read, and it is the rule that got `ltrim($value, 'ct')` wrong in 0.41.0. Form values only; nothing stored changes.
+
+### Added
+- `MenuItem::targetValue()` and `MenuItem::targetIdIn()` - the entity that owns both columns now owns the encoding between them, rather than the form writing one half and the controller reading the other.
+- `Dpress.targetOptionsFor()` and `Dpress.targetFieldsFor()` in `admin.js`, and the `initTargetFields()` binder behind them.
+
+### Notes
+With the script off, all three fields stay visible and the whole list is offered - the admin exactly as it was. **The server still decides either way**: a value whose kind is not the kind chosen is no target at all, and `itemProblem()` refuses the combination with the reason on the form.
+
 ## [0.41.1] &ndash; 2026-09-04
 
 ### Fixed

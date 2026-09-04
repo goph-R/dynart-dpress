@@ -321,7 +321,14 @@ class AdminForms {
         $item = $context['item'] ?? null;
         $form->addFields([
             'label'       => ['type' => 'text', 'label' => 'Label'],
-            'target_type' => ['type' => 'select', 'label' => 'Points at', 'options' => [
+            // the three `data-target-*` marks are what `initTargetFields()` in admin.js binds:
+            // the kind decides which of the other two are of any use, and which of the target
+            // options belong to it. Without the script all three stay visible and the whole
+            // list is offered, which is the admin as it was - and `itemProblem()` still has
+            // the last word either way
+            'target_type' => ['type' => 'select', 'label' => 'Points at',
+                              'attributes' => ['data-target-type'],
+                              'options' => [
                 MenuItem::TARGET_HOME     => 'The front page',
                 MenuItem::TARGET_CONTENT  => 'A post or page',
                 MenuItem::TARGET_CATEGORY => 'A category',
@@ -331,8 +338,10 @@ class AdminForms {
         ]);
         $form->addFields([
             'target_id' => ['type' => 'select', 'label' => 'Target', 'required' => false,
+                            'attributes' => ['data-target-id'],
                             'options' => $context['targets'] ?? []],
             'url'       => ['type' => 'text', 'label' => 'Address', 'required' => false,
+                            'attributes' => ['data-target-url'],
                             'description' => 'Only for an external address.'],
             'parent_id' => ['type' => 'select', 'label' => 'Under', 'required' => false,
                             'options' => $context['items'] ?? ['' => '(top level)']],
@@ -341,7 +350,8 @@ class AdminForms {
         if ($item !== null) {
             $form->addValues([
                 'label' => $item->label, 'target_type' => $item->target_type,
-                'target_id' => (string)($item->target_id ?? ''), 'url' => (string)$item->url,
+                'target_id' => MenuItem::targetValue($item->target_type, $item->target_id),
+                'url' => (string)$item->url,
                 'parent_id' => (string)($item->parent_id ?? ''), 'position' => (string)$item->position,
             ]);
         } else {

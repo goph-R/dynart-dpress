@@ -31,6 +31,9 @@ class MenuItem extends Entity {
         self::TARGET_TAG, self::TARGET_URL, self::TARGET_HOME,
     ];
 
+    /** The kinds that point at a row in this site, and so have something to choose in the editor */
+    const TARGETS_WITH_ID = [self::TARGET_CONTENT, self::TARGET_CATEGORY, self::TARGET_TAG];
+
     #[Column(type: Column::TYPE_INT, primaryKey: true, autoIncrement: true, notNull: true)]
     public int $id = 0;
 
@@ -60,5 +63,35 @@ class MenuItem extends Entity {
 
     public function isExternal(): bool {
         return $this->target_type === self::TARGET_URL;
+    }
+
+    /**
+     * The two target columns as one value, for the select that chooses between them
+     *
+     * The editor asks the kind in one select and the thing in another, so the second one's value
+     * has to carry its own kind: two fields can disagree, and they did - silently - until 0.41.0.
+     * It says so in the same words `target_type` uses, `content:12`, which is what lets the
+     * browser narrow the list to the kind that was chosen without a second vocabulary to keep in
+     * step with this one.
+     */
+    public static function targetValue(string $type, ?int $id): string {
+        return $id === null || !in_array($type, self::TARGETS_WITH_ID, true) ? '' : $type.':'.$id;
+    }
+
+    /**
+     * The id back out of that value, but only when its kind is the kind that was chosen
+     *
+     * A value of the wrong kind is **no target at all** rather than an id: `ltrim($value, 'ct')`
+     * used to strip the prefix whatever the kind was, so a tag picked under *A category* pointed
+     * the item at the category with that id, at a URL nobody had chosen. Refusing it here is what
+     * lets `itemProblem()` say so out loud.
+     */
+    public static function targetIdIn(string $type, string $value): ?int {
+        $prefix = $type.':';
+        if (!in_array($type, self::TARGETS_WITH_ID, true) || !str_starts_with($value, $prefix)) {
+            return null;
+        }
+        $id = substr($value, strlen($prefix));
+        return ctype_digit($id) && (int)$id > 0 ? (int)$id : null;
     }
 }

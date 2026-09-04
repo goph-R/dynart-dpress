@@ -49,6 +49,16 @@ const DOCUMENT = {
     url: '/uploads/2026/08/notes-d4e5f6.txt'
 };
 
+/** The target select as the server renders it: every value says which kind it is */
+const TARGETS = [
+    {value: '', text: '(none)'},
+    {value: 'content:12', text: 'Post: Something'},
+    {value: 'content:120', text: 'Page: Something else'},
+    {value: 'category:3', text: 'Category: Retro'},
+    {value: 'category:4', text: 'Category: AI'},
+    {value: 'tag:7', text: 'Tag: DOS'}
+];
+
 
 // --- a filter form, its events, and control over the clock ---
 
@@ -231,6 +241,60 @@ const tests = {
         window.Dpress.insertMedia(IMAGE, null);
         window.Dpress.insertMedia(null, field(''));
         assert.ok(true);
+    },
+
+    // --- the menu item editor: what "Points at" decides about the other two fields ---
+
+    /**
+     * The question that started it: choosing *A category* should leave the categories
+     */
+    'a kind narrows the target list to its own'() {
+        const shown = window.Dpress.targetOptionsFor('category', TARGETS).map(o => o.value);
+        assert.deepStrictEqual(shown, ['', 'category:3', 'category:4']);
+    },
+
+    /**
+     * `(none)` belongs to every kind - a target is not required, and an item with nothing
+     * chosen has to be something the editor can still say
+     */
+    'every kind keeps the empty option'() {
+        ['content', 'category', 'tag', 'url', 'home'].forEach(kind => {
+            const shown = window.Dpress.targetOptionsFor(kind, TARGETS);
+            assert.strictEqual(shown[0].value, '', kind + ' lost (none)');
+        });
+    },
+
+    /**
+     * `content:12` must not be read as a prefix of `content:120`, and no kind's name may be
+     * a prefix of another's - the colon is what makes both true
+     */
+    'a kind matches on the whole word'() {
+        const shown = window.Dpress.targetOptionsFor('tag', TARGETS).map(o => o.value);
+        assert.deepStrictEqual(shown, ['', 'tag:7']);
+    },
+
+    /**
+     * The front page and an external address point at nothing in the library, so the target
+     * select is not narrowed - it goes
+     */
+    'the kinds that point at nothing local offer no target at all'() {
+        assert.deepStrictEqual(window.Dpress.targetFieldsFor('home'), {target: false, url: false});
+        assert.deepStrictEqual(window.Dpress.targetFieldsFor('url'), {target: false, url: true});
+    },
+
+    /**
+     * And the reverse, which is the bug it was reported as: Address is only ever for an
+     * external address, so it is not there to be filled in under a kind that ignores it
+     */
+    'only an external address offers an address'() {
+        ['content', 'category', 'tag'].forEach(kind => {
+            assert.deepStrictEqual(window.Dpress.targetFieldsFor(kind), {target: true, url: false});
+        });
+    },
+
+    'an unknown kind offers neither, rather than everything'() {
+        assert.deepStrictEqual(window.Dpress.targetFieldsFor(''), {target: false, url: false});
+        assert.deepStrictEqual(window.Dpress.targetOptionsFor('', TARGETS).map(o => o.value), ['']);
     }
 };
 

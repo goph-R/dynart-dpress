@@ -304,6 +304,103 @@
     }
 
     /**
+     * The menu item editor: three fields that only make sense together
+     *
+     * "Points at" chooses a kind, and until now the other two ignored it - "Target" offered every
+     * post, category and tag at once, and "Address" sat there under all five kinds. Filling in
+     * Address while Points at still said *A post or page* is the obvious way to add an external
+     * link, and what it saved was a post link with no post.
+     *
+     * So the kind decides what the other two are: the target list narrows to the kind chosen, and
+     * a field a kind has no use for goes away. Every option value carries its own kind -
+     * `content:12` - which is the same word `target_type` uses, so this is reading the server's
+     * vocabulary rather than a second one that has to be kept in step.
+     *
+     * The server still decides. `itemProblem()` refuses the same combinations with the script off.
+     */
+    var TARGET_KINDS = ['content', 'category', 'tag'];
+
+    /** Which of the two dependent fields a kind has any use for */
+    Dpress.targetFieldsFor = function (kind) {
+        return {target: TARGET_KINDS.indexOf(kind) !== -1, url: kind === 'url'};
+    };
+
+    /**
+     * The options belonging to a kind, out of the whole list
+     *
+     * `(none)` is the empty value and belongs to every kind: a target is not required, and an
+     * item with nothing chosen is a thing the editor has to be able to say.
+     */
+    Dpress.targetOptionsFor = function (kind, options) {
+        var prefix = kind + ':';
+        return (options || []).filter(function (option) {
+            return option.value === '' || option.value.indexOf(prefix) === 0;
+        });
+    };
+
+    function fieldOf(element) {
+        // the wrapper the label and the error live in, so the whole row goes rather than the
+        // input on its own under a label for something that is no longer there
+        return (element.closest && element.closest('.form-field')) || element;
+    }
+
+    function showField(element, visible) {
+        var field = fieldOf(element);
+        field.hidden = !visible;
+        // hidden, not removed: a kind chosen by mistake and put back has to find what was typed,
+        // and a hidden input still posts - so nothing typed is thrown away by looking elsewhere
+        if (field.style) {
+            field.style.display = visible ? '' : 'none';
+        }
+    }
+
+    function applyTargetKind(type, target, url, options) {
+        var kind = type.value;
+        var wanted = Dpress.targetFieldsFor(kind);
+        if (target) {
+            var chosen = target.value;
+            var allowed = Dpress.targetOptionsFor(kind, options);
+            target.innerHTML = '';
+            allowed.forEach(function (option) {
+                var element = document.createElement('option');
+                element.value = option.value;
+                element.textContent = option.text;
+                target.appendChild(element);
+            });
+            // what was chosen is kept when the new kind still has it, and dropped when it does
+            // not - leaving it selected would post a target of a kind nobody asked for
+            target.value = allowed.some(function (o) { return o.value === chosen; }) ? chosen : '';
+            showField(target, wanted.target);
+        }
+        if (url) {
+            showField(url, wanted.url);
+        }
+    }
+
+    function initTargetFields(root) {
+        root.querySelectorAll('[data-target-type]').forEach(function (type) {
+            if (type.dataset.targetBound) {
+                return;
+            }
+            type.dataset.targetBound = '1';
+            var form = type.closest ? type.closest('form') : null;
+            if (!form) {
+                return;
+            }
+            var target = form.querySelector('[data-target-id]');
+            var url = form.querySelector('[data-target-url]');
+            // read once, before anything is taken out of the select
+            var options = target ? Array.prototype.map.call(target.options, function (option) {
+                return {value: option.value, text: option.text};
+            }) : [];
+            type.addEventListener('change', function () {
+                applyTargetKind(type, target, url, options);
+            });
+            applyTargetKind(type, target, url, options);
+        });
+    }
+
+    /**
      * A toolbar over a markdown textarea
      *
      * Deliberately not an editor. A markdown field whose value is anything other than exactly
@@ -1155,6 +1252,7 @@
         initConfirms(root);
         initMarkdown(root);
         initMediaFields(root);
+        initTargetFields(root);
         initSortableTrees(root);
         initLists(root);
         initAttachments(root);

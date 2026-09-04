@@ -378,19 +378,24 @@ class MenuAdminController extends AbstractAdminController {
     /**
      * Everything an item could point at, in one flat list
      *
-     * One `target` select rather than one per type: the editor picks a kind and then a thing, and
-     * the browser has all of them already, so switching the kind costs no request.
+     * One `target` select rather than one per kind: the browser is handed all of them and shows
+     * the ones belonging to the kind chosen in "Points at", so changing that kind costs no
+     * request. Each value says which kind it is - `content:12` - so the narrowing and the check
+     * on the way back in are reading the same word.
      */
     protected function itemContext(Menu $menu, ?MenuItem $item): array {
         $targets = ['' => '(none)'];
         foreach ($this->content->findAll(['max' => 500]) as $content) {
-            $targets[$content['id']] = ucfirst($content['type']).': '.$content['title'];
+            $targets[MenuItem::targetValue(MenuItem::TARGET_CONTENT, (int)$content['id'])]
+                = ucfirst($content['type']).': '.$content['title'];
         }
         foreach ($this->taxonomy->categories() as $category) {
-            $targets['c'.$category['id']] = 'Category: '.$category['name'];
+            $targets[MenuItem::targetValue(MenuItem::TARGET_CATEGORY, (int)$category['id'])]
+                = 'Category: '.$category['name'];
         }
         foreach ($this->taxonomy->tags() as $tag) {
-            $targets['t'.$tag['id']] = 'Tag: '.$tag['name'];
+            $targets[MenuItem::targetValue(MenuItem::TARGET_TAG, (int)$tag['id'])]
+                = 'Tag: '.$tag['name'];
         }
         $items = ['' => '(top level)'];
         foreach ($this->menus->itemRows($menu->id) as $row) {
@@ -410,22 +415,13 @@ class MenuAdminController extends AbstractAdminController {
         return [
             'label'       => (string)($values['label'] ?? ''),
             'target_type' => in_array($type, MenuItem::TARGETS, true) ? $type : MenuItem::TARGET_CONTENT,
-            'target_id'   => $this->targetId($type, (string)($values['target_id'] ?? '')),
+            'target_id'   => MenuItem::targetIdIn($type, (string)($values['target_id'] ?? '')),
             'url'         => (string)($values['url'] ?? ''),
             'parent_id'   => ($values['parent_id'] ?? '') === '' ? null : (int)$values['parent_id'],
             'position'    => (int)($values['position'] ?? 0),
         ];
     }
 
-    /**
-     * The id out of a target value, but only if its kind is the kind that was chosen
-     *
-     * The select carries the kind in the value - `12` is content, `c12` a category, `t12` a tag -
-     * and the kind was *also* chosen in "Points at". Two fields can disagree, and they did:
-     * `ltrim($target, 'ct')` on a tag under a category type gave `12` and the item then pointed at
-     * category 12, silently, at a URL nobody had chosen. So a value whose prefix does not match
-     * the type is **no target at all**, which `itemProblem()` then refuses out loud.
-     */
     /**
      * Why an item renders nowhere, in the words that say what to do about it
      *
@@ -438,23 +434,6 @@ class MenuAdminController extends AbstractAdminController {
             return 'it has no address';
         }
         return $row['target_id'] === null ? 'nothing is chosen for it to point at' : 'its target is gone';
-    }
-
-    protected function targetId(string $type, string $value): ?int {
-        $expected = [
-            MenuItem::TARGET_CONTENT  => '',
-            MenuItem::TARGET_CATEGORY => 'c',
-            MenuItem::TARGET_TAG      => 't',
-        ];
-        if ($value === '' || !array_key_exists($type, $expected)) {
-            return null;   // home and an external address point at nothing in the library
-        }
-        $prefix = $expected[$type];
-        if ($prefix !== '' && !str_starts_with($value, $prefix)) {
-            return null;
-        }
-        $id = $prefix === '' ? $value : substr($value, strlen($prefix));
-        return ctype_digit($id) ? (int)$id : null;
     }
 
     /**
