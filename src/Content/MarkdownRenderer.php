@@ -73,6 +73,42 @@ class MarkdownRenderer {
     }
 
     /**
+     * Which page of a document a line falls on, counting from 1
+     *
+     * What the editor asks when Preview is pressed: the tab should open on the part somebody was
+     * writing, not at the top of a seven page article. It reads the document by the same two
+     * rules everything else here does - the first separator ends the lead, every one after it
+     * ends a page - and walks the body the way `pages()` walks it, so it cannot drift from the
+     * pages that were actually rendered.
+     *
+     * A line in the lead is page one, because page one is where the lead is shown.
+     */
+    public function pageOfLine(string $markdown, int $line): int {
+        $lines = preg_split('/\R/', $markdown);
+        $separators = $this->separatorLines($lines);
+        if ($separators === [] || $line <= $separators[0]) {
+            return 1;
+        }
+        $bodyStart = $separators[0] + 1;
+        $bodyLines = array_slice($lines, $bodyStart);
+        $inBody = $line - $bodyStart;
+        $page = 0;
+        $start = 0;
+        foreach (array_merge($this->separatorLines($bodyLines, 0), [count($bodyLines)]) as $at) {
+            // the same walk, and the same skipping of an empty page, as `pages()` - a separator
+            // line belongs to the page it ends
+            if (trim(join("\n", array_slice($bodyLines, $start, $at - $start))) !== '') {
+                $page++;
+                if ($inBody <= $at) {
+                    return $page;
+                }
+            }
+            $start = $at + 1;
+        }
+        return max(1, $page);
+    }
+
+    /**
      * Splits a body into its pages
      *
      * Every separator after the first one is a page break - the same character doing a second

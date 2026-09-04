@@ -295,6 +295,41 @@ const tests = {
     'an unknown kind offers neither, rather than everything'() {
         assert.deepStrictEqual(window.Dpress.targetFieldsFor(''), {target: false, url: false});
         assert.deepStrictEqual(window.Dpress.targetOptionsFor('', TARGETS).map(o => o.value), ['']);
+    },
+
+    // --- where the cursor was when Preview was pressed ---
+
+    'the line is counted from zero'() {
+        const text = 'one\ntwo\nthree';
+        assert.strictEqual(window.Dpress.lineOfCursor(text, 0), 0);
+        assert.strictEqual(window.Dpress.lineOfCursor(text, 4), 1, 'the start of line two');
+        assert.strictEqual(window.Dpress.lineOfCursor(text, text.length), 2);
+    },
+
+    /**
+     * A textarea hands back whatever the document had in it, and Windows puts `\r\n` in one
+     * - counted as one break and not two, or every line after the first is out by its own
+     * number
+     */
+    'a CRLF is one line break'() {
+        assert.strictEqual(window.Dpress.lineOfCursor('one\r\ntwo\r\nthree', 12), 2);
+        assert.strictEqual(window.Dpress.lineOfCursor('one\rtwo', 5), 1);
+    },
+
+    /**
+     * The reason a line goes over the wire and not `selectionStart`: this counts UTF-16 units
+     * and PHP counts bytes, so an accented letter would put the two out of step. The line is
+     * the same number in both.
+     */
+    'an accented letter does not move the line'() {
+        const text = '\u00c1rv\u00edzt\u0171r\u0151\nsecond line';
+        assert.strictEqual(window.Dpress.lineOfCursor(text, 4), 0);
+        assert.strictEqual(window.Dpress.lineOfCursor(text, text.length), 1);
+    },
+
+    'nothing typed and nothing selected is the first line'() {
+        assert.strictEqual(window.Dpress.lineOfCursor('', 0), 0);
+        assert.strictEqual(window.Dpress.lineOfCursor(null, null), 0);
     }
 };
 

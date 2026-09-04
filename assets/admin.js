@@ -304,6 +304,47 @@
     }
 
     /**
+     * Which line of a text a position falls on, counting from 0
+     *
+     * Sent to the server instead of `selectionStart` itself, because that counts UTF-16 units
+     * while PHP counts bytes - the two agree until the first accented letter and then quietly
+     * do not, which on a Hungarian post would open the preview on the wrong page. A line number
+     * means the same thing in both languages.
+     */
+    Dpress.lineOfCursor = function (value, position) {
+        var upTo = String(value == null ? '' : value).slice(0, Math.max(0, position || 0));
+        return upTo.split(/\r\n|\r|\n/).length - 1;
+    };
+
+    /**
+     * Tells Preview where the cursor was, so the tab opens on the part being written
+     *
+     * A body written in `---` parts is served a page at a time, and a preview that always opened
+     * at the top meant paging back to what you were looking at. Read on the way out rather than
+     * on every keystroke: the button submits the form, so this is the last moment the cursor is
+     * still where somebody left it.
+     */
+    function initPreviewCursor(root) {
+        root.querySelectorAll('[data-preview-cursor]').forEach(function (button) {
+            if (button.dataset.previewCursorBound) {
+                return;
+            }
+            button.dataset.previewCursorBound = '1';
+            button.addEventListener('click', function () {
+                // `button.form` is the form the `form` attribute names, which is how this button
+                // can stand in the page head and still submit the editor below it
+                var form = button.form;
+                var textarea = form && form.querySelector('textarea.markdown-editor');
+                var field = form && form.querySelector('[data-cursor-line]');
+                if (!textarea || !field) {
+                    return; // no markdown box, or a form without the field: page one, as before
+                }
+                field.value = Dpress.lineOfCursor(textarea.value, textarea.selectionStart);
+            });
+        });
+    }
+
+    /**
      * The menu item editor: three fields that only make sense together
      *
      * "Points at" chooses a kind, and until now the other two ignored it - "Target" offered every
@@ -1253,6 +1294,7 @@
         initMarkdown(root);
         initMediaFields(root);
         initTargetFields(root);
+        initPreviewCursor(root);
         initSortableTrees(root);
         initLists(root);
         initAttachments(root);

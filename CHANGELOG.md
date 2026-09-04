@@ -5,6 +5,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.46.0] &ndash; 2026-09-04
+
+### Added
+- **A preview opens on the page the cursor was on.** On a body written in `---` parts, previewing from the middle of part four used to open at part one and leave you paging back to what you were looking at. The Preview button now sends the line the cursor was on and the redirect goes straight to that page.
+- `MarkdownRenderer::pageOfLine()`, which answers by walking the document the way `pages()` walks it - so a `---` inside fenced code is not a break here either, and the `---` after `---` that `pages()` drops as a typo is dropped here too rather than putting every later page out by one.
+- `Dpress.lineOfCursor()` in `admin.js`.
+
+### Notes
+A **line** goes over the wire and not `selectionStart`: that counts UTF-16 units while PHP counts bytes, and the two agree until the first accented letter - on a Hungarian post the preview would have opened confidently on the wrong page. A line number means the same thing in both languages.
+
+With the script off there is no line, and a preview opens at page one exactly as it did before.
+
 ## [0.45.0] &ndash; 2026-09-04
 
 ### Changed

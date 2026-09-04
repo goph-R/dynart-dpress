@@ -11,6 +11,7 @@ use Dynart\Micro\SessionInterface;
 use Dynart\Micro\ViewInterface;
 use Dynart\Dpress\Content\Dates;
 use Dynart\Dpress\Content\Slugger;
+use Dynart\Dpress\Content\MarkdownRenderer;
 use Dynart\Dpress\Entity\Content;
 use Dynart\Dpress\Form\AdminForms;
 use Dynart\Dpress\Form\FormFactory;
@@ -60,6 +61,7 @@ class ContentAdminController extends AbstractAdminController {
         protected Dates $dates,
         protected Slugger $slugger,
         protected SessionInterface $session,
+        protected MarkdownRenderer $markdown,
     ) {
         parent::__construct($view, $router, $request, $config, $jwtAuth, $forms, $list);
     }
@@ -275,8 +277,12 @@ class ContentAdminController extends AbstractAdminController {
         // them, and everything after that is a GET of a real address - which is what lets the
         // page links of a body written in `---` parts be **links**, the way they are on the
         // published page. Refreshing the tab stops re-posting too.
-        $this->app()->redirect('/admin/content/'.$type.'/preview/'.$stored->id,
-            [self::PREVIEW_TOKEN => $token], 303);
+        $params = [self::PREVIEW_TOKEN => $token];
+        $page = $this->previewPageOf($stored, $form->values());
+        if ($page > 1) {
+            $params[self::PAGE_PARAM] = $page;
+        }
+        $this->app()->redirect('/admin/content/'.$type.'/preview/'.$stored->id, $params, 303);
         return '';
     }
 
@@ -327,6 +333,22 @@ class ContentAdminController extends AbstractAdminController {
             'tags'       => $this->previewTags($values),
             'categories' => $this->previewCategories($values),
         ], 'post');
+    }
+
+    /**
+     * The page of the body the cursor was on, so a preview opens where the writing was
+     *
+     * Without the script there is no line and every preview opens at page one, which is where it
+     * opened before this existed.
+     */
+    protected function previewPageOf(Content $stored, array $values): int {
+        $line = (string)($values['cursor_line'] ?? '');
+        if (!ctype_digit($line)) {
+            return 1;
+        }
+        $markdown = array_key_exists('markdown', $values)
+            ? (string)$values['markdown'] : $stored->markdown;
+        return $this->markdown->pageOfLine($markdown, (int)$line);
     }
 
     /**

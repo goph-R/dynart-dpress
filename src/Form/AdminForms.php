@@ -72,6 +72,12 @@ class AdminForms {
         }
         $form->addFields([
             'title'    => ['type' => 'text', 'label' => 'Title'],
+            // Where the cursor was when Preview was pressed, written by `initPreviewCursor()`
+            // and read by nothing else - Save ignores it. A **line** and not a character
+            // offset, because `selectionStart` counts UTF-16 units and PHP counts bytes, and
+            // the two part company on the first accented letter.
+            'cursor_line' => ['type' => 'hidden', 'attributes' => ['data-cursor-line']],
+
             'markdown' => $markdown,
         ]);
         $form->addFields([
