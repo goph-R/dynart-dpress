@@ -54,6 +54,30 @@ class SchemaService {
     /**
      * Has the schema been installed?
      */
+    /** What a four byte character needs the database to be */
+    const CHARSET = 'utf8mb4';
+
+    /**
+     * The database's own character set, or '' when it cannot be asked
+     *
+     * Worth asking because of the one that is *nearly* right. MySQL's `utf8` is **three bytes per
+     * character**, which covers every character except the ones people notice are missing: an emoji
+     * is four bytes, and on a three byte column it is not stored badly, it is stored as `????`.
+     * Nothing raises an error and the text is gone by the time anybody looks at the page.
+     */
+    public function charset(): string {
+        try {
+            $found = $this->db->fetchOne(
+                'select default_character_set_name from information_schema.schemata'
+                    .' where schema_name = :name',
+                [':name' => $this->databaseName()]
+            );
+            return is_string($found) ? strtolower($found) : '';
+        } catch (\Throwable $e) {
+            return ''; // not every database has an `information_schema`, and this is a warning
+        }
+    }
+
     public function isInstalled(): bool {
         return $this->queryExecutor->isTableExist(MigrationHistory::class);
     }

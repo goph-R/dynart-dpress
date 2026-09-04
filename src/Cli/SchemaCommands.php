@@ -99,7 +99,34 @@ class SchemaCommands extends AbstractCommands {
             $this->output->writeLine($connectionError);
             return 1;
         }
+        $this->warnAboutCharset();
         return 0;
+    }
+
+    /**
+     * Says so when the database cannot hold a four byte character
+     *
+     * A warning and not a refusal: a site that never writes an emoji works perfectly well on
+     * `utf8`, and refusing to install would be this command inventing a requirement. But it is
+     * the failure that gives no sign of itself - nothing errors, and `????` is what a post says
+     * afterwards - so it has to be said out loud once, while somebody is looking at a terminal.
+     */
+    protected function warnAboutCharset(): void {
+        $charset = $this->schema->charset();
+        if ($charset === '' || $charset === SchemaService::CHARSET) {
+            return;
+        }
+        $this->output->setColor(CliOutput::YELLOW);
+        $this->output->writeLine('The database is `'.$charset.'`, which holds three bytes per character.');
+        $this->output->setColor(null);
+        $this->output->writeLine('An emoji is four, and it will be stored as `????` with no error.');
+        $this->output->writeLine('');
+        $this->output->writeLine('  alter database `'.$this->schema->databaseName().'`');
+        $this->output->writeLine('    character set utf8mb4 collate utf8mb4_unicode_ci;');
+        $this->output->writeLine('');
+        $this->output->writeLine('Existing tables keep the old one until they are converted too:');
+        $this->output->writeLine('  alter table `<name>` convert to character set utf8mb4 collate utf8mb4_unicode_ci;');
+        $this->output->writeLine('');
     }
 
     protected function reportApplied(array $applied): void {

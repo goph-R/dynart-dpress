@@ -5,6 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.56.0] &ndash; 2026-09-05
+
+### Fixed
+- **An emoji in a post was saved as `????`.** The database connection asked for `utf8`, which in MySQL is *three* bytes per character - it covers everything except the characters people notice are missing. Fixed in `dynart/micro-entities` 0.7.1, which this now requires.
+
+### Added
+- **`install` and `upgrade` say so when the database cannot hold a four byte character**, with the two `alter` statements that fix it. A warning rather than a refusal: a site that never writes an emoji is fine on `utf8`, and this command has no business inventing a requirement. But it is the failure that gives no sign of itself - nothing errors, and the text is already gone - so it gets said once, while somebody is looking at a terminal.
+- `SchemaService::charset()`.
+
+### Notes
+**Characters already saved as `????` are gone**; the bytes were replaced on the way in and no amount of converting brings them back. Those posts have to be edited. A three byte character - `⌨️`, `✨` - was never affected, which is why the damage looks arbitrary until you know where the boundary is.
+
+The connection was only half of it: a **table** created while the database default was `utf8` keeps it until converted, so an existing site wants both `alter database` and an `alter table ... convert to` per table.
+
 ## [0.55.0] &ndash; 2026-09-05
 
 ### Changed
