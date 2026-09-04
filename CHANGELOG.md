@@ -5,6 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.46.1] &ndash; 2026-09-04
+
+### Fixed
+- **Saving a post did nothing and brought the editor back.** 0.46.0 put the hidden `cursor_line` field in the *required* group of the content form - `addFields()` makes a field required unless it is told otherwise - so an empty one failed validation on every save. Being hidden it had nowhere to print the error, so the screen simply reloaded with no explanation. It is in the optional group now, and the test that guards this asserts the **whole set** of required fields rather than a sample of it, so the next field put in the wrong group fails a test instead of a save.
+
 ## [0.46.0] &ndash; 2026-09-04
 
 ### Added

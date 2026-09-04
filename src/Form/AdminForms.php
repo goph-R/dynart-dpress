@@ -72,17 +72,20 @@ class AdminForms {
         }
         $form->addFields([
             'title'    => ['type' => 'text', 'label' => 'Title'],
-            // Where the cursor was when Preview was pressed, written by `initPreviewCursor()`
-            // and read by nothing else - Save ignores it. A **line** and not a character
-            // offset, because `selectionStart` counts UTF-16 units and PHP counts bytes, and
-            // the two part company on the first accented letter.
-            'cursor_line' => ['type' => 'hidden', 'attributes' => ['data-cursor-line']],
-
             'markdown' => $markdown,
         ]);
         $form->addFields([
             'slug'   => ['type' => 'text', 'label' => 'Slug', 'required' => false,
                          'description' => 'Left empty it is made from the title.'],
+            // Where the cursor was when Preview was pressed, written by `initPreviewCursor()`
+            // and read by nothing else - Save ignores it. A **line** and not a character
+            // offset, because `selectionStart` counts UTF-16 units and PHP counts bytes, and
+            // the two part company on the first accented letter.
+            //
+            // In *this* group, which is the one that is not required. It went in beside the
+            // title first, where a field with nothing in it failed validation on every save -
+            // and being hidden, it had nowhere to say so, so the editor simply came back.
+            'cursor_line' => ['type' => 'hidden', 'attributes' => ['data-cursor-line']],
         ], false);
 
         // Only for somebody who may publish this kind of content - the stock editor role holds
