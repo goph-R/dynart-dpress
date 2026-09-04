@@ -358,9 +358,12 @@ class DpressServices {
                             'description' => 'It goes on the button, so keep it short.'
                                 .' Empty is "'.KofiBlock::DEFAULT_TEXT.'".'],
                 'color' => ['type' => 'text', 'label' => 'Button colour', 'required' => false,
-                            'description' => 'A hex value, like '.KofiBlock::DEFAULT_COLOR.','
-                                .' which is what an empty box means. The text on it turns black'
-                                .' or white by itself, whichever can be read.'],
+                            'description' => 'The background, as a hex value like '
+                                .KofiBlock::DEFAULT_COLOR.' - which is what an empty box means.'],
+                'text_color' => ['type' => 'text', 'label' => 'Button text colour',
+                            'required' => false,
+                            'description' => 'A hex value. Empty and it picks black or white'
+                                .' by itself, whichever can be read on the colour above.'],
                 'description' => ['type' => 'textarea', 'label' => 'Description', 'required' => false,
                             'description' => 'A line above the button. Optional.'],
             ],

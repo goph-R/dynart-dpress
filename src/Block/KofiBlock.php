@@ -50,7 +50,7 @@ class KofiBlock {
             'text'        => trim((string)($settings['text'] ?? '')) ?: self::DEFAULT_TEXT,
             'description' => trim((string)($settings['description'] ?? '')),
             'color'       => $color,
-            'ink'         => $this->isLight($color) ? '#1b1b1b' : '#ffffff',
+            'ink'         => $this->ink($color, (string)($settings['text_color'] ?? '')),
             'icon'        => self::ICON,
         ]);
     }
@@ -72,18 +72,40 @@ class KofiBlock {
     }
 
     /**
+     * What colour the words on the button are
+     *
+     * Chosen for you unless you say otherwise, and that is the useful default: black or white by
+     * relative luminance, whichever can be read on the background. A pale brand colour would
+     * otherwise get white text nobody can read, and nothing would tell the site owner.
+     *
+     * But automatic is not always right - a brand has two colours, not one - so a value here wins.
+     * An **empty** box means "decide for me", which is why this cannot simply call `color()`: that
+     * falls back to a colour, and what is wanted here is falling back to a *decision*.
+     */
+    public function ink(string $color, string $chosen): string {
+        $wanted = $this->color($chosen, '');
+        if ($wanted !== '') {
+            return $wanted;
+        }
+        return $this->isLight($color) ? '#1b1b1b' : '#ffffff';
+    }
+
+    /**
      * A hex colour, or Ko-fi's own when it is not one
      *
      * Validated and not escaped, because this goes into a `style` attribute: escaping would stop
      * it breaking out of the quotes, and what has to be impossible is a settings box naming a
      * *declaration*. Three digits are expanded to six so the template has one shape to deal with.
+     *
+     * @param string $fallback what an unreadable value means - a colour, or '' for a caller that
+     *                         would rather decide for itself
      */
-    public function color(string $value): string {
+    public function color(string $value, string $fallback = self::DEFAULT_COLOR): string {
         $value = ltrim(trim($value), '#');
         if (preg_match('/^[0-9A-Fa-f]{3}$/', $value) === 1) {
             $value = $value[0].$value[0].$value[1].$value[1].$value[2].$value[2];
         }
-        return preg_match('/^[0-9A-Fa-f]{6}$/', $value) === 1 ? '#'.strtolower($value) : self::DEFAULT_COLOR;
+        return preg_match('/^[0-9A-Fa-f]{6}$/', $value) === 1 ? '#'.strtolower($value) : $fallback;
     }
 
     /**

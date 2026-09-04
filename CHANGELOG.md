@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.54.0] &ndash; 2026-09-05
+
+### Added
+- **A button text colour on the Ko-fi block.** Empty still means "decide for me" - black or white by relative luminance, whichever can be read on the background - and a value wins, because automatic is not always right: a brand has two colours rather than one.
+
+### Notes
+It cannot simply go through `color()` the background does, and that is the whole design: `color()` falls back to a *colour*, and what an empty text box has to fall back to is a *decision*. So `color()` took a `$fallback` and `ink()` asks it for `''`.
+
+A text colour that is not a colour falls back to the automatic choice rather than to nothing - a button with no text colour at all is a button nobody can read. `docs/blocks.md` says which box does what.
+
 ## [0.53.0] &ndash; 2026-09-04
 
 ### Added

@@ -33,9 +33,9 @@ rendered*, and putting it back is one select.
 
 ### Ko-fi
 
-Four boxes: the **page name** - the bit after `ko-fi.com` in the address, and the whole address
-is accepted too - the **button text**, a **hex colour**, and an optional line of **description**
-above it.
+Five boxes: the **page name** - the bit after `ko-fi.com` in the address, and the whole address
+is accepted too - the **button text**, the **button colour**, the **button text
+colour**, and an optional line of **description** above it.
 
 It is a link and an image, and that is the whole of it: no iframe, no script, and nothing
 loaded at all on a page that does not have the block. Ko-fi's own widget is an iframe with a
@@ -44,9 +44,12 @@ script in it. The one third-party request left is the cup, an image on their CDN
 The colour is validated as six hex digits rather than escaped, because it goes into a `style`
 attribute - what has to be impossible is a settings box naming a *declaration*. Anything
 unreadable falls back to Ko-fi's own blue, so a mistyped colour looks like Ko-fi rather than
-looking broken. **The text on the button turns black or white by itself**, whichever can be
-read on the colour chosen: a pale brand colour would otherwise get white text nobody can read,
-and nothing would tell the site owner that is what happened.
+looking broken. **Leave the text colour empty and it turns black or white by itself**, whichever
+can be read on the background: a pale brand colour would otherwise get white text nobody can
+read, and nothing would tell the site owner that is what happened. Fill it in and that wins -
+automatic is not always right, because a brand has two colours rather than one. A text colour
+that is not one falls back to the automatic choice rather than to nothing, because a button
+with no text colour at all is a button nobody can read.
 
 The page name is validated the same way and for the same reason - it goes into an `href`.
 A name that is not one renders **nothing**, rather than a button pointing at `ko-fi.com` and
