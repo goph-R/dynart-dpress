@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.41.1] &ndash; 2026-09-04
+
+### Fixed
+- **Deleting a menu item deleted nothing.** It printed `{"csrf": "..."}` into the browser and moved the item to the top of the menu instead. The `#[Route]` for the delete had been written above the *next* method's docblock, and an attribute binds to the declaration that follows it - so `POST /admin/menus/items/delete/<id>` was reaching `moveItem()`, which answers with data rather than a redirect because a drag has already moved the row on screen. Every check there was passed: the route existed, it was a POST, it was not a bulk delete. Nothing asked which method it landed on. Two tests do now, one per route and one on the shape that caused it.
+- **A new category's slug came out `item`, then `item-2`, `item-3`.** The editor posts the slug field whether or not anybody typed in it, so an untouched field arrives as the empty string - and `$data['slug'] ?? $name` only reaches the name when the key is *missing*. The name was unreachable. An empty field is a slug nobody chose, not a slug that is empty; `ContentService` and `createTag()` had both said so since they had slugs at all. The `item` fallback stays, for the case it was written for: a name of nothing but punctuation.
+
 ## [0.41.0] &ndash; 2026-09-03
 
 ### Added

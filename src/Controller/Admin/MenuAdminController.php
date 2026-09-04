@@ -327,7 +327,6 @@ class MenuAdminController extends AbstractAdminController {
         return $this->itemEditor($menu, $form, $item);
     }
 
-    #[Route('POST', '/admin/menus/items/delete/?')]
     /**
      * Where a drag on the items screen lands
      *
@@ -356,6 +355,7 @@ class MenuAdminController extends AbstractAdminController {
         return $this->answer();
     }
 
+    #[Route('POST', '/admin/menus/items/delete/?')]
     public function deleteItem(string $id): string {
         $this->requirePermission(Permissions::MENU_UPDATE);
         $this->requireAction();

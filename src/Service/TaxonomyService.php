@@ -69,7 +69,11 @@ class TaxonomyService {
     public function createCategory(string $name, array $data = []): Category {
         $category = new Category();
         $category->name = trim($name);
-        $category->slug = $this->uniqueSlug(Category::class, $data['slug'] ?? $name, 0);
+        // An empty slug field is a slug nobody chose, not a slug that is the empty string:
+        // the editor always posts the field, so `?? $name` never once reached the name and
+        // every category came out `item`. `createTag()` and `updateCategory()` say the same.
+        $wanted = trim((string)($data['slug'] ?? ''));
+        $category->slug = $this->uniqueSlug(Category::class, $wanted !== '' ? $wanted : $name, 0);
         $category->parent_id = $data['parent_id'] ?? null;
         $category->description = $data['description'] ?? null;
         $category->thumbnail_media_id = $data['thumbnail_media_id'] ?? null;
