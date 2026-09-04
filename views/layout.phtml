@@ -139,6 +139,27 @@
         article h1 { font-size: 28px; margin: 0 0 18px; }
         article h2 { font-size: 21px; margin: 28px 0 10px; }
         article h3 { font-size: 17px; margin: 22px 0 8px; }
+        /* A table. `display: block` with `overflow-x: auto` rather than a wrapper element,
+           because the markup comes out of the renderer and there is nothing to wrap it in - a
+           six column table on a phone scrolls sideways instead of pushing the whole page wider,
+           which is the failure that is hard to notice on a desktop and impossible to miss on a
+           phone. The rows carry the lines rather than the cells: a full grid reads as a
+           spreadsheet, and this is prose. */
+        article table {
+            display: block; overflow-x: auto; max-width: 100%;
+            border-collapse: collapse; margin: 18px 0;
+        }
+        article th, article td {
+            padding: 7px 12px; text-align: left; vertical-align: top;
+            border-bottom: 1px solid rgba(127, 127, 127, .3);
+        }
+        article thead th { font-weight: 600; white-space: nowrap; }
+        article tbody tr:last-child td { border-bottom: 0; }
+        /* the column alignment a table says with `|---:|`, which the renderer writes as an
+           attribute - a stylesheet that ignores it silently loses what the author asked for */
+        article th[align='right'], article td[align='right'] { text-align: right; }
+        article th[align='center'], article td[align='center'] { text-align: center; }
+
         /* A blockquote, and the three panels `> [!WARNING]` and friends turn one into.
            The margin is reset: a browser indents a blockquote 40px on the left, which would leave
            the rule floating in the gutter rather than marking the column. `padding-right` is for

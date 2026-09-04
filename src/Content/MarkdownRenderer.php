@@ -6,6 +6,7 @@ use Dynart\Micro\EventServiceInterface;
 use League\CommonMark\ConverterInterface;
 use League\CommonMark\Environment\Environment;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
+use League\CommonMark\Extension\Table\TableExtension;
 use League\CommonMark\MarkdownConverter;
 
 /**
@@ -236,9 +237,15 @@ class MarkdownRenderer {
                 'html_input' => 'strip',
                 'allow_unsafe_links' => false,
             ]);
-            // plain CommonMark, the same as the shorthand converter this replaced. An
-            // environment rather than that shorthand only so a subscriber can reach it.
+            // CommonMark, plus tables. An environment rather than the shorthand converter this
+            // replaced only so a subscriber can reach it.
             $environment->addExtension(new CommonMarkCoreExtension());
+            // Here rather than as a subscriber, because a table is *syntax* and not a policy:
+            // it has nothing to configure and nothing to ask a service, and it only appears
+            // where somebody wrote one. The subscribers are the things that had a decision to
+            // make - what a URL points at, whether prose gets linked, what a callout looks
+            // like. Tables have none.
+            $environment->addExtension(new TableExtension());
             $this->events->emit(self::EVENT_ENVIRONMENT, [$environment]);
             $this->converter = new MarkdownConverter($environment);
         }

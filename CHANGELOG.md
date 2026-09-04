@@ -5,6 +5,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.49.0] &ndash; 2026-09-04
+
+### Added
+- **Tables.** The one syntax a post reaches for that plain CommonMark has no answer to:
+
+  ```markdown
+  | Emulator | Runs                 | Year |
+  |:---------|:--------------------:|-----:|
+  | DOSBox-X | DOS and Windows 3.11 | 2011 |
+  ```
+
+  Column alignment travels as an attribute and **both stylesheets answer it** - a theme that sets `text-align` on every cell and ignores `align` throws away what the author asked for. Cells are still markdown, so `**bold**` and `` `code` `` work inside one.
+- Table styles in the built-in layout. `display: block` with `overflow-x: auto` rather than a wrapper element, because the markup comes out of the renderer and there is nothing to wrap: a six column table on a phone scrolls sideways instead of pushing the whole page wider.
+
+### Notes
+Added beside the core extension rather than as a subscriber, because a table is **syntax and not a policy**: nothing to configure, nothing to ask a service, and it appears only where somebody wrote one. The subscribers are the things that had a decision to make - what a URL points at, whether prose gets linked, what a callout looks like. So there is no setting either: nobody writes a row of pipes by accident, and a sentence containing `ls | grep x` is still a sentence.
+
+Nothing already written changes shape. A table needs the row of dashes under its header, and `---` alone on a line is still a page break - the split happens before the markdown is parsed, and a table's separator is `|---|`.
+
 ## [0.48.0] &ndash; 2026-09-04
 
 ### Added
