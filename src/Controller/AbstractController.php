@@ -335,7 +335,7 @@ abstract class AbstractController {
      * The lead is on page one only: it is the opening of the article, not a header repeated
      * above every part of it.
      */
-    protected function pagedBody(Content $content, string $route): array {
+    protected function pagedBody(Content $content, string $route, array $extra = []): array {
         $pages = ContentPages::split($content->body_html);
         $count = count($pages);
         $number = (int)$this->request->get(self::PAGE_PARAM, 1);
@@ -347,12 +347,12 @@ abstract class AbstractController {
             'page'       => $number,
             'page_count' => $count,
             'show_lead'  => $number === 1,
-            'prev_url'   => $number > 1 ? $this->pageUrl($route, $number - 1) : '',
-            'next_url'   => $number < $count ? $this->pageUrl($route, $number + 1) : '',
+            'prev_url'   => $number > 1 ? $this->pageUrl($route, $number - 1, $extra) : '',
+            'next_url'   => $number < $count ? $this->pageUrl($route, $number + 1, $extra) : '',
             // every page's address, so a theme can print `1 2 3 4 5` rather than only two arrows.
             // Built here because the route is the controller's - a template has no way to make one
             'page_urls'  => array_map(
-                fn(int $n): string => $this->pageUrl($route, $n), range(1, max(1, $count))
+                fn(int $n): string => $this->pageUrl($route, $n, $extra), range(1, max(1, $count))
             ),
         ];
     }
@@ -363,8 +363,13 @@ abstract class AbstractController {
      * Two URLs for the same page - `/post/x` and `/post/x?page=1` - is two of everything for
      * search engines and for anybody sharing a link.
      */
-    protected function pageUrl(string $route, int $number): string {
-        return $this->router->url($route, $number > 1 ? [self::PAGE_PARAM => $number] : []);
+    /**
+     * @param array $extra query parameters every page of this route has to keep - the preview
+     *                     carries the token that says which unsaved draft is being looked at
+     */
+    protected function pageUrl(string $route, int $number, array $extra = []): string {
+        $params = $number > 1 ? $extra + [self::PAGE_PARAM => $number] : $extra;
+        return $this->router->url($route, $params);
     }
 
     protected function message(string $title, string $message, array $link = []): string {

@@ -5,6 +5,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.45.0] &ndash; 2026-09-04
+
+### Changed
+- **A preview pages through a body written in `---` parts**, the way the published post does. It used to show the whole body in one go, because the page links would have been GETs of a route that only answered POST. So the preview is **post, redirect, get** now: the boxes arrive by POST, which is the only way to send them, and every page after that is a GET of a real address. The pager is ordinary links again and a theme needs to know nothing about previews. Refreshing the tab stops re-posting into the bargain.
+- `pagedBody()` and `pageUrl()` take query parameters every page of a route has to keep.
+
+### Notes
+The redirect needs the boxes to outlive the POST, so they go in the **session** - not the database. The post itself is still never written, which was and is the whole point; this is one tab's copy of what somebody typed, it belongs to one person, and it goes when the session does. Three are kept, so previewing in two tabs works and a long session is not a place a hundred drafts pile up. A token that has fallen off the end says so and offers the way back to the editor, rather than quietly rendering the saved post under a bar claiming it is unsaved.
+
 ## [0.44.1] &ndash; 2026-09-04
 
 ### Changed

@@ -7,6 +7,7 @@ use Dynart\Micro\ConfigInterface;
 use Dynart\Micro\JwtAuthInterface;
 use Dynart\Micro\RequestInterface;
 use Dynart\Micro\RouterInterface;
+use Dynart\Micro\SessionInterface;
 use Dynart\Micro\ViewInterface;
 use Dynart\Dpress\Content\Dates;
 use Dynart\Dpress\Content\Slugger;
@@ -33,6 +34,13 @@ use Dynart\Dpress\Service\UserService;
 class ContentAdminController extends AbstractAdminController {
 
     /** What a list may be ordered by. Anything else is dropped rather than put into the SQL. */
+    /** Where a preview keeps the boxes it was handed, and what says which one to read */
+    const PREVIEW_SESSION = 'dpress.preview';
+    const PREVIEW_TOKEN = 'preview';
+
+    /** How many previews a session remembers - enough for a few tabs, not a place to grow */
+    const PREVIEW_KEEP = 3;
+
     const SORTABLE = ['id', 'title', 'slug', 'status', 'published_at', 'created_at', 'updated_at'];
 
     public function __construct(
@@ -51,6 +59,7 @@ class ContentAdminController extends AbstractAdminController {
         protected UserService $users,
         protected Dates $dates,
         protected Slugger $slugger,
+        protected SessionInterface $session,
     ) {
         parent::__construct($view, $router, $request, $config, $jwtAuth, $forms, $list);
     }
@@ -261,9 +270,41 @@ class ContentAdminController extends AbstractAdminController {
         // `csrf: false` so `process()` leaves the editor's token where it is - see above
         $form = $this->forms->create(AdminForms::CONTENT, $this->editorContext($type, $stored), false);
         $form->process(); // the result is ignored: previewing half a post is the whole point
-        $values = $form->values();
+        $token = $this->keepPreview($stored->id, $form->values());
+        // Post, redirect, get. The boxes arrive by POST because that is the only way to send
+        // them, and everything after that is a GET of a real address - which is what lets the
+        // page links of a body written in `---` parts be **links**, the way they are on the
+        // published page. Refreshing the tab stops re-posting too.
+        $this->app()->redirect('/admin/content/'.$type.'/preview/'.$stored->id,
+            [self::PREVIEW_TOKEN => $token], 303);
+        return '';
+    }
+
+    /**
+     * One page of a preview that was handed over a moment ago
+     *
+     * A GET, so the pager is ordinary links and a theme needs to know nothing about previews. The
+     * token says which set of boxes to read; without a live one there is nothing to show, and
+     * saying so is better than rendering the stored post under a bar that claims it is unsaved.
+     */
+    #[Route('GET', '/admin/content/?/preview/?')]
+    public function previewPage(string $type, string $id): string {
+        $this->enter($type, 'update');
+        $stored = $this->found($this->content->findById((int)$id));
+        $this->assertType($stored, $type);
+        $token = (string)$this->request->get(self::PREVIEW_TOKEN, '');
+        $values = $this->storedPreview($stored->id, $token);
+        if ($values === null) {
+            return $this->message('Preview', 'This preview is not here any more.'
+                .' Press Preview in the editor again.',
+                ['url' => $this->router->url('/admin/content/'.$type.'/edit/'.$stored->id),
+                 'label' => 'Back to the editor']);
+        }
         $content = $this->previewOf($stored, $values);
-        $common = [
+        $route = '/admin/content/'.$type.'/preview/'.$stored->id;
+        // the token travels with every page number, so a body written in `---` parts pages
+        // through exactly as it will once it is saved
+        $common = $this->pagedBody($content, $route, [self::PREVIEW_TOKEN => $token]) + [
             'preview'     => true,
             'title'       => $content->title,
             'content'     => $content,
@@ -273,12 +314,6 @@ class ContentAdminController extends AbstractAdminController {
             'featured'    => $content->featured_media_id !== null
                 ? $this->media->findById($content->featured_media_id) : null,
             'mediaView'   => $this->mediaView,
-            // the whole body rather than one page of it: the page links would have to be GETs of a
-            // route that only answers POST, and a preview full of dead links is worse than one
-            // with the breaks not drawn. They are there to see the moment it is saved.
-            'body_html'   => $content->body_html,
-            'page'        => 1, 'page_count' => 1, 'show_lead' => true,
-            'prev_url'    => '', 'next_url' => '', 'page_urls' => [],
         ];
         if ($content->isPage()) {
             return $this->render('dpress:content/page', $common + [
@@ -292,6 +327,41 @@ class ContentAdminController extends AbstractAdminController {
             'tags'       => $this->previewTags($values),
             'categories' => $this->previewCategories($values),
         ], 'post');
+    }
+
+    /**
+     * Puts the boxes somewhere the next few GETs can read them, and says where
+     *
+     * The session and **not the database**: the post itself is still never written, which is the
+     * whole point of a preview. This is the tab's own copy, it belongs to one person, and it goes
+     * when the session does.
+     *
+     * A few are kept rather than one, so previewing two posts in two tabs does not knock the
+     * first one out - and a few rather than all of them, so a long session is not a place a
+     * hundred drafts pile up.
+     */
+    protected function keepPreview(int $contentId, array $values): string {
+        $token = bin2hex(random_bytes(16));
+        $store = (array)$this->session->get(self::PREVIEW_SESSION, []);
+        $store[$token] = ['content_id' => $contentId, 'values' => $values];
+        $this->session->set(self::PREVIEW_SESSION,
+            array_slice($store, -self::PREVIEW_KEEP, null, true));
+        return $token;
+    }
+
+    /**
+     * The boxes a token stands for, or null when there are none any more
+     *
+     * The content id is checked as well as the token: a preview is of one post, and a token that
+     * has fallen off the end must not quietly render whatever else the address names.
+     */
+    protected function storedPreview(int $contentId, string $token): ?array {
+        $store = (array)$this->session->get(self::PREVIEW_SESSION, []);
+        $kept = $store[$token] ?? null;
+        if (!is_array($kept) || ($kept['content_id'] ?? 0) !== $contentId) {
+            return null;
+        }
+        return (array)($kept['values'] ?? []);
     }
 
     /**
