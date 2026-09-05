@@ -224,6 +224,9 @@ The defaults are **paths**, resolved by `siteAsset()` against `app.base_url` so 
 
 **The markdown block renders at save**, through the type's optional `prepare` hook, so a page view prints HTML and parses nothing - the `lead_html` rule one level down, and the reason `content:rerender` re-renders blocks too. Shortcodes inside one work with nothing added, because `expand()` runs over the finished page. An unregistered type leaves an HTML comment and a log line rather than throwing: the plugin that provided it may simply be off this morning, and a sidebar with one thing missing still renders. See [docs/blocks.md](docs/blocks.md).
 
+**A feature that can leave core without being rewritten is the test of the extension points.** The Ko-fi button was a block type, a template and a stylesheet inside dpress until 0.60.0, and it is [a plugin](https://github.com/goph-R/dynart-dpress-kofi) now - three registrations moved to a folder under `plugins/`, with the namespace and the fetched template the only things that changed. It stayed in core only because a plugin could not put a stylesheet in a page until `PageAssets`. A saved block keeps the same five settings keys, so installing the plugin finds the button as it was; without it, an unregistered type leaves an HTML comment and a log line
+and the page still renders.
+
 **Blocks are not audited**, like menus (plan §4.4): arranging a layout is moving things about, and a revision per drag is churn rather than history.
 
 **Menu items store a target, not a URL** — `content` / `category` / `tag` / `url` / `home` plus an id — so renaming a page moves its entry with it. `MenuService::tree()` resolves at render time and drops an item whose target is gone. One menu per place: assigning one moves any other out.

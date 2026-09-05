@@ -44,7 +44,6 @@ use Dynart\Dpress\Content\Shortcode\VideoShortcode;
 use Dynart\Dpress\Content\ShortcodeRenderer;
 use Dynart\Dpress\Block\Blocks;
 use Dynart\Dpress\Block\CategoryListBlock;
-use Dynart\Dpress\Block\KofiBlock;
 use Dynart\Dpress\Block\MarkdownBlock;
 use Dynart\Dpress\Block\TagCloudBlock;
 use Dynart\Dpress\Content\Shortcodes;
@@ -241,7 +240,6 @@ class DpressServices {
         Micro::add(TagCloudBlock::class);
         Micro::add(CategoryListBlock::class);
         Micro::add(MarkdownBlock::class);
-        Micro::add(KofiBlock::class);
         Micro::add(SchemaCommands::class);
         Micro::add(SystemCommands::class);
         Micro::add(UserCommands::class);
@@ -346,30 +344,6 @@ class DpressServices {
             'prepare' => [MarkdownBlock::class, 'prepare'],
             'fields'  => [
                 'markdown' => ['type' => 'markdown', 'label' => 'Markdown', 'required' => false],
-            ],
-        ],
-        'kofi' => [
-            'title'   => 'Ko-fi button',
-            'render'  => [KofiBlock::class, 'render'],
-            'prepare' => [KofiBlock::class, 'prepare'],
-            'fields' => [
-                'page'  => ['type' => 'text', 'label' => 'Page name or ID',
-                            'description' => 'The bit after ko-fi.com in the address:'
-                                .' for ko-fi.com/supportkofi, enter supportkofi. The whole'
-                                .' address is accepted too.'],
-                'text'  => ['type' => 'text', 'label' => 'Button text', 'required' => false,
-                            'description' => 'It goes on the button, so keep it short.'
-                                .' Empty is "'.KofiBlock::DEFAULT_TEXT.'".'],
-                'color' => ['type' => 'text', 'label' => 'Button colour', 'required' => false,
-                            'description' => 'The background, as a hex value like '
-                                .KofiBlock::DEFAULT_COLOR.' - which is what an empty box means.'],
-                'text_color' => ['type' => 'text', 'label' => 'Button text colour',
-                            'required' => false,
-                            'description' => 'A hex value. Empty and it picks black or white'
-                                .' by itself, whichever can be read on the colour above.'],
-                'description' => ['type' => 'markdown', 'label' => 'Description',
-                            'required' => false,
-                            'description' => 'Above the button, and it is markdown - the same toolbar, the same `media#14` and `post#3` references as anywhere else. Optional.'],
             ],
         ],
     ];

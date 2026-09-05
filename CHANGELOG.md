@@ -5,6 +5,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.60.0] &ndash; 2026-09-05
+
+The Ko-fi button leaves.
+
+### Removed
+- **The `kofi` block type**, `KofiBlock`, `views/block/kofi.phtml` and their stylesheet in the built-in layout. It is a plugin: **[dynart-dpress-kofi](https://github.com/goph-R/dynart-dpress-kofi)**.
+
+  A button for one payment service is the shape of thing a CMS should not carry — some sites want it, most do not, and the ones that do not were paying for its markup in every layout. It stayed in core until now for one reason: a plugin could not put a stylesheet in a page. 0.59.0 fixed that, and this is the first thing out of the door.
+
+  **Nothing about it changed in the move** except the namespace and the template it fetches. The settings a saved block holds are the same five keys, so a site that installs the plugin finds its button exactly as it left it.
+
+### Migrating
+**If you have a Ko-fi block, install the plugin.** Without it the block renders an HTML comment naming the missing type and logs what *is* registered, which is the fail-soft an unregistered type has always had — the page still renders and nothing is lost, but the button is gone.
+
+```bash
+git clone https://github.com/goph-R/dynart-dpress-kofi.git plugins/kofi
+vendor/bin/dpress plugin:enable -name kofi
+```
+
+It brings no tables, so there is no `dpress upgrade` to run. **A theme that styled the button** should keep only the properties the plugin does not set — it ships shape, a theme ships voice — because its stylesheet lands in the head *after* the theme's and wins on anything both of them say.
+
+### Notes
+This is what the plugin system was for, and it is also the test of it: if a feature can leave core without being rewritten, the extension points are the real ones. This one could, because it was already a block type, a template and a stylesheet — three registrations and no special cases anywhere in the CMS.
+
+---
+
 ## [0.59.0] &ndash; 2026-09-05
 
 A plugin can reach a visitor.

@@ -16,8 +16,12 @@ use Dynart\Dpress\Entity\Block;
  *     $blocks->add('kofi', [
  *         'title'  => 'Ko-fi button',
  *         'render' => [KofiBlock::class, 'render'],
- *         'fields' => ['handle' => ['type' => 'text', 'label' => 'Ko-fi name']],
+ *         'fields' => ['page' => ['type' => 'text', 'label' => 'Page name']],
  *     ]);
+ *
+ * That one is not made up and is not here: the Ko-fi button is a plugin, and this is the call
+ * it makes. A block type is a registration and never a migration, which is what lets a folder
+ * dropped into `plugins/` bring a new kind of block and take it away again.
  *
  * **`fields` is what makes a type more than markup.** It is a form field list, merged into the
  * block editor, so a type describes its own settings and no template ever branches on `type` -

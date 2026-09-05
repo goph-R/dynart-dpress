@@ -7,7 +7,7 @@ namespace Dynart\Dpress;
  */
 class Dpress {
 
-    const VERSION = '0.59.0';
+    const VERSION = '0.60.0';
 
     /** The file that marks the root of a dpress installation */
     const CONFIG_FILE_NAME = 'dpress.ini';

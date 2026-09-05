@@ -86,23 +86,6 @@
         .tag-cloud { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px; }
         /* five buckets, and the block decides which one a tag is in - what "used a lot" looks
            like is the stylesheet's business, which is why no font size is written into the HTML */
-        /* The Ko-fi button. Its colour is an inline style, because it belongs to the one block
-           and a class cannot carry a value somebody typed - everything that is the same on every
-           one of them is here. */
-        .kofi-description { margin: 0 0 10px; }
-        /* markdown, so it arrives with paragraphs of its own - they must not add a gap at
-           either end of the box that is already spacing it */
-        .kofi-description > :first-child { margin-top: 0; }
-        .kofi-description > :last-child { margin-bottom: 0; }
-        .kofi-button {
-            display: inline-flex; align-items: center; gap: 8px;
-            padding: 9px 16px; border-radius: 999px; text-decoration: none;
-            font-weight: 600; line-height: 1;
-        }
-        .kofi-button:visited { color: inherit; }
-        .kofi-button:hover { filter: brightness(1.08); }
-        .kofi-cup { width: 20px; height: auto; display: block; }
-
         .tag-cloud .tag-1 { font-size: 12px; }
         .tag-cloud .tag-2 { font-size: 13px; }
         .tag-cloud .tag-3 { font-size: 14px; }

@@ -29,32 +29,12 @@ rendered*, and putting it back is one select.
 | Tag cloud | The tags in use, sized by how much they are used. `limit` keeps the most used ones. |
 | Category list | The categories, nested the way they are nested. |
 | Markdown | Whatever you write. |
-| Ko-fi button | A link to a Ko-fi page, with their cup on it. |
 
-### Ko-fi
-
-Five boxes: the **page name** - the bit after `ko-fi.com` in the address, and the whole address
-is accepted too - the **button text**, the **button colour**, the **button text
-colour**, and an optional **description** above it, which is markdown - the same toolbar and the same
-`media#14` and `post#3` references as anywhere else, rendered when the block is saved.
-
-It is a link and an image, and that is the whole of it: no iframe, no script, and nothing
-loaded at all on a page that does not have the block. Ko-fi's own widget is an iframe with a
-script in it. The one third-party request left is the cup, an image on their CDN.
-
-The colour is validated as six hex digits rather than escaped, because it goes into a `style`
-attribute - what has to be impossible is a settings box naming a *declaration*. Anything
-unreadable falls back to Ko-fi's own blue, so a mistyped colour looks like Ko-fi rather than
-looking broken. **Leave the text colour empty and it turns black or white by itself**, whichever
-can be read on the background: a pale brand colour would otherwise get white text nobody can
-read, and nothing would tell the site owner that is what happened. Fill it in and that wins -
-automatic is not always right, because a brand has two colours rather than one. A text colour
-that is not one falls back to the automatic choice rather than to nothing, because a button
-with no text colour at all is a button nobody can read.
-
-The page name is validated the same way and for the same reason - it goes into an `href`.
-A name that is not one renders **nothing**, rather than a button pointing at `ko-fi.com` and
-asking the reader which of several million pages was meant.
+**The Ko-fi button used to be a fourth**, and is a plugin now:
+[dynart-dpress-kofi](https://github.com/goph-R/dynart-dpress-kofi). It left the day the plugin
+system could reach a visitor's page, because a button for one payment service is the shape of
+thing a CMS should not carry - some sites want it, most do not, and the ones that do not were
+paying for its stylesheet in every layout. Nothing about it changed in the move.
 
 ### Markdown
 
@@ -91,10 +71,13 @@ A block type is a registration, exactly like a shortcode or a field type:
 $blocks->add('kofi', [
     'title'  => 'Ko-fi button',
     'render' => [KofiBlock::class, 'render'],       // fn(Block, array $settings): string
-    'fields' => ['handle' => ['type' => 'text', 'label' => 'Ko-fi name']],
+    'fields' => ['page' => ['type' => 'text', 'label' => 'Page name']],
     'prepare' => [KofiBlock::class, 'prepare'],     // optional, runs at save
 ]);
 ```
+
+That is not an invented example - it is the call the Ko-fi plugin makes, and a plugin makes it
+by declaring `blocks()` rather than by calling `add()` itself.
 
 - **`fields`** is a form field list, merged into the block editor. That is what keeps the editor
   from being a template that branches on `type` — the mistake `FormWidgets` exists to have taken

@@ -8,8 +8,9 @@ use Dynart\Dpress\Entity\Block;
 /**
  * Whatever somebody wants to write, beside the content
  *
- * A Ko-fi button was the case this was asked for, and there is a block of its own for that now -
- * but the example is still the one worth reading, because a picture inside a link is:
+ * A Ko-fi button was the case this was asked for. It got a block of its own, and that block is
+ * a **plugin** now - which is the shape this one is the fallback for: a picture inside a link,
+ * written by anybody, needing nothing installed:
  *
  *     [![Sponsor me](media#14)](https://example.com/sponsor)
  *
