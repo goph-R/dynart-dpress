@@ -1,8 +1,11 @@
 # Comments, through Disqus
 
-**Status: core built, plugin planned.** §3 landed in dpress 0.62.0; the plugin itself is not
-written yet. It is written down so the decisions are made once,
-in the open, rather than halfway through an afternoon.
+**Status: built.** §3 landed in dpress 0.62.0 and the plugin is
+[dynart-dpress-disqus](https://github.com/goph-R/dynart-dpress-disqus) 1.0.0. What is *not*
+built is §8, the counts - see the plugin README for why.
+
+What follows is what it was all decided from, written down before anything was built so the
+decisions were made once, in the open, rather than halfway through an afternoon. It held up.
 
 The goal is narrow and worth stating plainly: **it is the last thing missing before a WordPress
 blog with comments can move here.** Not a comment system — a way to keep the comments that already
