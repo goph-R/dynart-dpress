@@ -290,6 +290,55 @@ less. No options table to load, no block parser, no theme customiser, and the ma
 once at save time rather than on every view. If a measurement ever shows otherwise, the
 measurement is right and this document is wrong.
 
+### The first production measurement
+
+`gopherlab.net` moved from WordPress to dpress on 2026-09-05, and the WordPress site was kept
+running, unchanged, on `wp.gopherlab.net` on the same machine. That makes the comparison this
+section asks for available for real, on every count except the two admitted below.
+
+**The machine.** A shared VPS: Debian 13, Apache 2.4.68, PHP 8.4 through FPM, MariaDB 11,
+`opcache.memory_consumption=128`, `max_accelerated_files=20000`, `validate_timestamps=1`. Around
+thirty other domains live on it, so both sides pay the same contention, and both run in the same
+FPM pool as each other.
+
+**The method.** `curl -o /dev/null -w '%{time_starttransfer}'`, nine requests, median, from a
+workstation over the public internet. Both hostnames resolve to the same address, so the network
+cost is identical on both sides and cancels.
+
+| | median TTFB |
+|---|---|
+| `gopherlab.net/` — dpress | **75 ms** |
+| `gopherlab.net/<post>` — dpress | **74 ms** |
+| `wp.gopherlab.net/` — WordPress | 627 ms |
+| `wp.gopherlab.net/<post>` — WordPress | 600 ms |
+| `gopherlab.net/favicon.png` — a static file, no PHP | 32 ms |
+
+That last row is the floor: the network round trip plus Apache handing over a file. It is the
+number to subtract, because neither CMS is responsible for it. What is left is server time:
+
+**~43 ms against ~568 ms — about 13×.**
+
+Left in, it reads as 8×. Quote that one if you would rather understate it.
+
+Full page load in a browser's network tab, everything included, was ~170 ms against 800-900 ms
+on the same two pages. That number moves with the theme's assets and the reader's connection, so
+it belongs here as an observation and not as the result.
+
+**Where this breaks the rules above.** Two of them, and worth saying plainly:
+
+- **Neither side is stock.** dpress is serving a custom theme and three plugins (Ko-fi,
+  Font Awesome, Disqus). WordPress is running the theme and plugins the blog actually had. So
+  this is not "dpress against WordPress" — it is *the site I had against the site I have*, which
+  is a narrower claim and the only one a migration can honestly support.
+- **No query counts.** The rule above says to print them next to the milliseconds and this entry
+  does not. Getting them means `log.level = debug` on a production site, which writes every
+  statement and its bound parameters to a file; worth doing deliberately and briefly, with
+  section 2's counter, and not worth leaving on.
+
+What it does support: **43 ms of server time, on a contended shared VPS, with three plugins
+loaded and markdown rendered at save time.** The plugin figures in the next section were measured
+in a lab; this is the same machinery on a real site, and it did not fall over on contact with one.
+
 ### The plugin system, measured
 
 This document used to say "no plugin API to boot" in that list. **That stopped being true in
