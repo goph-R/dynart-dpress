@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.65.1] &ndash; 2026-09-06
+
+### Fixed
+- **A long line of code wrapped instead of scrolling.** EnlighterJS defaults `textOverflow` to `break`, which had never been examined - and code is the one kind of text where a wrap changes what it says: the indent stops marking a nesting level, and a shell command comes apart mid-flag. On a phone almost every line wrapped, so a block was a paragraph of fragments.
+
+  `scroll` is the library's **own supported mode**, not a stylesheet fighting it: the option adds `enlighter-overflow-scroll`, and every EnlighterJS theme already answers that class with `overflow-x: auto` and `white-space: pre !important`. One word in the init options.
+
+- **A sideways swipe inside a code block could navigate back.** A block that scrolls is a block a thumb swipes in, and once the code runs out the swipe chains to the page - which under Chrome's gesture navigation and on iOS is the back gesture. `overscroll-behavior-x: contain`, added to `CodeAssets::STYLE` beside the padding correction it already carries. Reading a wide line should not be able to leave the article.
+
+  `PADDING` is now `STYLE`, since it carries two rules.
+
+---
+
 ## [0.65.0] &ndash; 2026-09-06
 
 A sitemap, and the `robots.txt` that points at it.

@@ -57,7 +57,9 @@ class CodeAssets {
     const NONE = 'none';
 
     /**
-     * Room inside the block, which every theme leaves out
+     * The two rules the highlighter's own stylesheets leave out
+     *
+     * Room inside the block first.
      *
      * `.enlighter-default` is the element the theme paints its background on, and it sets
      * `padding: 0` - so the first line of code sits against the top edge of the colour and the
@@ -70,8 +72,14 @@ class CodeAssets {
      * is needed - there is one copy, and it arrives with the thing it corrects.
      *
      * The vendored file stays unmodified, which is what keeps the MPL obligation to a notice.
+     *
+     * `overscroll-behavior-x` is the other one, and it is about the phone: a block that scrolls
+     * sideways is a block a thumb swipes in, and without this the swipe chains to the page once
+     * the code runs out - which under Chrome's gesture navigation and on iOS is the *back*
+     * gesture. Reading a wide line should not be able to leave the article.
      */
-    const PADDING = '<style>.enlighter-default{padding:12px 0}</style>';
+    const STYLE = '<style>.enlighter-default{padding:12px 0}'
+        .'.enlighter-default.enlighter-overflow-scroll{overscroll-behavior-x:contain}</style>';
 
     public function __construct(
         protected RouterInterface $router,
@@ -122,14 +130,18 @@ class CodeAssets {
             return '';
         }
         return '<link rel="stylesheet" href="'.htmlspecialchars($this->url('enlighterjs.'.$theme.'.min.css')).'">'
-            ."\n".self::PADDING
+            ."\n".self::STYLE
             ."\n".'<script src="'.htmlspecialchars($this->url('enlighterjs.min.js')).'" defer></script>'
             ."\n".'<script defer>document.addEventListener("DOMContentLoaded",function(){'
             // `init(blocks, inline, options)` - the second selector is for **inline** snippets and
             // has to match nothing. Given `code` it rebuilds every backtick span in somebody's
             // prose as a code sample, which is not what writing one asks for.
             .'EnlighterJS.init("pre['.self::MARKER.']","code.enlighter-inline",'
-            .'{indent:4,theme:"'.htmlspecialchars($theme).'"});'
+            // `textOverflow` defaults to `break`, which wraps a long line - and code is the one
+            // kind of text where a wrap changes what it says: the indent stops meaning a nesting
+            // level, and a shell command comes apart mid-flag. Everywhere else code is read it
+            // scrolls. Narrow screens are where it matters and where the default is worst.
+            .'{indent:4,textOverflow:"scroll",theme:"'.htmlspecialchars($theme).'"});'
             .'});</script>';
     }
 
