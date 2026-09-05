@@ -108,6 +108,7 @@ use Dynart\Dpress\Theme\ThemeService;
 use Dynart\Dpress\Theme\PageAssets;
 use Dynart\Dpress\Theme\ThemeAssets;
 use Dynart\Dpress\Content\Dates;
+use Dynart\Dpress\Content\Feed;
 use Dynart\Dpress\Content\PageContext;
 use Dynart\Dpress\Service\RoleService;
 use Dynart\Dpress\Service\SchemaService;
@@ -233,6 +234,7 @@ class DpressServices {
         Micro::add(ThemeAssets::class);
         Micro::add(PageAssets::class);
         Micro::add(Dates::class);
+        Micro::add(Feed::class);
         Micro::add(PageContext::class);
         Micro::add(PluginService::class);
         Micro::add(MenuService::class);
@@ -335,6 +337,7 @@ class DpressServices {
         Setting::REGISTRATION_OPEN => 'bool',
         Setting::AUTOLINK => 'bool',
         Setting::POSTS_PER_PAGE => 'int',
+        Setting::FEED_ITEMS => 'int',
         Setting::POST_PATH => 'string',
         Setting::FEATURED_TAG => 'string',
         Setting::DATE_FORMAT => 'string',
@@ -398,6 +401,10 @@ class DpressServices {
      */
     public static function registerPageAssets(PageAssets $assets): void {
         $assets->add('code', [CodeAssets::class, 'tagsFor'], CodeAssets::MARKER);
+        // No needle: every page, in every theme. A `<link rel="alternate">` a theme has to
+        // remember is a `<link rel="alternate">` a theme forgets, and a feed nothing points at
+        // is a feed a reader cannot subscribe to without being told the address.
+        $assets->add('feed', [Feed::class, 'headLink'], '</head>');
     }
 
     public static function registerShortcodes(Shortcodes $shortcodes): void {

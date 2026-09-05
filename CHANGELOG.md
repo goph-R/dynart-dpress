@@ -5,6 +5,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.64.0] &ndash; 2026-09-05
+
+The site has an RSS feed, which it has never had.
+
+### Added
+- **`/feed`.** A blog that moves and stops publishing a feed does not hear about it: nobody writes in to say their reader went quiet, they simply stop reading. WordPress served `/feed/` from the day it was installed, so every site migrating to dpress arrives with subscribers pointed at an address that answered 404.
+
+  RSS 2.0, because that is what those subscriptions already understand. `<description>` carries the lead and `<content:encoded>` the whole post, so a reader shows either without the site having an opinion - deliberately **not** a setting, since "summary or full text" is a preference that earns a support question from every reader that resolves it differently.
+
+  The HTML is the same `lead_html` and `body_html` the page renders, already absolute because `content:rerender` writes URLs against `app.base_url`. A feed item is the post, not a re-render of it, and there is no second markdown pipeline to keep in step with the first.
+
+- **`feed_items`**, on the settings screen. How many posts go out, 20 by default and clamped to 100. Separate from `posts_per_page` although both are "how many posts": a page is paginated and a feed is not, so ten on the front page is a reader clicking for the rest, while ten in the feed is the eleventh post never reaching somebody who was away for a fortnight.
+
+- **`Dates::rss()`.** RFC 2822, and pointedly *not* through the site timezone: `pubDate` carries its own offset and the reader converts it. Printing a Budapest wall clock with `+0000` stapled on is the one way to get this wrong, and it is wrong silently - the date merely reads a few hours out in somebody else's reader.
+
+- **The `<link rel="alternate">` is in every page of every theme**, through `PageAssets` with `</head>` as its needle. A theme that has to remember this is a theme that forgets it, and a feed nothing points at cannot be subscribed to without being told the address. The needle is not a trick: it is exactly the question being asked, and it keeps a fragment render from building the service to find out it is not a page.
+
+### Notes
+**A trailing slash is somebody else's job.** WordPress wrote `/feed/`, and the app skeleton's `.htaccess` now redirects any trailing slash before PHP starts - one rule for every URL on the site rather than an alias route for this one. See `dynart-dpress-app`.
+
+**The CDATA terminator is the thing that breaks a hand-written feed.** A post containing `]]>` - which a blog about file formats will write sooner or later - ends the section early, and the document stops being XML from there down, so a reader drops all of it rather than that one item. Split across two sections, which leaves the bytes a reader sees unchanged. There is a test that fails without it.
+
+---
+
 ## [0.63.0] &ndash; 2026-09-05
 
 An account can be deleted from the CLI, and deleting an author cannot take their work with it.

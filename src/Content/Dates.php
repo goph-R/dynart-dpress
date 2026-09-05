@@ -80,6 +80,20 @@ class Dates {
     }
 
     /**
+     * The same moment as RFC 2822, which is what RSS reads
+     *
+     * A separate method rather than `format($stored, DateTimeInterface::RSS)` because the site's
+     * timezone must **not** apply here: `pubDate` carries its own offset and a reader converts it
+     * for whoever is reading. Printing a local wall-clock time with a UTC offset stapled on is the
+     * one way to get this wrong, and it is wrong silently - the date merely reads a few hours out
+     * in somebody else's reader.
+     */
+    public function rss(?string $stored): string {
+        $moment = $this->moment($stored);
+        return $moment === null ? '' : $moment->format(\DateTimeInterface::RSS);
+    }
+
+    /**
      * The whole element, since the two halves are never wanted apart
      */
     public function tag(?string $stored, string $format = '', string $class = 'date'): string {

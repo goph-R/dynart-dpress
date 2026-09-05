@@ -62,10 +62,14 @@ setting says so, `ContentService::path()` answering with the same shape, and the
 
 - **Which shape**: `/post/<slug>` (today) or `/<slug>` (WordPress's, and the blog's). Only the
   second preserves the existing URLs.
-- **Trailing slash**: accept both and 301 to one, or accept both and treat them as the same page.
-  **Still open.** Both answer today, for posts and pages alike, which is two URLs for one thing -
-  and the blog that is moving here wrote its links *with* the slash, so this is no longer
-  hypothetical.
+- **Trailing slash**: **decided, 0.64.0** - one canonical URL without the slash, and a 301 to it.
+  It lives in the app skeleton's `.htaccess` rather than in the router, so the redirect happens
+  before PHP starts and costs no boot. What settled it was that the two shapes were already
+  disagreeing: `/category/x/` was a 404, because `?` matches exactly one segment and the empty
+  one after the slash makes three, while `/a-post/` answered **200** off the `/*` catch-all -
+  the same page at two addresses with nothing naming the real one, which is the worse of the
+  two because a 404 at least tells somebody. An nginx deployment gets nothing from this and
+  would want the same rule in its own config, or a redirect in the middleware chain.
 - **Old URLs that are not just this**: date-based permalinks, `?p=123`, an old feed address. If
   the blog only ever used post-name permalinks, the shape above covers everything and no redirect
   table is needed. Worth checking before assuming.

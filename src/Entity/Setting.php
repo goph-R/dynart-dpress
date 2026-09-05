@@ -79,6 +79,16 @@ class Setting extends Entity {
     const POSTS_PER_PAGE = 'posts_per_page';
 
     /**
+     * How many posts the RSS feed carries
+     *
+     * Separate from `posts_per_page` although both are "how many posts": a page is paginated and
+     * a feed is not, so the front page showing ten is a reader seeing the rest by clicking, while
+     * a feed showing ten is the eleventh post never reaching anybody who was away for a fortnight.
+     * `Feed` clamps it, because the cost of a large number is paid on every fetch forever.
+     */
+    const FEED_ITEMS = 'feed_items';
+
+    /**
      * The tag that puts a post at the top of the front page
      *
      * **A tag rather than a column**, because an author already knows how to tag a post and

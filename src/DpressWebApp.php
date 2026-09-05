@@ -30,6 +30,7 @@ use Dynart\Dpress\Controller\Admin\TaxonomyAdminController;
 use Dynart\Dpress\Controller\Admin\UserAdminController;
 use Dynart\Dpress\Controller\AuthController;
 use Dynart\Dpress\Controller\ContentController;
+use Dynart\Dpress\Controller\FeedController;
 use Dynart\Dpress\Controller\HomeController;
 use Dynart\Dpress\Controller\MediaController;
 use Dynart\Dpress\Controller\PageController;
@@ -66,6 +67,7 @@ class DpressWebApp extends WebApp {
         AuthController::class,
         ProfileController::class,
         ContentController::class,
+        FeedController::class,
         MediaController::class,
         AssetController::class,
         DashboardController::class,

@@ -291,6 +291,8 @@ class AdminForms {
                                     'text' => 'Turn http:// and https:// in the text into links',
                                     'description' => 'Never inside code. Applied when a post is rendered, so run `dpress content:rerender` after changing it to bring the posts that are already saved into line.'],
             'posts_per_page'    => ['type' => 'text', 'label' => 'Posts per page', 'required' => false],
+            'feed_items'        => ['type' => 'text', 'label' => 'Posts in the feed', 'required' => false,
+                                    'description' => 'How many posts `/feed` carries. A feed is not paginated, so this is also how far back somebody who was away can still catch up. 20 by default, 100 at most.'],
             'post_path'         => ['type' => 'select', 'label' => 'Post addresses', 'required' => false,
                                     'options' => $context['post_paths'] ?? [],
                                     'description' => 'Where a post lives. The other shape keeps answering either way, with a redirect, so changing this breaks no link anybody has written down. Run `dpress content:rerender` afterwards: a link written inside a post was resolved when it was saved, so it holds the old shape until it is rendered again.'],
