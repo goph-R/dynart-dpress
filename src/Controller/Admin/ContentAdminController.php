@@ -42,7 +42,7 @@ class ContentAdminController extends AbstractAdminController {
     /** How many previews a session remembers - enough for a few tabs, not a place to grow */
     const PREVIEW_KEEP = 3;
 
-    const SORTABLE = ['id', 'title', 'slug', 'status', 'weight', 'published_at', 'created_at', 'updated_at'];
+    const SORTABLE = ['id', 'title', 'status', 'weight', 'published_at', 'created_at', 'updated_at'];
 
     public function __construct(
         ViewInterface $view,
@@ -148,7 +148,7 @@ class ContentAdminController extends AbstractAdminController {
         return [
             'id'           => (int)$content['id'],
             'title'        => $content['title'],
-            'slug'         => $content['slug'],
+
             'status'       => $content['status'],
             'weight'       => (int)$content['weight'],
             'published_at' => $content['published_at'],
@@ -186,8 +186,10 @@ class ContentAdminController extends AbstractAdminController {
                 // the id, because it is what a reference in somebody's markdown is made of:
                 // `post#42` is written by hand as often as it is inserted by a button
                 'id'     => ['label' => '#', 'align' => 'right', 'width' => '1%'],
+                // No slug column. It is in the editor, where it is edited, and on a list it was a
+                // second copy of the title in a different shape - taking the width the dates and
+                // the weight now want.
                 'title'  => ['label' => 'Title', 'view' => 'link', 'options' => ['hrefProperty' => 'edit_url']],
-                'slug'   => ['label' => 'Slug'],
                 'status' => ['label' => 'Status', 'view' => 'badge', 'options' => [
                     'labels' => [Content::STATUS_DRAFT => 'Draft', Content::STATUS_PUBLISHED => 'Published'],
                 ]],
@@ -237,9 +239,14 @@ class ContentAdminController extends AbstractAdminController {
         if ($form->process() && $this->publishedAtIsReadable($form)) {
             // read before the save, which is what turns an auto-draft into a draft
             $wasAutoDraft = $content->isAutoDraft();
-            $form->handle(function ($form) use ($content) {
+            $form->handle(function ($form) use ($content, $type) {
                 $values = $form->values();
-                $this->content->update($content, $this->contentData($values));
+                // one `update()` and so one revision: a second save for the author alone would
+                // put two rows in the history for one press of the button
+                $this->content->update(
+                    $content,
+                    $this->contentData($values) + $this->authorData($type, $values)
+                );
                 $this->applyTaxonomy($content, $values);
                 return $content;
             });
@@ -593,6 +600,9 @@ class ContentAdminController extends AbstractAdminController {
         $context = [
             'is_page' => $type === Content::TYPE_PAGE,
             'content' => $content,
+            // empty for anybody who may not reassign, and the form offers no box for it -
+            // `AdminForms::content()` asks this and nothing else
+            'authors' => $this->canAssignAuthor($type) ? $this->authorOptions() : [],
             // a select that cannot do anything is worse than no select: the page says "Saved."
             // and nothing moved, which is exactly the bug this whole method exists to fix
             'can_publish' => $this->can(Permissions::forContent($type, 'publish')),
@@ -615,6 +625,59 @@ class ContentAdminController extends AbstractAdminController {
             }
         }
         return $context;
+    }
+
+    /**
+     * May this person put somebody else's name on this?
+     *
+     * Its own permission rather than `update`, because it is a different act: writing a post
+     * and deciding who wrote it are not the same authority. The stock editor role does not
+     * hold it and the admin role holds every permission implicitly, so out of the box it is
+     * an administrator's.
+     */
+    protected function canAssignAuthor(string $type): bool {
+        return $this->can(Permissions::forContent($type, 'assign_author'));
+    }
+
+    /**
+     * Everybody who could be named as the author, by id
+     *
+     * Every account and not only the active ones: somebody who has left still wrote what they
+     * wrote, and a name that vanishes from the select the day an account is blocked would make
+     * the next save quietly reassign the post to whoever is at the top of the list.
+     *
+     * A select, like the parent page one, which is the same bet: a site with thousands of
+     * accounts wants a search box here instead, and this CMS does not have one anywhere yet.
+     *
+     * @return array [id => name]
+     */
+    protected function authorOptions(): array {
+        $options = [];
+        foreach ($this->users->findAll(['order_by' => 'name', 'order_dir' => 'asc']) as $user) {
+            $options[(int)$user['id']] = $user['name'];
+        }
+        return $options;
+    }
+
+    /**
+     * The chosen author as an update, if this person may choose one and chose a real one
+     *
+     * Checked against the accounts that exist rather than trusted, because `author_id` is a
+     * foreign key: an id that is not a user is an exception on save, from the database, with
+     * the editor gone and nothing on the screen to say what happened.
+     *
+     * **Separate from `contentData()`, and merged in at the call site.** That method maps
+     * boxes to columns and asks nothing about who is asking - which is what lets the preview
+     * route reuse it on a controller with no request behind it. A permission check inside it
+     * turned every preview into a fatal, and the preview is the one screen where a fatal is a
+     * blank page in a new tab with the editor still open behind it.
+     */
+    protected function authorData(string $type, array $values): array {
+        if (!$this->canAssignAuthor($type) || !array_key_exists('author_id', $values)) {
+            return [];
+        }
+        $id = (int)$values['author_id'];
+        return $id > 0 && $this->users->findById($id) !== null ? ['author_id' => $id] : [];
     }
 
     /**

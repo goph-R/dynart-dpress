@@ -5,6 +5,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.58.0] &ndash; 2026-09-05
+
+Whose name goes on it.
+
+### Added
+- **An author select in the content editor.** Migrating a blog means posts that somebody else wrote, and until now the author was whoever pressed New.
+- **`post.assign_author` and `page.assign_author`** — its own permission rather than part of `update`, because writing a post and deciding who wrote it are not the same authority. **Not an editor's**: the stock role does not hold it and the admin role holds every permission implicitly, so out of the box reassigning is an administrator's. Like the status select, the box is **offered to nobody else at all** — a control that is ignored on save is worse than no control, because the screen says "Saved." and the name did not move.
+
+### Changed
+- **The content list has no Slug column**, for posts or for pages. The slug is in the editor, where it is edited; on a list it was a second copy of the title in a different shape, taking the width the dates and the new weight want.
+
+### Notes
+The chosen id is checked against the accounts that exist rather than trusted, because `author_id` is a foreign key — an id that is not a user would be an exception from the database on save, with the editor gone and nothing on the screen to say what happened. An unknown id is dropped and the post keeps the author it had.
+
+It is merged into the same `update()` as the rest of the boxes rather than applied after it, so one press of Save is one revision. And `authorData()` is deliberately **not** part of `contentData()`: that method maps boxes to columns and asks nothing about who is asking, which is what lets the preview route reuse it on a controller with no request behind it.
+
+Every account is offered and not only the active ones — somebody who has left still wrote what they wrote, and a name vanishing from the select the day an account is blocked would make the next save quietly reassign the post to whoever is at the top of the list.
+
+---
+
 ## [0.57.1] &ndash; 2026-09-05
 
 ### Fixed

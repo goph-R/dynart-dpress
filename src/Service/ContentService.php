@@ -344,6 +344,12 @@ class ContentService {
         if (array_key_exists('weight', $data)) {
             $content->weight = (int)$data['weight'];
         }
+        // Whose name goes on it. Checked by the caller against the people it actually
+        // offered, because this is a foreign key: an id that is not a user is a database
+        // error on save rather than a message on a field.
+        if (array_key_exists('author_id', $data)) {
+            $content->author_id = (int)$data['author_id'];
+        }
         if (array_key_exists('parent_id', $data)) {
             $this->assertNoCycle($content);
         }

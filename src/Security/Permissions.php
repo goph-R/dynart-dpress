@@ -37,12 +37,14 @@ class Permissions {
     const POST_UPDATE = 'post.update';
     const POST_DELETE = 'post.delete';
     const POST_PUBLISH = 'post.publish';
+    const POST_ASSIGN_AUTHOR = 'post.assign_author';
 
     const PAGE_VIEW = 'page.view';
     const PAGE_CREATE = 'page.create';
     const PAGE_UPDATE = 'page.update';
     const PAGE_DELETE = 'page.delete';
     const PAGE_PUBLISH = 'page.publish';
+    const PAGE_ASSIGN_AUTHOR = 'page.assign_author';
 
     /** Reading the revision history of a piece of content */
     const CONTENT_HISTORY = 'content.history';
@@ -107,11 +109,13 @@ class Permissions {
         self::POST_UPDATE    => 'post',
         self::POST_DELETE    => 'post',
         self::POST_PUBLISH   => 'post',
+        self::POST_ASSIGN_AUTHOR => 'post',
         self::PAGE_VIEW      => 'page',
         self::PAGE_CREATE    => 'page',
         self::PAGE_UPDATE    => 'page',
         self::PAGE_DELETE    => 'page',
         self::PAGE_PUBLISH   => 'page',
+        self::PAGE_ASSIGN_AUTHOR => 'page',
         self::CONTENT_HISTORY => 'content',
         self::CATEGORY_VIEW   => 'category',
         self::CATEGORY_CREATE => 'category',

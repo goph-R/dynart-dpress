@@ -107,6 +107,17 @@ class AdminForms {
             ], false);
         }
 
+        // Behind its own permission and offered to nobody else, on the same reasoning as the
+        // status select above it: a box that is ignored on save is worse than no box, because
+        // the screen says "Saved." and the name did not move. An editor writes under their own
+        // name; handing a post to somebody else is an administrator's act.
+        if (!empty($context['authors'])) {
+            $form->addFields([
+                'author_id' => ['type' => 'select', 'label' => 'Author', 'required' => false,
+                                'options' => $context['authors']],
+            ], false);
+        }
+
         $form->addFields([
             'featured_media_id' => ['type' => 'media', 'label' => 'Featured image', 'required' => false,
                                     'preview' => (string)($context['featured_preview'] ?? '')],
@@ -146,6 +157,7 @@ class AdminForms {
                 'published_at' => $context['published_input'] ?? '',
                 'featured_media_id' => (string)($content->featured_media_id ?? ''),
                 'weight'   => (string)$content->weight,
+                'author_id' => (string)$content->author_id,
                 'parent_id' => (string)($content->parent_id ?? ''),
                 'tags'      => $context['tags'] ?? '',
                 'categories' => $context['selected_categories'] ?? [],
