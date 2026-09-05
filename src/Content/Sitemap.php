@@ -196,7 +196,7 @@ class Sitemap {
      */
     protected function tags(): array {
         $urls = [];
-        foreach ($this->taxonomy->tagCloud() as $row) {
+        foreach ($this->taxonomy->tagCloud(['exclude_slug' => $this->taxonomy->featuredTagSlug()]) as $row) {
             $urls[] = [
                 'loc' => $this->router->url($this->taxonomy->tagPathBySlug((string)($row['slug'] ?? ''))),
                 'lastmod' => '',

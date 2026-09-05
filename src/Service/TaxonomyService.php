@@ -12,6 +12,7 @@ use Dynart\Dpress\DpressException;
 use Dynart\Dpress\Entity\Category;
 use Dynart\Dpress\Entity\ContentCategory;
 use Dynart\Dpress\Entity\ContentTag;
+use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Entity\Tag;
 use Dynart\Dpress\Query\QueryFactory;
 
@@ -42,7 +43,20 @@ class TaxonomyService {
         protected EventServiceInterface $events,
         protected Slugger $slugger,
         protected TreeOrder $tree,
+        protected SettingService $settings,
     ) {}
+
+    /**
+     * The tag that pins a post to the front page, or '' when a site has turned that off
+     *
+     * Here rather than read from the setting at each call site, because two places now care what
+     * it is - the front page, which looks it up, and everything visitor-facing, which leaves it
+     * out - and a trim that is done in one of them and forgotten in the other is a tag named
+     * ` featured` that half the site can see.
+     */
+    public function featuredTagSlug(): string {
+        return trim((string)$this->settings->get(Setting::FEATURED_TAG, Setting::DEFAULT_FEATURED_TAG));
+    }
 
     // --- Categories ---
 
@@ -178,9 +192,17 @@ class TaxonomyService {
 
     /**
      * Tags with a count of how many published items use them
+     *
+     * **The exclusion is opt-in and not a default.** A visitor-facing cloud should not show the
+     * `featured` tag - it is machinery, not a subject, and nobody browsing wants an archive of
+     * "posts the author pinned". But `taxonomy:list` in the CLI calls this too, and hiding a tag
+     * from the listing somebody would use to *find* it is how it gets lost. So the two public
+     * callers ask, and the operator's one does not.
+     *
+     * @param array $context `exclude_slug` to leave one out
      */
-    public function tagCloud(): array {
-        return $this->queryExecutor->findAll($this->queries->create('tag_cloud'));
+    public function tagCloud(array $context = []): array {
+        return $this->queryExecutor->findAll($this->queries->create('tag_cloud', $context));
     }
 
     public function createTag(string $name, string $slug = ''): Tag {

@@ -5,6 +5,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.66.0] &ndash; 2026-09-06
+
+The featured tag stops being something a visitor meets.
+
+### Changed
+- **`featured` is out of the tag cloud, and out of the weight calculation with it.** It is machinery - how an author pins a post to the front page - and not a subject; nobody browsing wants an archive of *"posts the author pinned"*. In a cloud it is worse than clutter, because the cloud scales between the smallest and the largest total and the featured tag sits on whatever was pinned. On the site this was written for it had **5 posts against a next-highest of 3**, so it set the top of the scale by itself and every real tag was squashed into the bottom buckets. Removed, the same tags spread across weights 1, 3 and 5.
+
+  **Left out of the rows rather than filtered after them**, which is what puts it out of the scaling as well as out of the list.
+
+- **Out of the sitemap too**, for the same reason plus one: a `/tag/featured` archive is the front page's featured strip a second time, and a thin duplicate is not what a sitemap should point a crawler at.
+
+- **`dpress taxonomy:list` still shows it.** The exclusion is **opt-in**, not a default on `tagCloud()`: hiding a tag from the listing somebody would use to find out it exists is how it gets lost, and an operator's view should show what is there. The two visitor-facing callers ask; the CLI does not.
+
+### Added
+- **`TaxonomyService::featuredTagSlug()`**, the one place the setting is read. `HomeController` used to read and trim it itself and now asks - a trim done in one caller and forgotten in the other is a tag named ` featured` that half the site can still see.
+
+  `TaxonomyService` takes `SettingService` for it, and `tagCloud()` now takes a context with `exclude_slug`. The condition is **qualified** (`` `dp_tag`.`slug` ``) for the reason the selected fields already are: the join brings in a `content`, which has a slug of its own, and MariaDB rejects the ambiguous name rather than guessing.
+
+---
+
 ## [0.65.1] &ndash; 2026-09-06
 
 ### Fixed

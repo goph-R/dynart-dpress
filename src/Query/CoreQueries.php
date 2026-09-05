@@ -133,6 +133,15 @@ class CoreQueries {
         $query->addInnerJoin([ContentTag::class, 'ct'], '`ct`.`tag_id` = '.$this->safeTable(Tag::class).'.`id`');
         $query->addInnerJoin([Content::class, 'c'], '`c`.`id` = `ct`.`content_id`');
         $query->addCondition('`c`.`status` = :publishedStatus', [':publishedStatus' => Content::STATUS_PUBLISHED]);
+        // qualified for the reason the fields above are: the join brings in a `content`, which
+        // has a `slug` of its own, and an unqualified one is ambiguous rather than wrong
+        $exclude = trim((string)($context['exclude_slug'] ?? ''));
+        if ($exclude !== '') {
+            $query->addCondition(
+                $this->safeTable(Tag::class).'.`slug` <> :excludeSlug',
+                [':excludeSlug' => $exclude]
+            );
+        }
         $query->addGroupBy($this->safeTable(Tag::class).'.`id`');
         $query->addOrderBy('name');
         return $query;

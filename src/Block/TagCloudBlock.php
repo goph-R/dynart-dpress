@@ -27,7 +27,11 @@ class TagCloudBlock {
     public function __construct(protected TaxonomyService $taxonomy, protected ViewInterface $view) {}
 
     public function render(Block $block, array $settings): string {
-        $tags = $this->taxonomy->tagCloud();
+        // Left out of the rows entirely rather than filtered after, so it is out of the weight
+        // calculation too: `weigh()` scales between the smallest and the largest total, and the
+        // featured tag is on whatever the author pinned - often the highest count on the site,
+        // which would flatten every real tag into the bottom bucket.
+        $tags = $this->taxonomy->tagCloud(['exclude_slug' => $this->taxonomy->featuredTagSlug()]);
         if ($tags === []) {
             return '';
         }

@@ -80,7 +80,7 @@ class HomeController extends AbstractController {
      * @return array[] listing rows, newest first
      */
     protected function featured(): array {
-        $slug = trim((string)$this->settings->get(Setting::FEATURED_TAG, Setting::DEFAULT_FEATURED_TAG));
+        $slug = $this->taxonomy->featuredTagSlug();
         if ($slug === '') {
             return [];
         }
