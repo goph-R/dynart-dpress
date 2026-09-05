@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.57.1] &ndash; 2026-09-05
+
+### Fixed
+- **`Dpress::VERSION` said 0.57.0 while `composer.json` said 0.57.0 and the constant still said 0.56.0.** The constant is what the admin's asset URLs are cached against, so a browser that had been on 0.56.0 would keep last version's list code while the endpoints moved under it. A patch release rather than a moved tag: v0.57.0 is pushed, and a tag that means something different today than it did yesterday is worse than one that was wrong once.
+
+---
+
 ## [0.57.0] &ndash; 2026-09-05
 
 A post can be put where you want it.
