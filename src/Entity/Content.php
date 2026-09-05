@@ -96,6 +96,21 @@ class Content extends Entity {
     #[Column(type: Column::TYPE_DATETIME, index: true)]
     public ?string $published_at = null;
 
+    /**
+     * Where this one goes when a listing is ordered, above the date
+     *
+     * **A tiebreaker and not a sort order.** Every listing asks for `weight desc,
+     * published_at desc`, so a site that never sets one is a site ordered by date, exactly as
+     * before - which is what made it safe to put on every listing at once. The alternative,
+     * a weight that *replaces* the date, means every new post arrives at 0 and lands at the
+     * bottom until somebody remembers to number it.
+     *
+     * Signed, because "push this one down" is as real a wish as pushing one up, and a
+     * negative number says it without renumbering everything else.
+     */
+    #[Column(type: Column::TYPE_INT, notNull: true, default: 0)]
+    public int $weight = 0;
+
     #[Column(type: Column::TYPE_DATETIME, notNull: true)]
     public ?string $created_at = null;
 

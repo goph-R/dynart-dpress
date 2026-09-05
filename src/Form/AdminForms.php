@@ -6,6 +6,7 @@ use Dynart\Dpress\Entity\Content;
 use Dynart\Dpress\Entity\MenuItem;
 use Dynart\Dpress\Entity\User;
 use Dynart\Dpress\Form\Validator\EmailValidator;
+use Dynart\Dpress\Form\Validator\IntegerValidator;
 use Dynart\Dpress\Form\Validator\MatchFieldValidator;
 use Dynart\Dpress\Form\Validator\MinLengthValidator;
 use Dynart\Dpress\Security\PasswordHasher;
@@ -109,7 +110,14 @@ class AdminForms {
         $form->addFields([
             'featured_media_id' => ['type' => 'media', 'label' => 'Featured image', 'required' => false,
                                     'preview' => (string)($context['featured_preview'] ?? '')],
+            // A plain box, because a whole number is a thing people can type. Validated rather
+            // than cast, so `1o` is a message on the field and not a silent 0.
+            'weight' => ['type' => 'text', 'label' => 'Weight', 'required' => false,
+                        'attributes' => ['inputmode' => 'numeric'],
+                        'description' => 'Where this one goes in a listing, above the date.'
+                            .' 0 is normal and orders by date as usual; a higher number floats up, a negative one sinks. Any whole number.'],
         ], false);
+        $form->addValidator('weight', new IntegerValidator());
 
         if ($isPage) {
             $form->addFields([
@@ -137,6 +145,7 @@ class AdminForms {
                 'status'   => $content->status,
                 'published_at' => $context['published_input'] ?? '',
                 'featured_media_id' => (string)($content->featured_media_id ?? ''),
+                'weight'   => (string)$content->weight,
                 'parent_id' => (string)($content->parent_id ?? ''),
                 'tags'      => $context['tags'] ?? '',
                 'categories' => $context['selected_categories'] ?? [],

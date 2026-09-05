@@ -288,6 +288,7 @@ class ContentService {
         $content->markdown = (string)($data['markdown'] ?? '');
         $content->parent_id = $this->nullableId($data['parent_id'] ?? null);
         $content->featured_media_id = $this->nullableId($data['featured_media_id'] ?? null);
+        $content->weight = (int)($data['weight'] ?? 0);
         $content->slug = $this->resolveSlug($data['slug'] ?? '', $content->title);
         $content->created_at = $this->now();
         $content->updated_at = $content->created_at;
@@ -339,6 +340,9 @@ class ContentService {
             if (array_key_exists($field, $data)) {
                 $content->$field = $this->nullableId($data[$field]);
             }
+        }
+        if (array_key_exists('weight', $data)) {
+            $content->weight = (int)$data['weight'];
         }
         if (array_key_exists('parent_id', $data)) {
             $this->assertNoCycle($content);

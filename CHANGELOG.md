@@ -5,6 +5,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.57.0] &ndash; 2026-09-05
+
+A post can be put where you want it.
+
+### Added
+- **`Content::$weight`** — a whole number, and where a post goes in a listing. **A tiebreaker on top of the date, not a sort order of its own**: every listing asks for `weight desc, published_at desc`, so a site that never sets one is ordered by date exactly as before, which is what made it safe to put on every listing at once. A weight that *replaced* the date would mean every new post arriving at 0 and landing at the bottom until somebody remembered to number it.
+- **Signed**, because "push this one down" is as real a wish as pushing one up, and `-1` says it without renumbering everything above.
+- **A box in the editor and a sortable column in the list**, so "what have I ordered by hand" is a click on a column rather than a screen of its own.
+- **`IntegerValidator`** — the box is validated and not cast. `(int)` never fails: `1o` is 1 and `x` is 0, so a mistyped weight would have become "the same as everything else" with the screen reporting that it saved.
+
+### Changed
+- **`CoreQueries::orderContent()`** — one helper behind `content_list`, `content_by_tag` and `content_by_category`, because the *agreement* is the point: a post that floats on the front page and sits still in its category is a bug nobody would think to look for in the query builder they did not change. It also orders the featured strip, which is the whole of "featured, and in this order".
+- **`content_children` orders by `weight desc, title asc`**, so the pages under a page — "In this section", and the tree in the admin — can be arranged rather than alphabetised.
+
+### Notes
+A schema change, so before 1.0 that is `database/reset.sh`. An existing database can take the column instead — the audit mirror needs it too:
+
+```sql
+alter table dp_content add column weight int not null default 0 after published_at;
+alter table dp_content_aud add column weight int not null default 0 after published_at;
+```
+
+---
+
 ## [0.56.0] &ndash; 2026-09-05
 
 ### Fixed

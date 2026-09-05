@@ -8,7 +8,7 @@ start with decisions rather than with guessing. Two of the four are built since.
 | 1 | Where a post lives — the URL | **built in 0.47.0**, as the `post_path` setting |
 | 2 | A recent posts block | planned |
 | 3 | Featured posts, by tag | **built in 0.39.0**, as the listing rather than as a block |
-| 4 | A weight, for ordering posts by hand | planned |
+| 4 | A weight, for ordering posts by hand | **built in 0.57.0** |
 
 ---
 
@@ -129,6 +129,19 @@ and the block version costs a new grammar to express one condition.
 ---
 
 ## 4. A weight, for ordering by hand
+
+> **Built in 0.57.0**, as the tiebreaker recommended below. An `int weight` on `Content`,
+> `weight desc` in front of the date in `contentList`, `contentByTag`, `contentByCategory`
+> and `contentChildren` — through one `orderContent()` helper, so the four cannot drift apart
+> and a post cannot float on the front page while sitting still in its category. A box in the
+> editor and a sortable column in the list. The section below is what it was decided from.
+>
+> Three things the sketch did not mention. The number is **signed**: "push this one down" is
+> as real a wish as pushing one up, and `-1` says it without renumbering everything else.
+> It is **validated rather than cast**, because `(int)` never fails — `1o` would have been 1
+> and `x` would have been 0, with the screen reporting that it saved. And it orders the
+> **children of a page** as well, so "In this section" and the page tree in the admin can be
+> put in an order somebody chose rather than the one the alphabet chose.
 
 Posts have no drag handle, because they are not a tree — so ordering them by hand needs a number
 in the editor rather than a position among siblings. That is the right read: `position` belongs to

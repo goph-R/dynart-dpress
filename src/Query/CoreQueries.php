@@ -161,7 +161,7 @@ class CoreQueries {
         $query->addInnerJoin([ContentCategory::class, 'cc'], '`cc`.`content_id` = '.$this->safeTable(Content::class).'.`id`');
         $query->addCondition('`cc`.`category_id` = :categoryId', [':categoryId' => $context['category_id'] ?? 0]);
         $this->onlyPublished($query);
-        $query->addOrderBy('published_at', 'desc');
+        $this->orderContent($query, $context);
         return $query;
     }
 
@@ -171,8 +171,10 @@ class CoreQueries {
         $query->addCondition('`ct`.`tag_id` = :tagId', [':tagId' => $context['tag_id'] ?? 0]);
         $this->onlyPublished($query);
         // through the same helper as every other listing, so `max` works here too - which is what
-        // a featured strip needs, since it wants the five newest and not the whole tag
-        $this->applyListOptions($query, $context, ['published_at' => 'desc']);
+        // a featured strip needs, since it wants the five newest and not the whole tag - and
+        // so a weight orders the featured strip as well, which is the whole of "featured, and
+        // in this order"
+        $this->orderContent($query, $context);
         return $query;
     }
 
@@ -221,7 +223,7 @@ class CoreQueries {
     public function contentList(array $context): Query {
         $query = new Query(Content::class);
         $this->applyContentFilters($query, $context);
-        $this->applyListOptions($query, $context, ['published_at' => 'desc', 'created_at' => 'desc']);
+        $this->orderContent($query, $context);
         return $query;
     }
 
@@ -244,7 +246,9 @@ class CoreQueries {
         if ($context['published_only'] ?? false) {
             $this->onlyPublished($query);
         }
-        $this->applyListOptions($query, $context, ['title' => 'asc']);
+        // a weight first here too, so "In this section" and the page tree in the admin can be
+        // put in an order somebody chose rather than in the one the alphabet chose
+        $this->applyListOptions($query, $context, ['weight' => 'desc', 'title' => 'asc']);
         return $query;
     }
 
@@ -412,6 +416,23 @@ class CoreQueries {
      *
      * @param array $default In [field => direction] order
      */
+    /**
+     * The order every listing of content puts itself in
+     *
+     * One method rather than the same three words in four queries, because what it is worth
+     * having is the *agreement*: the front page, a category, a tag and the featured strip all
+     * answer "which post comes first" the same way, and a weight set once is not a post that
+     * floats on one page and sits still on another.
+     *
+     * `weight desc` before the date, so a higher number floats up and 0 - which is every post
+     * until somebody says otherwise - leaves the date deciding, exactly as it did before.
+     */
+    protected function orderContent(Query $query, array $context): void {
+        $this->applyListOptions($query, $context, [
+            'weight' => 'desc', 'published_at' => 'desc', 'created_at' => 'desc',
+        ]);
+    }
+
     protected function applyListOptions(Query $query, array $context, array $default = []): void {
         $orderBy = (string)($context['order_by'] ?? '');
         if ($orderBy !== '' && preg_match('/^[a-z0-9_]+$/', $orderBy)) {

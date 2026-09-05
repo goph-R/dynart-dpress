@@ -42,7 +42,7 @@ class ContentAdminController extends AbstractAdminController {
     /** How many previews a session remembers - enough for a few tabs, not a place to grow */
     const PREVIEW_KEEP = 3;
 
-    const SORTABLE = ['id', 'title', 'slug', 'status', 'published_at', 'created_at', 'updated_at'];
+    const SORTABLE = ['id', 'title', 'slug', 'status', 'weight', 'published_at', 'created_at', 'updated_at'];
 
     public function __construct(
         ViewInterface $view,
@@ -150,6 +150,7 @@ class ContentAdminController extends AbstractAdminController {
             'title'        => $content['title'],
             'slug'         => $content['slug'],
             'status'       => $content['status'],
+            'weight'       => (int)$content['weight'],
             'published_at' => $content['published_at'],
             'created_at'   => $content['created_at'],
             'updated_at'   => $content['updated_at'],
@@ -190,6 +191,9 @@ class ContentAdminController extends AbstractAdminController {
                 'status' => ['label' => 'Status', 'view' => 'badge', 'options' => [
                     'labels' => [Content::STATUS_DRAFT => 'Draft', Content::STATUS_PUBLISHED => 'Published'],
                 ]],
+                // sortable like the rest, which is how "show me what I have ordered by hand"
+                // is asked without a screen of its own
+                'weight' => ['label' => 'Weight', 'align' => 'right', 'width' => '1%'],
                 'published_at' => ['label' => 'Published', 'view' => 'dateTime'],
                 'updated_at'   => ['label' => 'Changed', 'view' => 'dateTime'],
             ],
@@ -682,6 +686,11 @@ class ContentAdminController extends AbstractAdminController {
             if (array_key_exists($field, $values)) {
                 $data[$field] = $values[$field] === '' ? null : (int)$values[$field];
             }
+        }
+        // an empty box is 0 and not "leave it alone": the field is on the form, and somebody
+        // who cleared it meant to say "back to normal"
+        if (array_key_exists('weight', $values)) {
+            $data['weight'] = (int)$values['weight'];
         }
         return $data;
     }
