@@ -161,43 +161,21 @@ Both work identically, so the quieter one is what goes on other people's sites.
 It refuses politely: `media#2` naming an image says so, and a file that has been deleted says
 that instead of rendering a player that plays nothing.
 
-## 8. `icon`
+## 8. `icon` &mdash; a plugin
 
-```
-{{ icon('star') }}                        <i class="fa-solid fa-star" aria-hidden="true"></i>
-{{ icon('rust', style='brands') }}        <i class="fa-brands fa-rust" ...>
-{{ icon('star', label='Favourite') }}     <i class="fa-solid fa-star" role="img" aria-label="Favourite">
-```
+`{{ icon('star') }}` was here until 0.61.0 and is
+**[dynart-dpress-fontawesome](https://github.com/goph-R/dynart-dpress-fontawesome)** now, with
+the font files and the stylesheet that draws them.
 
-**The CMS ships no icons.** This writes the classes and nothing else, so whether anything appears
-is a question about the theme's stylesheet - Font Awesome's class names are the vocabulary because
-they are the ones an author looks up. An icon set is a design decision with a licence attached, and
-a CMS bundling one makes that decision for every site that ever uses it.
+It left for the reason it was written the way it was: **the CMS ships no icons**, because an
+icon set is a design decision with a licence attached and a CMS bundling one makes that
+decision for every site that ever uses it. So the shortcode wrote classes and left the drawing
+to whatever stylesheet a theme happened to have - which meant every site copied 380 KB of fonts
+into its own theme by hand, and changing themes took the icons out of every post. A plugin is
+what that arrangement was reaching for.
 
-It exists because **raw HTML in a post is stripped** (`html_input => 'strip'`), so
-`<i class="fa-solid fa-star">` renders as a gap. That strip is what stops a compromised account
-putting a script on every page; the shortcode is the way through it, and it is a lookup table
-rather than a hole - the name is matched against `[a-z0-9-]+` and the style against a list, because
-a post must not be able to name a class somebody else's stylesheet defines.
-
-**Silent unless it is given a label.** An icon beside a word that already says the same thing is
-decoration, and a screen reader announcing "star star" is worse than one that says it once. A
-`label` is the author saying this one carries the meaning on its own.
-
-### 8.1 Installing an icon set in a theme
-
-The theme asset folder is **flat** - the route serves `name.ext` and no directories - so Font
-Awesome needs its `url()`s rewritten from `../webfonts/fa-solid-900.woff2` to the bare file name.
-`woff2` is on the allowlist. Then, in the theme's head:
-
-```php
-<?php if ($theme->exists('fontawesome.css')): ?>
-    <link rel="stylesheet" href="<?= esc_attr($theme->url('fontawesome.css')) ?>">
-<?php endif ?>
-```
-
-`exists()` rather than an unconditional `<link>`, so a theme works with or without one instead of
-asking every site that never installed one for a 404 on every page.
+A shortcode is a registration, so nothing in the CMS knew this one was special and nothing had
+to change to let it go.
 
 ## 9. `br`
 

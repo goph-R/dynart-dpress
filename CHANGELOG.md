@@ -5,6 +5,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.61.0] &ndash; 2026-09-05
+
+The icon shortcode leaves.
+
+### Removed
+- **`{{ icon(...) }}`** and `IconShortcode`. It is a plugin, with the font files and the stylesheet that draws them: **[dynart-dpress-fontawesome](https://github.com/goph-R/dynart-dpress-fontawesome)**.
+
+  It was written the way it was for a good reason — **the CMS ships no icons**, because an icon set is a design decision with a licence attached and a CMS bundling one makes that decision for every site that ever uses it. So the shortcode wrote classes and left the drawing to whatever stylesheet a theme happened to have. Right instinct, wrong shape: every site copied 380 KB of fonts into its own theme by hand, and **changing themes took the icons out of every post**. An icon set is not a theme's asset. It is a thing a site installs.
+
+### Migrating
+**If any post writes `{{ icon(...) }}`, install the plugin** — and install it *before* the next `dpress content:rerender`. Without it the shortcode leaves an HTML comment naming itself and logs what *is* registered, which is the fail-soft an unknown shortcode has always had: the page renders and the document is untouched, but the icon is a gap.
+
+```bash
+git clone https://github.com/goph-R/dynart-dpress-fontawesome.git plugins/fontawesome
+vendor/bin/dpress plugin:enable -name fontawesome
+```
+
+A theme that had Font Awesome copied into its `assets/` can delete it and drop the `<link>` from its head — the plugin puts its own there, on the pages that have an icon on them.
+
+### Notes
+A shortcode is a registration, so nothing in the CMS knew this one was special and nothing had to change to let it go. That is the second feature out of core in two releases and the second one that needed no rewriting — which is the only test of an extension point worth having.
+
+---
+
 ## [0.60.0] &ndash; 2026-09-05
 
 The Ko-fi button leaves.
