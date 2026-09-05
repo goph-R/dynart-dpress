@@ -5,6 +5,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.65.0] &ndash; 2026-09-06
+
+A sitemap, and the `robots.txt` that points at it.
+
+### Added
+- **`/sitemap.xml`.** Every canonical URL on the site: the front page, the published posts and pages, every category, and the tags something published actually carries. A sitemap earns its keep exactly when a site's addresses change - which is the day it moves off something else - and a crawler left to find them by following links takes weeks over a small blog.
+
+  **No `changefreq` and no `priority`.** Google has ignored both for years, and they are the two fields that make a hand-written sitemap look authoritative while saying nothing. What is left, `loc` and `lastmod`, is the part a crawler reads - and `lastmod` only helps if it is true, so it is `updated_at` falling back to `published_at`, never `time()`.
+
+- **`/robots.txt`**, whose only job is to name the sitemap - the one way a crawler finds it without somebody submitting it by hand. Deliberately permissive, and the admin is **not** disallowed: a `Disallow: /admin` is a public file naming the door, it stops nothing that was going to try it, and the screens behind it already answer 401. A site that wants its own drops a real `robots.txt` into `public/` and Apache serves that instead - the front controller only ever sees the request because the file is not there.
+
+- **`TaxonomyService::categoryPathBySlug()` and `tagPathBySlug()`**, beside the two that take an entity, for the same reason `ContentService::postPath()` sits beside `publicPath()`: a listing has rows and not entities, and an archive needs nothing but the slug to be addressed. The prefix stays written once, so a sitemap and a template cannot disagree about it.
+
+### Notes
+**A draft ancestor still shapes a published child's URL.** `ContentService::path()` walks the chain without asking about status, so every page is fetched and only the published ones are listed - fetch only the published and the sitemap advertises `/install` where the page really lives at `/docs/install`, which 404s. There is a test that fails without it.
+
+**Categories yes, unused tags no.** A category is made by hand and there are few, so an empty one is a section somebody meant to have. A tag is a side effect of writing a post, so an unused one is a leftover from something retagged or unpublished and its archive is an empty page. `tagCloud()` already joins on published content, so that costs no query.
+
+**Four queries, whatever the size of the site.** The page tree is walked in memory over the rows rather than through `ancestors()`, which is a `findById()` per level: right for one page, a query storm over all of them. Past `MAX_URLS` (50000, from sitemaps.org) a site needs a sitemap *index*, which is a different shape and is not built here - the cap is applied to the queries, so growing into that problem truncates rather than exhausts a worker.
+
+---
+
 ## [0.64.0] &ndash; 2026-09-05
 
 The site has an RSS feed, which it has never had.

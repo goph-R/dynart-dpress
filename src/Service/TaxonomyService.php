@@ -143,7 +143,18 @@ class TaxonomyService {
      * anything joining the pieces itself would produce a link that goes nowhere.
      */
     public function categoryPath(Category $category): string {
-        return '/category/'.$category->slug;
+        return $this->categoryPathBySlug($category->slug);
+    }
+
+    /**
+     * The same path from the slug alone
+     *
+     * A listing has rows and not entities, and a category archive needs nothing but the slug to
+     * be addressed - the same reason `ContentService::postPath()` exists beside `publicPath()`.
+     * The prefix stays written once, here, so a sitemap and a template cannot disagree about it.
+     */
+    public function categoryPathBySlug(string $slug): string {
+        return '/category/'.$slug;
     }
 
     // --- Tags ---
@@ -213,7 +224,12 @@ class TaxonomyService {
 
     /** @see categoryPath() */
     public function tagPath(Tag $tag): string {
-        return '/tag/'.$tag->slug;
+        return $this->tagPathBySlug($tag->slug);
+    }
+
+    /** @see categoryPathBySlug() */
+    public function tagPathBySlug(string $slug): string {
+        return '/tag/'.$slug;
     }
 
     // --- Assignments ---

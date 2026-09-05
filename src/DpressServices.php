@@ -109,6 +109,7 @@ use Dynart\Dpress\Theme\PageAssets;
 use Dynart\Dpress\Theme\ThemeAssets;
 use Dynart\Dpress\Content\Dates;
 use Dynart\Dpress\Content\Feed;
+use Dynart\Dpress\Content\Sitemap;
 use Dynart\Dpress\Content\PageContext;
 use Dynart\Dpress\Service\RoleService;
 use Dynart\Dpress\Service\SchemaService;
@@ -235,6 +236,7 @@ class DpressServices {
         Micro::add(PageAssets::class);
         Micro::add(Dates::class);
         Micro::add(Feed::class);
+        Micro::add(Sitemap::class);
         Micro::add(PageContext::class);
         Micro::add(PluginService::class);
         Micro::add(MenuService::class);
