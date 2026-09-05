@@ -172,6 +172,72 @@ class UserCommands extends AbstractCommands {
     }
 
     /**
+     * `dpress user:delete -email x -confirm`
+     *
+     * The account and its roles and tokens; not what the person wrote. `UserService::delete()`
+     * refuses while they still own a post or a media item, because `author_id` and
+     * `uploaded_by` are not null foreign keys - so the alternative to refusing is deleting
+     * somebody's work along with their login.
+     *
+     * `-confirm`, like `media:purge`, because it is the other operation here that takes
+     * something away for good: the audit history keeps every change the account ever made,
+     * and the account itself does not come back.
+     */
+    public function delete(array $params = []): int {
+        $email = $this->param($params, 'email');
+        if ($email === '') {
+            return $this->fail('-email is required.');
+        }
+        $user = $this->users->findByEmail($this->users->normalizeEmail($email));
+        if ($user === null) {
+            return $this->fail("There is no user with the email address '$email'.");
+        }
+        if (!$this->flag($params, 'confirm')) {
+            return $this->describe($user);
+        }
+        try {
+            $this->users->delete($user);
+        } catch (DpressException $e) {
+            return $this->fail($e->getMessage());
+        }
+        return $this->success("Deleted <{$user->email}>. What they wrote is untouched.");
+    }
+
+    /**
+     * What the account is, before anybody says to take it away
+     *
+     * The roles matter here more than they look: revoking the last administrator is the one
+     * refusal somebody is likely to hit, and reading "admin" in this list is what makes the
+     * refusal make sense when it comes.
+     */
+    protected function describe(User $user): int {
+        $this->output->setColor(CliOutput::YELLOW);
+        $this->output->writeLine('This deletes the account. It does not come back.');
+        $this->output->setColor(null);
+        $roles = $this->users->roleNames($user->id);
+        $this->output->writeLine("  #{$user->id}  {$user->name} <{$user->email}>");
+        $this->output->writeLine('  '.$user->status.', '
+            .($roles === [] ? 'no roles' : join(', ', $roles)));
+        $owned = $this->users->ownedRows($user->id);
+        if ($owned !== []) {
+            $this->output->writeLine('  '.UserService::describeOwned($owned));
+        }
+        $this->output->writeLine('');
+        if ($owned !== []) {
+            $this->output->writeLine('What they wrote stays, which is why this will be refused:');
+            $this->output->writeLine('give it to somebody else first, with the Author box in the');
+            $this->output->writeLine('post editor.');
+            $this->output->writeLine('');
+            return 1;
+        }
+        $this->output->writeLine('Their roles and tokens go with it. The audit history of what they');
+        $this->output->writeLine('changed is kept.');
+        $this->output->writeLine('');
+        $this->output->writeLine('Add -confirm if that is what you want.');
+        return 1;
+    }
+
+    /**
      * `dpress role:list`
      */
     public function listRoles(array $params = []): int {

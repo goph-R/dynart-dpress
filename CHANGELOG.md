@@ -5,6 +5,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.63.0] &ndash; 2026-09-05
+
+An account can be deleted from the CLI, and deleting an author cannot take their work with it.
+
+### Added
+- **`dpress user:delete -email x -confirm`.** `user:create` has existed since the CLI did and there was no way to undo it: the admin screen refuses to delete the account you are signed in as, which is exactly the account somebody automating a task is signed in as. The way round it was three `delete` statements in SQL, which skips the entity manager - so the `user_role` rows stay behind and the audit history shows an account that was created and never removed.
+
+  It goes through `UserService::delete()`, so the roles and tokens go with it and the `del` revision is written. **What the person wrote stays.** `-confirm` like `media:purge`, with a dry run that names the account, its roles and what it owns.
+
+### Fixed
+- **Deleting a user who had written anything was a database error.** `content.author_id` and `media.uploaded_by` are not null foreign keys, so the delete came back as a raw constraint violation - a 500 on the admin screen, a stack trace on the CLI - with nothing anywhere saying *give their posts to somebody else first*. `UserService::delete()` now refuses, and says how many and what to do:
+
+  ```
+  <gopher@example.com> still has 9 posts and pages and 50 media items. Give them to
+  somebody else first: the Author box in the post editor, one post at a time.
+  ```
+
+  In the **service**, beside `guardLastActiveAdmin()` and for the same reason: the rule is about the state the site may end up in, and there are two ways in. The admin screen gets it without knowing about it.
+
+### Notes
+**Not a cascade, deliberately.** Deleting somebody should not delete what they wrote, and a cascade would take it out inside the database, where no event fires and nothing is audited - the same reasoning the audited relation tables already follow. Who should own it instead is a decision, and the author select added in 0.58.0 is where it is made.
+
+---
+
 ## [0.62.0] &ndash; 2026-09-05
 
 Three seams a comments plugin needs, and nothing could reach.

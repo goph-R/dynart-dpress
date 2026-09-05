@@ -100,6 +100,8 @@ It rests on `Request::ip()` being trustworthy, which it only is from micro 0.18.
 
 **The admin role holds every permission implicitly** (`DpressUser::hasPermission()` short-circuits on it), so it is seeded with none and a permission invented later by a plugin needs no retroactive grant. It is also seeded `removable = false`, and `user:role -revoke` refuses to take it from the last administrator.
 
+**Deleting a user never deletes what they wrote.** `content.author_id` and `media.uploaded_by` are not null foreign keys, so `UserService::delete()` **refuses** while the account still owns either - naming how many and pointing at the author select. It is in the service beside `guardLastActiveAdmin()` for the same reason: the rule is about the state the site may end up in and there are two ways in. Not a cascade, deliberately - a cascade would take the work out inside the database where no event fires and nothing is audited.
+
 **The site always keeps a way in.** `UserService::guardLastActiveAdmin()` refuses to block, demote or delete the last administrator who can still sign in, and it is in the *service* because the rule is about the state the site may end up in — it used to live in `UserCommands`, where it guarded one CLI flag while the admin UI walked past it three different ways. It counts **active** administrators: `AuthService::login()` refuses anybody who is not active, so an account that cannot sign in is not a way in, whatever roles it holds.
 
 **Permissions are plain strings** — `Permissions::add()` is all a plugin needs; there is no lookup table to migrate.

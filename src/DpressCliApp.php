@@ -88,6 +88,13 @@ class DpressCliApp extends CliApp {
             'flags' => ['revoke'],
             'needsConfig' => true,
         ],
+        'user:delete' => [
+            'callable' => [UserCommands::class, 'delete'],
+            'description' => 'Delete a user, keeping what they wrote',
+            'params' => ['email'],
+            'flags' => ['confirm'],
+            'needsConfig' => true,
+        ],
         'role:list' => [
             'callable' => [UserCommands::class, 'listRoles'],
             'description' => 'List the roles and their permissions',

@@ -7,6 +7,8 @@ use Dynart\Micro\Entities\Database;
 use Dynart\Micro\Entities\EntityManager;
 use Dynart\Micro\Entities\QueryExecutor;
 use Dynart\Dpress\DpressException;
+use Dynart\Dpress\Entity\Content;
+use Dynart\Dpress\Entity\Media;
 use Dynart\Dpress\Entity\Role;
 use Dynart\Dpress\Entity\RefreshToken;
 use Dynart\Dpress\Entity\User;
@@ -212,6 +214,7 @@ class UserService {
      */
     public function delete(User $user): void {
         $this->guardLastActiveAdmin($user, 'the account cannot be deleted');
+        $this->guardOwnedRows($user);
         $this->events->emit(self::EVENT_BEFORE_DELETE, [$user]);
         foreach ($this->roleNames($user->id) as $roleName) {
             $this->revokeRole($user, $roleName);
@@ -219,6 +222,81 @@ class UserService {
         $this->deleteTokensOf($user->id);
         $this->em->deleteById(User::class, $user->id);
         $this->events->emit(self::EVENT_DELETED, [$user]);
+    }
+
+    /**
+     * What a user still owns, which is what stops the account going
+     *
+     * `content.author_id` and `media.uploaded_by` are **not null** foreign keys, so a user who
+     * has written anything cannot be deleted while it is theirs - and until 0.63.0 that came
+     * back as a raw constraint violation from the database: a 500 on the admin screen and a
+     * stack trace on the CLI, with nothing anywhere saying "reassign their posts first".
+     *
+     * A refusal in the *service*, like `guardLastActiveAdmin()` beside it, because the rule is
+     * about the state the site may end up in and there are two ways in.
+     *
+     * **Not a cascade, and deliberately.** Deleting somebody should not delete what they wrote,
+     * and a cascade would take it out inside the database where no event fires and nothing is
+     * audited. Whoever should own it now is a decision, and the author select on the content
+     * editor is where it is made.
+     */
+    protected function guardOwnedRows(User $user): void {
+        $owned = $this->ownedRows($user->id);
+        if ($owned === []) {
+            return;
+        }
+        throw new DpressException(
+            "<{$user->email}> still has ".self::describeOwned($owned)
+                .'. Give them to somebody else first: the Author box in the post editor,'
+                .' one post at a time - there is no bulk reassign yet.'
+        );
+    }
+
+    /**
+     * The two things a user owns that cannot be deleted out from under, and what to call them
+     *
+     * @var array<string, array{0: class-string, 1: string, 2: string, 3: string}>
+     */
+    const OWNED = [
+        'content' => [Content::class, 'author_id', 'post or page', 'posts and pages'],
+        'media'   => [Media::class, 'uploaded_by', 'media item', 'media items'],
+    ];
+
+    /**
+     * @return array<string, int> what the user owns, keyed by `OWNED`, leaving out the zeroes
+     */
+    public function ownedRows(int $userId): array {
+        $counts = [];
+        foreach (self::OWNED as $key => [$className, $column]) {
+            $rows = $this->db->fetchColumn(
+                'select count(1) from '.$this->em->safeTableName($className)
+                    ." where `$column` = :userId",
+                [':userId' => $userId]
+            );
+            $count = (int)($rows[0] ?? 0);
+            if ($count > 0) {
+                $counts[$key] = $count;
+            }
+        }
+        return $counts;
+    }
+
+    /**
+     * `9 posts and pages and 50 media items`, or `1 post or page`
+     *
+     * Here rather than in the command, because the refusal above says the same sentence and a
+     * refusal that words it differently from the screen that warned about it reads as two
+     * different rules.
+     *
+     * @param array<string, int> $owned as `ownedRows()` answers
+     */
+    public static function describeOwned(array $owned): string {
+        $parts = [];
+        foreach ($owned as $key => $count) {
+            [, , $one, $many] = self::OWNED[$key];
+            $parts[] = $count.' '.($count === 1 ? $one : $many);
+        }
+        return join(' and ', $parts);
     }
 
     // --- Roles ---
