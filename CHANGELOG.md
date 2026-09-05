@@ -5,6 +5,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.59.0] &ndash; 2026-09-05
+
+A plugin can reach a visitor.
+
+### Added
+- **`PageAssets`** — a registry for what goes in the `<head>` of a page somebody asked for. Until now a plugin could add a field type, a shortcode, a block and a route, and could not put one line into a page: the two things most people would write a plugin for, a set of icons and a button, both ended with *"now open your theme's `head.phtml`"*.
+- **Every entry carries a needle**, a plain substring the finished page has to contain, so an icon font is on the pages with an icon on them and nowhere else. A site with three plugins enabled and none of them on this page loads nothing for any of them. It is the same `str_contains` the shortcodes and the highlighter already use, over a string that is in memory anyway; `''` means every page.
+- **`AbstractPlugin::pageAssets()`** — `file => needle`, out of the plugin's own `assets/`. Not the same list as `assets()`, which is the admin's: a field type's behaviour belongs on the screen that renders the field, and a stylesheet belongs on the site.
+- **`AbstractPlugin::blocks()`** — the same definition `Blocks::add()` takes, so a block type arrives from a folder under `plugins/` the way `widgets()` and `shortcodes()` already did. It was reachable from `register()` before; it is now declarative, which means the loader can read what a plugin *would* do without running it.
+
+### Changed
+- **A plugin's assets moved to `/assets/plugin/<plugin>/<file>`**, beside the theme's and the highlighter's, and out from under `/admin` — where they were while the only thing a plugin could contribute was an admin widget's behaviour. A stylesheet a visitor loads should not have the word `admin` in its address: it invites a firewall rule that blocks the admin from the outside and takes the site's icons with it. The URL carries the **plugin's** version, so a plugin releasing a new stylesheet expires that stylesheet and upgrading dpress expires nothing.
+- **A plugin may serve whatever a theme may** — `AssetController::PLUGIN_TYPES` *is* `ThemeAssets::TYPES` now, one list rather than two answers to one question. It was `js`, `css` and `svg`; it is images and **web fonts** as well, which a plugin shipping an icon set cannot do without.
+- **`AbstractController::withCodeAssets()` is `withPageAssets()`**, and the syntax highlighter is registered into the registry rather than special-cased in the controller — the first entry of a mechanism rather than the only thing that mechanism was for. A mechanism the core does not eat is a mechanism nobody tests.
+
+### Notes
+A plugin's page assets are registered as a **closure**, resolved the first time a page wants the file. The loader runs in the CLI too, and there is no router to build a URL with there — a plugin doing it eagerly would be recorded as failed by `dpress upgrade` and its tables would never be made.
+
+The example plugin in the development app grew a block and a stylesheet, because it exists to exercise every capability at once: if it works, the plugin system works.
+
+Nothing to migrate. A plugin that named an asset URL by hand — there is no such plugin — would want `AssetController::pluginUrl()`, which already answered with the right one.
+
+---
+
 ## [0.58.0] &ndash; 2026-09-05
 
 Whose name goes on it.

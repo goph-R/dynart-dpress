@@ -49,6 +49,38 @@ interface PluginInterface {
     public function widgets(): array;
 
     /**
+     * Block types this plugin adds
+     *
+     * The same definition `Blocks::add()` takes - `title`, `render`, and optionally `fields`
+     * and `prepare`. A block is a registration and never a migration, so a plugin bringing a
+     * new kind of block brings no table with it.
+     *
+     * @return array<string, array> type => definition
+     */
+    public function blocks(): array;
+
+    /**
+     * Files out of this plugin's `assets/` to put in the head of a **visitor's** page
+     *
+     * Not the same list as `assets()`, which is the admin's. A field type's behaviour belongs
+     * on the screen that renders the field; a set of icons or a button's stylesheet belongs on
+     * the site, and until 0.59.0 a plugin had no way to put one there.
+     *
+     * The value is a **needle**: a plain substring the finished page must contain for the file
+     * to be loaded at all, so a stylesheet for an icon font is on the pages with an icon on
+     * them and nowhere else. `''` means every page.
+     *
+     *     ['fontawesome.css' => 'class="fa-', 'kofi.css' => '']
+     *
+     * `.css` becomes a stylesheet and `.js` a deferred script; anything else is ignored,
+     * because a font is fetched *by* a stylesheet rather than linked from a page.
+     *
+     * @return array<string, string> file => needle
+     */
+    public function pageAssets(): array;
+
+
+    /**
      * Shortcodes, as `name => handler` or `name => [handler, kind]`
      *
      * The handler is a Micro callable, `[MyShortcode::class, 'render']`, so nothing is built until

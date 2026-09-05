@@ -45,6 +45,8 @@ class ReadingTimePlugin extends AbstractPlugin {
     public function entities(): array    { return [Entity\ReadingTime::class]; }
     public function migrations(): array  { return [Migration\CreateReadingTimeTable::class]; }
     public function widgets(): array     { return ['reading_time' => 'reading_time:widget/minutes']; }
+    public function blocks(): array      { return ['reading_time' => [...]]; }
+    public function pageAssets(): array  { return ['reading-time.css' => 'reading-time']; }
     public function views(): array       { return ['reading_time' => dirname(__DIR__).'/views']; }
     public function assets(): array      { return ['reading-time.js']; }
     public function permissions(): array { return ['reading_time.override' => 'reading_time']; }
@@ -167,6 +169,66 @@ window.Dpress.addInit(function (root) {
 Only `.js` and `.css` are loaded, only from the plugin's own `assets/`, and only while the plugin
 is loaded. The filename is matched against `[A-Za-z0-9_-]+\.[A-Za-z0-9]+` with no slashes, so it
 cannot climb out of the folder.
+
+## 5a. Blocks
+
+`blocks()` takes the same definition `Blocks::add()` does — `title`, `render`, and optionally
+`fields` and `prepare` — so a plugin uses the mechanism the CMS itself eats for its own three.
+A block is a registration and **never a migration**, so a new kind of block brings no table.
+
+```php
+public function blocks(): array {
+    return [
+        'reading_time' => [
+            'title'  => 'Reading time',
+            'render' => [ReadingTimeBlock::class, 'render'],   // a Micro callable
+            'fields' => ['minutes' => ['type' => 'text', 'label' => 'Minutes', 'required' => false]],
+        ],
+    ];
+}
+```
+
+The renderer is a Micro callable, so **the class has to be in `services()`** — the container
+builds it when a page draws the block, and not before.
+
+## 5b. Getting into a visitor's page
+
+Everything above is the admin. `pageAssets()` is the front end, and until 0.59.0 there was no
+such thing: a plugin could add a field type, a shortcode, a block and a route, and could not
+put one line into a page. The two things most people would write a plugin for — a set of icons
+and a button — both ended with *"now open your theme's `head.phtml`"*.
+
+```php
+public function pageAssets(): array {
+    return ['fontawesome.css' => 'class="fa-', 'kofi.css' => ''];
+}
+```
+
+**The value is a needle**: a plain substring the finished page has to contain for the file to
+be loaded at all. So an icon font is on the pages with an icon on them and nowhere else, and a
+site with three plugins enabled and none of them on this page loads nothing for any of them.
+`''` means every page. It is the same `str_contains` the shortcodes and the highlighter already
+use, over a string that is in memory anyway.
+
+`.css` becomes a stylesheet and `.js` a deferred script. **Fonts are not listed here** — a font
+is fetched *by* a stylesheet rather than linked from a page — but they are served: a plugin may
+serve whatever a theme may, which is `ThemeAssets::TYPES`, images and web fonts included.
+
+Files are at **`/assets/plugin/<plugin>/<file>`**, beside the theme's, carrying the *plugin's*
+version as the cache buster — a plugin releasing a new stylesheet should expire that
+stylesheet, and upgrading dpress should not expire a font nothing touched. They were under
+`/admin/assets/plugin/` while the only thing a plugin could contribute was an admin widget's
+behaviour; a stylesheet a visitor loads should not have the word `admin` in its address.
+
+For anything more than a file — a `<meta>`, an inline `<style>`, markup worked out at render
+time — reach `PageAssets` directly from `register()`:
+
+```php
+Micro::get(PageAssets::class)->add('myplugin:og', [MyPlugin::class, 'openGraphTags'], '<article');
+```
+
+The callable is handed the finished page and answers with markup. It is resolved through the
+container **only when its needle matches**, so registering one costs nothing.
 
 ## 6. Turning one on
 

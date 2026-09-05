@@ -58,32 +58,35 @@ class AssetController extends AbstractController {
         return '';
     }
 
-    /** What a plugin is allowed to serve, by extension */
-    const PLUGIN_TYPES = [
-        'js'  => 'application/javascript; charset=utf-8',
-        'css' => 'text/css; charset=utf-8',
-        'svg' => 'image/svg+xml',
-    ];
+    /**
+     * What a plugin is allowed to serve, which is what a theme is allowed to serve
+     *
+     * The same list, deliberately: the two answer the same question - what may a folder
+     * somebody dropped into this site put in front of a browser - and two lists would be one
+     * fact written twice, with the copy going stale. It is what brought **fonts** in, which a
+     * plugin shipping an icon set cannot do without and which a theme has always been able to.
+     */
+    const PLUGIN_TYPES = ThemeAssets::TYPES;
+
+    /**
+     * Where a plugin's own files are served from
+     *
+     * Beside the theme's and the highlighter's, and **not** under `/admin`, which is where it
+     * was while the only thing a plugin could contribute was a field type's behaviour. A
+     * stylesheet a visitor loads should not have the word `admin` in its address: it invites
+     * a firewall rule that blocks the admin from the outside and takes the site's icons with
+     * it, and it made the URL a lie about who the file is for.
+     */
+    const PLUGIN_ROUTE = '/assets/plugin/';
 
     /**
      * The URL of a file inside a plugin's `assets/` folder
      */
     public static function pluginUrl(string $plugin, string $file, string $version = ''): string {
         $router = Micro::get(\Dynart\Micro\RouterInterface::class);
-        return $router->url('/admin/assets/plugin/'.$plugin.'/'.$file, ['v' => $version ?: \Dynart\Dpress\Dpress::VERSION]);
+        return $router->url(self::PLUGIN_ROUTE.$plugin.'/'.$file, ['v' => $version ?: \Dynart\Dpress\Dpress::VERSION]);
     }
 
-    /**
-     * A plugin's own stylesheet or script
-     *
-     * A field type usually comes with behaviour, and a plugin has nowhere to put it otherwise -
-     * `ASSETS` above is a fixed list of files this package ships.
-     *
-     * Two things keep this from being a way to read the disk. The name is matched against
-     * `[A-Za-z0-9._-]+` with no slashes and no dots in sequence, so it cannot climb out of the
-     * folder; and the plugin has to be one the loader **actually loaded**, so a folder somebody
-     * dropped in but never enabled serves nothing.
-     */
     /**
      * The syntax highlighter, on the **front end** rather than under `/admin`
      *
@@ -129,8 +132,22 @@ class AssetController extends AbstractController {
         return '';
     }
 
+    /**
+     * A plugin's own stylesheet or script
+     *
+     * A field type usually comes with behaviour, and a plugin has nowhere to put it otherwise -
+     * `ASSETS` above is a fixed list of files this package ships.
+     *
+     * Two things keep this from being a way to read the disk. The name is matched against
+     * `[A-Za-z0-9._-]+` with no slashes and no dots in sequence, so it cannot climb out of the
+     * folder; and the plugin has to be one the loader **actually loaded**, so a folder somebody
+     * dropped in but never enabled serves nothing.
+     *
+     * Anonymous, and on the front end since 0.59.0: a plugin may now put a stylesheet into a
+     * visitor's page, and a visitor has no token.
+     */
     #[AllowAnonymous]
-    #[Route('GET', '/admin/assets/plugin/?/?')]
+    #[Route('GET', self::PLUGIN_ROUTE.'?/?')]
     public function pluginAsset(string $plugin, string $file): string {
         $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
         if (!preg_match('/^[A-Za-z0-9_-]+$/', $plugin)

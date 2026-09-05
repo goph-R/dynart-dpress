@@ -98,6 +98,19 @@ class CodeAssets {
     }
 
     /**
+     * The tags for one page, or nothing when there is nothing to highlight
+     *
+     * The shape `PageAssets` calls: it hands over the finished HTML and takes markup back.
+     * The registration also carries `MARKER` as its needle, which looks like the same test
+     * twice and is not - the needle is a `str_contains` that keeps the container from
+     * building this class at all on a page with no code on it, and `needed()` is the actual
+     * question, which also asks whether highlighting is switched on.
+     */
+    public function tagsFor(string $html): string {
+        return $this->needed($html) ? $this->tags() : '';
+    }
+
+    /**
      * The `<link>` and `<script>` for a page that has code on it
      *
      * Rendered here rather than in a template so a theme cannot forget them and cannot get the

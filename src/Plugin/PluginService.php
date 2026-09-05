@@ -10,11 +10,14 @@ use Dynart\Micro\Micro;
 use Dynart\Micro\ViewInterface;
 use Dynart\Micro\Entities\EntityManager;
 use Dynart\Micro\Entities\Migrations;
+use Dynart\Dpress\Block\Blocks;
 use Dynart\Dpress\Content\Shortcodes;
+use Dynart\Dpress\Controller\Admin\AssetController;
 use Dynart\Dpress\DpressException;
 use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Security\Permissions;
 use Dynart\Dpress\Service\SettingService;
+use Dynart\Dpress\Theme\PageAssets;
 use Throwable;
 
 /**
@@ -219,7 +222,7 @@ class PluginService {
         try {
             $this->autoload($plugin);
             $instance = $this->instantiate($plugin);
-            $this->contribute($instance);
+            $this->contribute($plugin, $instance);
             $instance->register();
             // Last, and deliberately after `register()`. The container has no way to unregister
             // anything, so a plugin that throws part way through cannot be rolled back - but a
@@ -290,7 +293,7 @@ class PluginService {
      * staying is what keeps its table from being dropped out from under its data, and a widget
      * or a permission left over is untidy rather than dangerous.
      */
-    protected function contribute(PluginInterface $plugin): void {
+    protected function contribute(Plugin $record, PluginInterface $plugin): void {
         foreach ($plugin->services() as $interface => $className) {
             Micro::add($interface, $className === $interface ? null : $className);
         }
@@ -300,6 +303,10 @@ class PluginService {
         foreach ($plugin->widgets() as $type => $view) {
             Micro::get(FormWidgets::class)->add($type, $view);
         }
+        foreach ($plugin->blocks() as $type => $definition) {
+            Micro::get(Blocks::class)->add($type, $definition);
+        }
+        $this->contributePageAssets($record, $plugin);
         foreach ($plugin->shortcodes() as $name => $declared) {
             // `name => handler` or `name => [handler, kind]`, so the common case stays one line
             [$handler, $kind] = is_array($declared) && isset($declared[1])
@@ -315,6 +322,48 @@ class PluginService {
         $permissions = Micro::get(Permissions::class);
         foreach ($plugin->permissions() as $permission => $group) {
             $permissions->add($permission, $group);
+        }
+    }
+
+    /**
+     * The plugin's own files, into the head of a visitor's page
+     *
+     * Named `plugin:<name>:<file>`, so a plugin loaded twice registers one of each rather
+     * than two, and so a theme that wants to answer one of them can say which.
+     *
+     * The URL carries the **plugin's** version and not the CMS's: a plugin releasing a new
+     * stylesheet should expire that stylesheet, and upgrading dpress should not expire a font
+     * nothing touched. The same reasoning as a theme's assets, one folder over.
+     *
+     * An extension that is neither `css` nor `js` is skipped rather than guessed at. A font is
+     * fetched *by* a stylesheet, not linked from a page, and a `<link>` to a `.woff2` is a
+     * download the browser does nothing with.
+     */
+    protected function contributePageAssets(Plugin $record, PluginInterface $plugin): void {
+        $assets = Micro::get(PageAssets::class);
+        foreach ($plugin->pageAssets() as $file => $needle) {
+            $file = (string)$file;
+            $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+            if ($extension !== 'css' && $extension !== 'js') {
+                $this->logger->warning(
+                    "dpress: the plugin '{$record->name}' offers '$file' to the page, and only"
+                        ." css and js can go in a head."
+                );
+                continue;
+            }
+            // A closure and not a built URL, because **the loader runs in the CLI too** and
+            // there is no router to ask for one there - a plugin doing this eagerly would be
+            // recorded as failed by `dpress upgrade` and its tables would never be made. The
+            // address is worked out the first time a page wants the file.
+            $assets->add(
+                'plugin:'.$record->name.':'.$file,
+                function () use ($record, $file, $extension): string {
+                    $url = AssetController::pluginUrl($record->name, $file, $record->version());
+                    return $extension === 'css'
+                        ? PageAssets::styleTag($url) : PageAssets::scriptTag($url);
+                },
+                (string)$needle
+            );
         }
     }
 }

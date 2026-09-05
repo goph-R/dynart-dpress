@@ -106,6 +106,7 @@ use Dynart\Dpress\Service\SettingService;
 use Dynart\Dpress\Service\TaxonomyService;
 use Dynart\Dpress\Theme\Places;
 use Dynart\Dpress\Theme\ThemeService;
+use Dynart\Dpress\Theme\PageAssets;
 use Dynart\Dpress\Theme\ThemeAssets;
 use Dynart\Dpress\Content\Dates;
 use Dynart\Dpress\Service\RoleService;
@@ -230,6 +231,7 @@ class DpressServices {
         Micro::add(SettingService::class);
         Micro::add(ThemeService::class);
         Micro::add(ThemeAssets::class);
+        Micro::add(PageAssets::class);
         Micro::add(Dates::class);
         Micro::add(PluginService::class);
         Micro::add(MenuService::class);
@@ -376,6 +378,20 @@ class DpressServices {
         foreach (self::BLOCKS as $type => $definition) {
             $blocks->add($type, $definition);
         }
+    }
+
+    /**
+     * What core puts in the head of a page, which is the highlighter and nothing else
+     *
+     * The **web app only**: a CLI run renders no page, and a registry of things to put in
+     * a `<head>` has nothing to say to `dpress upgrade`. A plugin's own are added by the
+     * loader, which does run on both paths - lazily, for exactly this reason.
+     *
+     * The needle keeps the container from building `CodeAssets` at all on a page with no
+     * code block on it, which is most pages of most sites.
+     */
+    public static function registerPageAssets(PageAssets $assets): void {
+        $assets->add('code', [CodeAssets::class, 'tagsFor'], CodeAssets::MARKER);
     }
 
     public static function registerShortcodes(Shortcodes $shortcodes): void {

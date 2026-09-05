@@ -10,7 +10,7 @@ use Dynart\Micro\RouterInterface;
 use Dynart\Micro\ViewInterface;
 use Dynart\Micro\WebApp;
 use Dynart\Dpress\Security\DpressUser;
-use Dynart\Dpress\Content\CodeAssets;
+use Dynart\Dpress\Theme\PageAssets;
 use Dynart\Dpress\Content\Shortcodes;
 use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Media\MediaView;
@@ -186,7 +186,7 @@ abstract class AbstractController {
         // still looks up nothing itself, and lazy, so a theme that renders no places reads nothing
         $this->view->set('places', Micro::get(Places::class));
         $html = Micro::get(Shortcodes::class)->expand($this->view->fetch($template, $variables));
-        return $this->withCodeAssets($html);
+        return $this->withPageAssets($html);
     }
 
     /**
@@ -299,22 +299,26 @@ abstract class AbstractController {
     }
 
     /**
-     * Puts the highlighter into a page that has code on it, and into no other
+     * Puts whatever this page asked for into its head, and nothing else
      *
-     * After the page is built rather than before, because whether it has code in it is a fact
-     * about the finished HTML - a listing shows leads, a post shows a body, and a theme decides
+     * After the page is built rather than before, because what is *on* a page is a fact about
+     * the finished HTML - a listing shows leads, a post shows a body, and a theme decides
      * which. The alternative is a view variable every layout has to remember to print.
+     *
+     * It was the syntax highlighter and only the highlighter until 0.59.0. `PageAssets` is the
+     * registry that grew out of it, so a plugin can put a stylesheet on the pages that need one
+     * without an edit to somebody else's theme.
      *
      * `</head>` is where it goes; a page whose layout has none gets nothing, and gets it silently,
      * because a front end without a `<head>` is somebody rendering a fragment on purpose.
      */
-    protected function withCodeAssets(string $html): string {
-        $assets = Micro::get(CodeAssets::class);
-        if (!$assets->needed($html)) {
+    protected function withPageAssets(string $html): string {
+        $tags = Micro::get(PageAssets::class)->tags($html);
+        if ($tags === '') {
             return $html;
         }
         $at = stripos($html, '</head>');
-        return $at === false ? $html : substr_replace($html, $assets->tags()."
+        return $at === false ? $html : substr_replace($html, $tags."
 ", $at, 0);
     }
 
