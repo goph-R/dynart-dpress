@@ -25,6 +25,7 @@ use Dynart\Dpress\Service\ContentService;
 use Dynart\Dpress\Service\SettingService;
 use Dynart\Dpress\Service\UserService;
 use Dynart\Dpress\Content\Dates;
+use Dynart\Dpress\Content\PageContext;
 
 /**
  * What every CMS controller needs
@@ -358,6 +359,12 @@ abstract class AbstractController {
      * a post is a post wherever it was reached from.
      */
     protected function renderContent(Content $content): string {
+        // What the page is about, for anything rendered inside it that needs to know - a
+        // comments block has to name the thread it belongs to, and a block renderer is handed
+        // nothing but its own settings. Here rather than in the two controllers, because this
+        // is the one place a post or a page is turned into HTML and the preview goes through
+        // it too.
+        Micro::get(PageContext::class)->set($content);
         $contents = Micro::get(ContentService::class);
         $media = Micro::get(MediaService::class);
         $common = $this->pagedBody($content, $contents->publicPath($content)) + [

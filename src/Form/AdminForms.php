@@ -310,6 +310,16 @@ class AdminForms {
             'theme'             => ['type' => 'select', 'label' => 'Theme', 'required' => false,
                                     'options' => $context['themes'] ?? []],
         ], false);
+        // Whatever a plugin registered with a field definition, after the ones above. Its own
+        // call could not have gone here - the twelve above need lists only the controller can
+        // fetch - so `SettingFields::add()` takes both halves, and the controller hands the
+        // second one over here with everything else it had to look up. Optional, always: a
+        // required settings field added by a plugin would stop anybody saving the screen
+        // until they had filled it in.
+        $registered = $context['registered_fields'] ?? [];
+        if ($registered !== []) {
+            $form->addFields($registered, false);
+        }
         $form->addValues($context['values'] ?? []);
     }
 

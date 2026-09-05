@@ -5,6 +5,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.62.0] &ndash; 2026-09-05
+
+Three seams a comments plugin needs, and nothing could reach.
+
+All three are the same shape — a hardcoded list where the rest of the CMS has a registry — and each is worth closing on its own. They are what [docs/comments.md](docs/comments.md) §3 asked for, and the Disqus plugin is unwritable without them.
+
+### Added
+- **`PageContext`** — what piece of content the page being rendered is *about*. A block renderer is handed `(Block, array $settings)` and nothing else, which is right for a tag cloud and useless for a comments block, which has to name the thread it belongs to. A service rather than an argument passed down through `Places::render()`, because a **shortcode** is not rendered through a place and wants the same answer.
+
+  **Empty is the normal case**: the front page, an archive and every admin screen are about no content at all, and a block that needs one should render nothing there rather than guess. Set in `AbstractController::renderContent()`, the one place a post or a page becomes HTML — so the preview goes through it too.
+- **An `after_content` place**, drawn by `content/single.phtml` and `content/page.phtml`, outside the `</article>` because what goes there is *about* what was just read rather than part of it. One place and not two, so "comments on pages as well" is a question about where the block is put.
+- **`SettingFields`** — the settings the admin writes, as a registry.
+
+### Changed
+- **`SettingsAdminController::FIELDS` is gone.** It was a `const`, and `save()` iterated it — so a plugin could add a field to the settings form through `form.admin_settings:created`, watch it render, fill it in, press Save and watch it silently not be written. **An extension point that appears to work is worse than one that is missing**: the missing one sends somebody looking for another way, and this one sent them looking for a bug in their own code.
+
+  `SettingFields::add($name, $type, $field)` takes the form field along with the type, so a plugin adds a setting in one call and it renders, saves and is audited like any other. Core's twelve pass no field definition: theirs are built by hand in `AdminForms::settings()` because most need a list only the controller can fetch — the themes, the timezones, the thumbnail of the chosen logo.
+
+### Notes
+**A theme that declares its own `places[]` replaces the built-in list rather than adding to it**, so a theme wanting the new place has to name it: `places[] = after_content`. That is not new behaviour, but it is the first time a place has been added to core after themes existed, and it is the thing to get wrong.
+
+---
+
 ## [0.61.0] &ndash; 2026-09-05
 
 The icon shortcode leaves.

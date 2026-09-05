@@ -28,6 +28,7 @@ use Dynart\Dpress\Cli\UserCommands;
 use Dynart\Dpress\Plugin\PluginService;
 use Dynart\Dpress\Query\CoreQueries;
 use Dynart\Dpress\Query\QueryFactory;
+use Dynart\Dpress\Service\SettingFields;
 
 /**
  * The `dpress` command line application
@@ -308,6 +309,7 @@ class DpressCliApp extends CliApp {
         DpressServices::registerWidgets(Micro::get(FormWidgets::class));
         DpressServices::registerShortcodes(Micro::get(Shortcodes::class));
         DpressServices::registerBlocks(Micro::get(Blocks::class));
+        DpressServices::registerSettingFields(Micro::get(SettingFields::class));
         // there is no attribute processor in a CLI run, so the entities are registered by hand
         DpressServices::registerEntities(Micro::get(EntityManager::class));
         DpressServices::addMigrations(Micro::get(Migrations::class));

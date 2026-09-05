@@ -5,6 +5,7 @@ namespace Dynart\Dpress\Controller\Admin;
 use Dynart\Micro\Attribute\Route;
 use Dynart\Micro\ConfigInterface;
 use Dynart\Micro\JwtAuthInterface;
+use Dynart\Micro\Micro;
 use Dynart\Micro\RequestInterface;
 use Dynart\Micro\RouterInterface;
 use Dynart\Micro\ViewInterface;
@@ -17,6 +18,7 @@ use Dynart\Dpress\Media\MediaView;
 use Dynart\Dpress\Query\ListRequest;
 use Dynart\Dpress\Security\Permissions;
 use Dynart\Dpress\Service\MediaService;
+use Dynart\Dpress\Service\SettingFields;
 use Dynart\Dpress\Service\SettingService;
 use Dynart\Dpress\Theme\ThemeService;
 
@@ -30,21 +32,17 @@ use Dynart\Dpress\Theme\ThemeService;
  */
 class SettingsAdminController extends AbstractAdminController {
 
-    /** The settings this screen writes, and how each is read back */
-    const FIELDS = [
-        Setting::SITE_NAME => 'string',
-        Setting::SITE_DESCRIPTION => 'string',
-        Setting::SITE_LOGO => 'media',
-        Setting::SITE_ICON => 'media',
-        Setting::REGISTRATION_OPEN => 'bool',
-        Setting::AUTOLINK => 'bool',
-        Setting::POSTS_PER_PAGE => 'int',
-        Setting::POST_PATH => 'string',
-        Setting::FEATURED_TAG => 'string',
-        Setting::DATE_FORMAT => 'string',
-        Setting::TIMEZONE => 'string',
-        Setting::CODE_THEME => 'string',
-    ];
+    /**
+     * The settings this screen writes, and how each is read back
+     *
+     * A registry rather than a `const` since 0.62.0, because a plugin adding a settings field
+     * through `form.admin_settings:created` could watch it render and then not be saved - the
+     * loop below iterated a constant it had no way into. `DpressServices::registerSettingFields()`
+     * seeds it with these twelve.
+     */
+    protected function fields(): array {
+        return Micro::get(SettingFields::class)->types();
+    }
 
     public function __construct(
         ViewInterface $view,
@@ -98,6 +96,8 @@ class SettingsAdminController extends AbstractAdminController {
                 Setting::POST_PATH_ROOT     => '/the-slug',
             ],
             'values' => $values,
+            // what a plugin added, looked up here like every other list this form needs
+            'registered_fields' => Micro::get(SettingFields::class)->formFields(),
             // the thumbnail the field shows for what is already chosen, rendered here because a
             // template has no business asking a service what a media id looks like
             'site_logo_preview' => $this->mediaPreview((int)($values[Setting::SITE_LOGO] ?? 0)),
@@ -129,7 +129,7 @@ class SettingsAdminController extends AbstractAdminController {
      * registration on" is answerable afterwards.
      */
     protected function save(array $values): void {
-        foreach (self::FIELDS as $name => $type) {
+        foreach ($this->fields() as $name => $type) {
             if (!array_key_exists($name, $values)) {
                 continue;
             }
@@ -153,7 +153,7 @@ class SettingsAdminController extends AbstractAdminController {
 
     protected function currentValues(): array {
         $values = [];
-        foreach (self::FIELDS as $name => $type) {
+        foreach ($this->fields() as $name => $type) {
             $values[$name] = match ($type) {
                 'bool' => $this->settings->getBool($name) ? '1' : '',
                 'int'  => (string)$this->settings->getInt($name),

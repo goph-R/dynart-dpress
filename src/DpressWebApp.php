@@ -44,6 +44,7 @@ use Dynart\Dpress\Query\QueryFactory;
 use Dynart\Dpress\Service\AuthService;
 use Dynart\Dpress\Theme\PageAssets;
 use Dynart\Dpress\Theme\ThemeService;
+use Dynart\Dpress\Service\SettingFields;
 
 /**
  * The dpress web application
@@ -147,6 +148,7 @@ class DpressWebApp extends WebApp {
         DpressServices::registerWidgets(Micro::get(FormWidgets::class));
         DpressServices::registerShortcodes(Micro::get(Shortcodes::class));
         DpressServices::registerBlocks(Micro::get(Blocks::class));
+        DpressServices::registerSettingFields(Micro::get(SettingFields::class));
         DpressServices::registerPageAssets(Micro::get(PageAssets::class));
         $this->applyTheme($view);
 

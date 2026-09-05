@@ -100,6 +100,7 @@ use Dynart\Dpress\Service\ContentService;
 use Dynart\Dpress\Service\MediaService;
 use Dynart\Dpress\Service\BlockService;
 use Dynart\Dpress\Service\MenuService;
+use Dynart\Dpress\Service\SettingFields;
 use Dynart\Dpress\Service\SettingService;
 use Dynart\Dpress\Service\TaxonomyService;
 use Dynart\Dpress\Theme\Places;
@@ -107,6 +108,7 @@ use Dynart\Dpress\Theme\ThemeService;
 use Dynart\Dpress\Theme\PageAssets;
 use Dynart\Dpress\Theme\ThemeAssets;
 use Dynart\Dpress\Content\Dates;
+use Dynart\Dpress\Content\PageContext;
 use Dynart\Dpress\Service\RoleService;
 use Dynart\Dpress\Service\SchemaService;
 use Dynart\Dpress\Service\UserService;
@@ -226,10 +228,12 @@ class DpressServices {
         Micro::add(MediaService::class);
         Micro::add(TaxonomyService::class);
         Micro::add(SettingService::class);
+        Micro::add(SettingFields::class);
         Micro::add(ThemeService::class);
         Micro::add(ThemeAssets::class);
         Micro::add(PageAssets::class);
         Micro::add(Dates::class);
+        Micro::add(PageContext::class);
         Micro::add(PluginService::class);
         Micro::add(MenuService::class);
         Micro::add(Blocks::class);
@@ -322,6 +326,22 @@ class DpressServices {
      * out of form rendering. `prepare` is the save-time hook, and only the markdown block wants
      * one: it renders there so a page view never parses markdown.
      */
+    /** The settings the admin writes, and how each is read back */
+    const SETTING_FIELDS = [
+        Setting::SITE_NAME => 'string',
+        Setting::SITE_DESCRIPTION => 'string',
+        Setting::SITE_LOGO => 'media',
+        Setting::SITE_ICON => 'media',
+        Setting::REGISTRATION_OPEN => 'bool',
+        Setting::AUTOLINK => 'bool',
+        Setting::POSTS_PER_PAGE => 'int',
+        Setting::POST_PATH => 'string',
+        Setting::FEATURED_TAG => 'string',
+        Setting::DATE_FORMAT => 'string',
+        Setting::TIMEZONE => 'string',
+        Setting::CODE_THEME => 'string',
+    ];
+
     const BLOCKS = [
         'tag_cloud' => [
             'title'  => 'Tag cloud',
@@ -344,6 +364,21 @@ class DpressServices {
             ],
         ],
     ];
+
+    /**
+     * The settings the Settings screen writes
+     *
+     * Their **form fields** are not here: `AdminForms::settings()` builds those by hand,
+     * because most of them need a list only the controller can fetch - the themes, the
+     * timezones, the thumbnail of the chosen logo. What a registry buys is the other half,
+     * which is the half that was broken: a plugin can now add a setting that is actually
+     * saved, and it passes its field definition along with it in the one call.
+     */
+    public static function registerSettingFields(SettingFields $fields): void {
+        foreach (self::SETTING_FIELDS as $name => $type) {
+            $fields->add($name, $type);
+        }
+    }
 
     public static function registerBlocks(Blocks $blocks): void {
         foreach (self::BLOCKS as $type => $definition) {

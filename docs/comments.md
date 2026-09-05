@@ -1,6 +1,7 @@
 # Comments, through Disqus
 
-**Status: planned.** Nothing of this is built. It is written down so the decisions are made once,
+**Status: core built, plugin planned.** §3 landed in dpress 0.62.0; the plugin itself is not
+written yet. It is written down so the decisions are made once,
 in the open, rather than halfway through an afternoon.
 
 The goal is narrow and worth stating plainly: **it is the last thing missing before a WordPress
@@ -43,7 +44,11 @@ embed asks for the *right thread* is the entire job.
 
 ---
 
-## 3. What core is missing (three small things)
+## 3. What core was missing (three small things)
+
+> **Built in 0.62.0**, all three. `PageContext`, the `after_content` place, and the settings
+> registry. What follows is what they were decided from, and it is still what they do.
+
 
 The plugin has nowhere to render, and no way to be configured. All three gaps are the same shape —
 a hardcoded list where the rest of the CMS has a registry — and each is worth closing on its own

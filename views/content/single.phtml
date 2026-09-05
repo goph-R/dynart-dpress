@@ -43,4 +43,9 @@
             </ul>
         <?php endif ?>
     </article>
+    <?php // Outside the article, because what goes here is *about* the thing that was just
+          // read rather than part of it. Nothing renders when the place is empty, which is
+          // every site that has put no block in it. ?>
+    <?= $places->render('after_content') ?>
+
 <?php $this->endBlock() ?>

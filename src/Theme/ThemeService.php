@@ -44,7 +44,18 @@ class ThemeService {
      * blocks. **A place is one idea**: what is assigned to it renders there, whether that is a menu
      * or a list of blocks, so both editors offer this same list.
      */
-    const BUILT_IN_PLACES = ['main' => 'Main', 'sidebar' => 'Sidebar'];
+    /**
+     * The places the built-in templates draw
+     *
+     * `after_content` is under a post and under a page, which is where anything *about* the
+     * thing being read goes - comments, a newsletter box, related posts later. It is one place
+     * and not two, so "comments on pages as well" is a question about where the block is put
+     * rather than a second name a theme has to declare.
+     */
+    const BUILT_IN_PLACES = [
+        'main' => 'Main', 'sidebar' => 'Sidebar', 'after_content' => 'After content',
+    ];
+
 
     private ?array $themes = null;
 
