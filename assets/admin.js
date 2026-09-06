@@ -473,7 +473,11 @@
                 var insert = document.createElement('button');
                 insert.type = 'button';
                 insert.className = 'markdown-insert';
-                insert.textContent = '🖼';
+                // Words rather than a pictogram. It is the only button on the bar, so there is no
+                // row of icons for it to be consistent with; an emoji renders as whichever
+                // drawing the operating system has at whatever size it feels like; and "Insert
+                // from library" says what it does, which a picture of a frame does not.
+                insert.textContent = 'Insert from library';
                 insert.title = 'Insert a file from the library';
                 insert.addEventListener('click', function () {
                     Dpress.pickMedia(function (item) {
@@ -838,25 +842,55 @@
     /**
      * Writes a library item into the markdown field, at the cursor
      *
-     * An image is `![alt](url)` and anything else is a link, because the library holds documents
-     * too and a PDF is not a picture. The label is the item's own alt text: an image with no alt
-     * is invisible to somebody using a screen reader, and this is the moment anybody knows what
-     * the picture is *for*.
+     * **What gets written is decided by the category**, because the kinds of file the library
+     * holds are different things to put in a document:
      *
-     * A `]` in that text would end the label early and leave the rest loose in the paragraph.
+     * | category | written |
+     * |---|---|
+     * | `image` | `![alt](media#12)` - shown where it sits |
+     * | `video` | `{{ video('media#13') }}` - a player |
+     * | `audio` | `{{ audio('media#5') }}` - a player |
+     * | anything else | `[label](media#7)` - a link, because a PDF is a download |
+     *
+     * A video used to be written as `![alt](media#13)`, which renders an `<img>` pointing at an
+     * mp4: a broken picture on the page with nothing to say why. Both shortcodes are core
+     * (`VideoShortcode`, `AudioShortcode`), so this never writes something the site cannot
+     * render - a plugin's shortcode would be a different question.
+     *
+     * The label is the item's own alt text: an image with no alt is invisible to somebody using a
+     * screen reader, and this is the moment anybody knows what the picture is *for*. A `]` in that
+     * text would end the label early and leave the rest loose in the paragraph. **A shortcode
+     * carries no label**, so there is nothing to escape into one - the player reads the alt text
+     * out of the library when it renders, which is the same text and one fewer copy of it living
+     * in somebody's document.
      *
      * The destination is `media#<id>`, not the URL the row also carries. A document says *what*
      * it points at and the server works out where that is when it renders, so moving the site
      * from a test domain to a real one leaves every stored document exactly as it was.
      */
+    var MEDIA_PLAYERS = {video: 'video', audio: 'audio'};
+
     Dpress.insertMedia = function (item, textarea) {
         textarea = textarea || document.querySelector('textarea.markdown-editor');
         if (!textarea || !item) {
             return;
         }
+        replaceSelection(textarea, Dpress.mediaMarkdown(item), '', false);
+    };
+
+    /**
+     * The markdown for one library item
+     *
+     * Its own function because it is the part with the decision in it, and the one thing here
+     * that ends up inside somebody's document forever.
+     */
+    Dpress.mediaMarkdown = function (item) {
+        var player = MEDIA_PLAYERS[item.category];
+        if (player) {
+            return '{{ ' + player + "('media#" + item.id + "') }}";
+        }
         var label = String(item.alt || item.title || item.file_name || '').replace(/([\[\]])/g, '\\$1');
-        var markdown = (item.category === 'image' ? '!' : '') + '[' + label + '](media#' + item.id + ')';
-        replaceSelection(textarea, markdown, '', false);
+        return (item.category === 'image' ? '!' : '') + '[' + label + '](media#' + item.id + ')';
     };
 
     /**

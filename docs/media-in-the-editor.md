@@ -7,6 +7,13 @@ design withdrawn — §2 and §3, which were the same idea twice.
   **the attachments are the author's, and nothing recalculates them.**
 - §2, the `hidden` flag itself, went in 0.24.0. Inserting a picture attaches nothing at all now,
   so there is no attachment that needs hiding.
+- The insert rule below is **superseded by 0.67.0**, which also removed `MARKDOWN_ACTIONS`: the
+  toolbar's formatting buttons are gone and this is the only button left on it, labelled *Insert
+  from library* rather than drawn as an icon. What it writes is now decided by the category -
+  an image is `![alt](media#12)` as before, a **video** is `{{ video('media#13') }}` and an
+  **audio** file is `{{ audio('media#5') }}`, and everything else is still a link. A video used
+  to be written as `![alt](media#13)`, which renders an `<img>` pointing at an mp4: a broken
+  picture with nothing on the page to say why. See `Dpress.mediaMarkdown()`.
 
 The goal, in one sentence: **while writing a post you can insert a picture without leaving the
 page** — pick one from the library or upload a new one in a dialog, and a reference to it lands

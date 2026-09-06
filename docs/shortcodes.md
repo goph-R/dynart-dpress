@@ -7,7 +7,7 @@
 ```
 
 A registered name, optional arguments, and whatever HTML the handler returns. Three ship -
-`video`, `icon` and `br`; everything else comes from a plugin.
+`video`, `audio` and `br`; everything else comes from a plugin (`icon` is one).
 
 ---
 
@@ -127,7 +127,7 @@ shortcode is a deliberate hole in that, and the arguments came from an author.
 | the name is not registered when the post is **saved** | the text is left exactly as typed, so the document can be written before the plugin is installed |
 | the name is gone by the time the page is **rendered** | an HTML comment naming it, and a logged warning |
 | the arguments are malformed | left as text |
-| `video` cannot do what it was asked | a comment saying why |
+| `video` or `audio` cannot do what it was asked | a comment saying why |
 
 The second row is the plugin that got switched off this morning. A post that mentions its
 shortcode is a page with one thing missing, not broken content — the same answer `FormWidgets`
@@ -158,10 +158,38 @@ Both work identically, so the quieter one is what goes on other people's sites.
 **The host is matched at its end, not searched for.** `notyoutube.com` and
 `youtube.com.example.net` are not YouTube, and a `str_contains` would embed both.
 
+## 8. `audio`
+
+```
+{{ audio('media#5') }}
+```
+
+Added in 0.67.0. The library has had a `audio` category since it existed, and until now the only
+thing an author could do with one was link to it - which is a download, not a player.
+
+| given | rendered |
+|---|---|
+| `media#5` | an `<audio>` with the file's URL and its alt text as the label |
+| a link to an audio file (`.mp3`, `.m4a`, `.aac`, `.oga`, `.ogg`, `.opus`, `.wav`, `.flac`, `.weba`) | the same |
+| anything else | a comment saying so |
+
+**`.ogg` is on both lists**, video's and this one's. The extension genuinely says nothing about
+which one a file is, and the author already said which they meant by the name they typed.
+
+**No third-party embeds**, which is the one place this is not a copy of `video`. YouTube and Vimeo
+are there because that is where people's videos already are; the equivalent list for audio is a
+set of services the CMS would then owe an update to forever, and a site that wants a Spotify
+player has always been able to write the iframe. It is one method override if that changes.
+
+**Both are `AbstractMediaShortcode`.** The library reference, the direct file, the refusals and
+the check that `media#5` is actually the right *kind* of file are shared - that last one exists
+because `video('media#2')` naming an SVG used to render a player that plays nothing, and a second
+shortcode working it out separately would have had to learn it separately too.
+
 It refuses politely: `media#2` naming an image says so, and a file that has been deleted says
 that instead of rendering a player that plays nothing.
 
-## 8. `icon` &mdash; a plugin
+## 9. `icon` &mdash; a plugin
 
 `{{ icon('star') }}` was here until 0.61.0 and is
 **[dynart-dpress-fontawesome](https://github.com/goph-R/dynart-dpress-fontawesome)** now, with
@@ -177,7 +205,7 @@ what that arrangement was reaching for.
 A shortcode is a registration, so nothing in the CMS knew this one was special and nothing had
 to change to let it go.
 
-## 9. `br`
+## 10. `br`
 
 ```markdown
 | Links                                    | Picture              |
@@ -200,7 +228,7 @@ that has no alternative.
 
 ---
 
-## 10. What was deliberately left out
+## 11. What was deliberately left out
 
 - **Theme shortcodes.** A theme is data and templates; a shortcode is code. A theme that wants one
   ships a companion plugin.

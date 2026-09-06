@@ -58,6 +58,14 @@ const DOCUMENT = {
     id: 2, category: 'document', file_name: 'notes.txt', alt: '', title: '',
     url: '/uploads/2026/08/notes-d4e5f6.txt'
 };
+const VIDEO = {
+    id: 13, category: 'video', file_name: 'fox.mp4', alt: 'A fox', title: 'Fox',
+    url: '/uploads/2026/08/fox-99aabb.mp4'
+};
+const AUDIO = {
+    id: 5, category: 'audio', file_name: 'theme.mp3', alt: 'The theme', title: 'Theme',
+    url: '/uploads/2026/08/theme-cc11dd.mp3'
+};
 
 /** The target select as the server renders it: every value says which kind it is */
 const TARGETS = [
@@ -241,6 +249,55 @@ const tests = {
         const textarea = field('keep THIS keep', 5, 9);
         window.Dpress.insertMedia(IMAGE, textarea);
         assert.strictEqual(textarea.value, 'keep ![A sunset](media#1)THIS keep');
+    },
+
+    // --- what each category is written as ---
+
+    /**
+     * A video written as `![alt](media#13)` renders an `<img>` pointing at an mp4: a broken
+     * picture on the page, with nothing on it to say why. It is a player, and the shortcode for
+     * one is core.
+     */
+    'a video is a player, not a picture'() {
+        assert.strictEqual(window.Dpress.mediaMarkdown(VIDEO), "{{ video('media#13') }}");
+    },
+
+    'an audio file is a player too'() {
+        assert.strictEqual(window.Dpress.mediaMarkdown(AUDIO), "{{ audio('media#5') }}");
+    },
+
+    'an image is still shown where it sits'() {
+        assert.strictEqual(window.Dpress.mediaMarkdown(IMAGE), '![A sunset](media#1)');
+    },
+
+    /** A PDF is a download, so it is a link and not an embed */
+    'anything else is a link'() {
+        assert.strictEqual(window.Dpress.mediaMarkdown(DOCUMENT), '[notes.txt](media#2)');
+    },
+
+    /**
+     * A shortcode carries no label, so there is nothing to escape into one - the player reads the
+     * alt text out of the library when it renders. A `]` in that text is only dangerous where it
+     * would close a bracket, and this writes no brackets.
+     */
+    'a player takes no label from an odd name'() {
+        assert.strictEqual(
+            window.Dpress.mediaMarkdown({id: 9, category: 'video', alt: 'A [very] odd name'}),
+            "{{ video('media#9') }}"
+        );
+    },
+
+    /** The reference is the id, so the shortcode a video writes is one `VideoShortcode` accepts */
+    'the reference is the one the shortcode reads'() {
+        const written = window.Dpress.mediaMarkdown(VIDEO);
+        assert.ok(/^\{\{ video\('media#\d+'\) \}\}$/.test(written), written);
+    },
+
+    'an unknown category falls back to a link rather than an empty shortcode'() {
+        assert.strictEqual(
+            window.Dpress.mediaMarkdown({id: 4, category: 'archive', file_name: 'backup.zip'}),
+            '[backup.zip](media#4)'
+        );
     },
 
     /**

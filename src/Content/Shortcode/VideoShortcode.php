@@ -2,10 +2,7 @@
 
 namespace Dynart\Dpress\Content\Shortcode;
 
-use Dynart\Dpress\Content\InternalLinks;
 use Dynart\Dpress\Entity\Media;
-use Dynart\Dpress\Media\MediaView;
-use Dynart\Dpress\Service\MediaService;
 
 /**
  * `{{ video('media#13') }}`
@@ -15,38 +12,25 @@ use Dynart\Dpress\Service\MediaService;
  *
  * That is why the name is `video` and not `embed_video`: what an author means is "put this video
  * here", and which of those it turns out to be is not their problem.
+ *
+ * The library reference, the direct file and the refusals are `AbstractMediaShortcode`, which is
+ * everything `audio` needed too. What is here is the part only video has: other people's players.
  */
-class VideoShortcode {
+class VideoShortcode extends AbstractMediaShortcode {
 
-    /** Named so a `<video>` can be given one that a browser will actually play */
+    const CATEGORY = Media::CATEGORY_VIDEO;
+    const NOUN = 'video';
     const DIRECT_EXTENSIONS = ['mp4', 'webm', 'ogv', 'ogg', 'mov', 'm4v'];
 
-    public function __construct(
-        protected MediaService $media,
-        protected MediaView $view,
-    ) {}
-
     /**
-     * @param array $arguments `0` the reference or URL, `poster` an optional media reference
+     * A link somebody pasted, which may be a player this knows
      */
-    public function render(array $arguments): string {
-        $source = trim((string)($arguments[0] ?? $arguments['src'] ?? ''));
-        if ($source === '') {
-            return $this->cannot('a video needs something to play');
-        }
-        if (preg_match(InternalLinks::PATTERN, $source, $matches) && $matches[1] === 'media') {
-            return $this->fromLibrary((int)$matches[2]);
-        }
-        if ($this->isDirectFile($source)) {
-            return $this->tag($source);
-        }
+    protected function elsewhere(string $source, array $arguments): string {
         $embed = $this->embedUrl($source);
         if ($embed !== null) {
             return $this->frame($embed, (string)($arguments['title'] ?? 'Embedded video'));
         }
-        // A watch page handed to a `<video>` element fails silently, which looks like the CMS is
-        // broken rather than like the link is one this does not know.
-        return $this->cannot('that is not a video file or an address this understands');
+        return parent::elsewhere($source, $arguments);
     }
 
     /**
@@ -95,43 +79,11 @@ class VideoShortcode {
             .'></iframe>';
     }
 
-    /**
-     * A library item, which has to actually be a video
-     *
-     * `video('media#2')` naming an SVG would otherwise render a player that plays nothing, and
-     * the author would have no way of telling why.
-     */
-    protected function fromLibrary(int $id): string {
-        $media = $this->media->findById($id);
-        if ($media === null || $media->isDeleted()) {
-            return $this->cannot('that file is not in the library any more');
-        }
-        if ($media->category !== Media::CATEGORY_VIDEO) {
-            return $this->cannot('media#'.$id.' is a '.$media->category.', not a video');
-        }
-        return $this->tag($this->view->url($media), (string)($media->alt ?? ''));
-    }
-
     protected function tag(string $url, string $label = ''): string {
         return '<video class="dpress-video" controls preload="metadata" src="'.htmlspecialchars($url).'"'
             .($label === '' ? '' : ' aria-label="'.htmlspecialchars($label).'"')
             .'>'
             .'<a href="'.htmlspecialchars($url).'">'.htmlspecialchars($label !== '' ? $label : 'Download the video').'</a>'
             .'</video>';
-    }
-
-    protected function isDirectFile(string $url): bool {
-        $extension = strtolower((string)pathinfo((string)parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION));
-        return in_array($extension, self::DIRECT_EXTENSIONS, true);
-    }
-
-    /**
-     * What a shortcode that cannot do what it was asked leaves behind
-     *
-     * A comment rather than nothing, for the same reason an unregistered shortcode leaves one:
-     * the page still renders, and whoever looks at the source finds out why.
-     */
-    protected function cannot(string $why): string {
-        return '<!-- video: '.htmlspecialchars($why).' -->';
     }
 }

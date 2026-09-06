@@ -44,7 +44,44 @@ The markdown field gets colour and loses its toolbar.
   of the textarea's line width and not out of the backdrop's, so without it the two wrap at
   different columns on every post long enough to scroll.
 
+### Added
+- **`{{ audio('media#5') }}`**, which the library has been waiting for: `Media::CATEGORY_AUDIO`
+  has existed since the media library did, and the only thing an author could do with one was
+  link to it - a download, not a player. It is a `<audio controls preload="metadata">` with a
+  download link inside it for a browser that will not play it, and it takes a library reference
+  or a direct file (`.mp3`, `.m4a`, `.aac`, `.oga`, `.ogg`, `.opus`, `.wav`, `.flac`, `.weba`).
+
+  **No third-party embeds**, which is the one place it is not a copy of `video`. YouTube and
+  Vimeo are there because that is where people's videos already are; the equivalent for audio is
+  a list of services the CMS would owe an update to forever, and a site that wants a Spotify
+  player has always been able to write the iframe. It is one method override if that changes.
+
+- **`AbstractMediaShortcode`**, which is what `video` and `audio` both are: is it a library
+  reference, is it a file this can play, and if neither then what. Only the noun, the category
+  and the extension list differ. Written twice, the copy is what goes stale - the check that a
+  `media#` reference is actually the right *kind* of file exists because `video('media#2')`
+  naming an SVG rendered a player that plays nothing, and a second shortcode reaching that
+  conclusion separately would have had to learn it separately too. `video` keeps the part only
+  it has, in `elsewhere()`: other people's players.
+
 ### Changed
+- **The insert button writes what the file actually is.** An image is `![alt](media#12)` as
+  before, **a video is now `{{ video('media#13') }}`** and **an audio file `{{ audio('media#5') }}`**,
+  and anything else is still a link because a PDF is a download. A video used to be written as
+  `![alt](media#13)`, which renders an `<img>` pointing at an mp4: a broken picture on the page,
+  with nothing on it to say why. Both shortcodes are core, so this never writes something the
+  site cannot render. The decision is `Dpress.mediaMarkdown()`, its own function because it is
+  the one thing here that ends up inside somebody's document forever.
+
+  A shortcode carries no label, so there is nothing to escape into one - the player reads the alt
+  text out of the library when it renders, which is the same text and one fewer copy of it living
+  in the document.
+
+- **The button says *Insert from library* rather than showing a picture frame.** It is the only
+  button on the bar now, so there is no row of icons for it to match; an emoji renders as
+  whichever drawing the operating system has, at a size the stylesheet does not choose; and the
+  words say what it does.
+
 - **Scrolling the markdown field no longer scrolls the admin behind it.** The field is 540px
   inside a screen that scrolls, so whatever it could not absorb went to the window - measured in
   Chrome, four wheel notches over a field already at its bottom moved the page 480px, and the
