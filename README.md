@@ -1,7 +1,7 @@
 # Dpress
 
-A markdown based CMS built on [dynart-micro](../dynart-micro) and
-[dynart-micro-entities](../dynart-micro-entities). PHP 8.0+, MariaDB, MIT.
+A markdown based CMS built on [dynart-micro](https://github.com/goph-R/dynart-micro) and
+[dynart-micro-entities](https://github.com/goph-R/dynart-micro-entities). PHP 8.0+, MariaDB, MIT.
 
 It is for a site somebody writes rather than assembles: **the markdown is the truth**, the pages
 are rendered when they are saved, and a page view is a handful of queries and no build step. The
@@ -333,7 +333,7 @@ what changed and what it was like before.
 ## Tests
 
 ```bash
-# the PHP suite, from ../dynart-dpress-test/
+# the PHP suite, from https://github.com/goph-R/dynart-dpress-test/
 php vendor/bin/phpunit --stderr
 
 # the browser side, from this repo — a stub DOM, no dependency, no build step
