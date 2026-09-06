@@ -8,7 +8,13 @@
  *
  * `attributes` is where the content builder puts `data-insert-media`, which is what grows the one
  * button the field has.
+ *
+ * **No browser text assistance.** `spellcheck` is off because this is source and not prose: a
+ * dictionary flags every fenced identifier, every slug and every URL word, and under a coloured
+ * field the underlines sit on a layer of their own. `autocorrect` is off for a harder reason -
+ * it *changes what was typed*, and a field whose value is anything other than exactly what the
+ * author typed is the one thing this whole editor is built not to be.
  */
 $id = $form->idByNameAndField($name, $field);
 ?>
-<textarea id="<?= $id ?>" name="<?= $form->inputName($name) ?>" class="markdown-editor" rows="18"<?= esc_attrs($field['attributes'] ?? []) ?>><?= $form->value($name, true) ?></textarea>
+<textarea id="<?= $id ?>" name="<?= $form->inputName($name) ?>" class="markdown-editor" rows="18" spellcheck="false" autocorrect="off"<?= esc_attrs($field['attributes'] ?? []) ?>><?= $form->value($name, true) ?></textarea>

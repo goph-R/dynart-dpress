@@ -44,6 +44,14 @@ The markdown field gets colour and loses its toolbar.
   of the textarea's line width and not out of the backdrop's, so without it the two wrap at
   different columns on every post long enough to scroll.
 
+### Changed
+- **The markdown field asks the browser to leave its text alone.** `spellcheck="false"` because
+  this is source and not prose - a dictionary flags every fenced identifier, every slug and every
+  URL word, and under a coloured field the red underlines sit on a layer of their own, which is
+  what made them worth removing rather than merely noisy. `autocorrect="off"` for a harder reason:
+  it *changes what was typed*, and a field whose value is anything other than exactly what the
+  author typed is the one thing this editor is built not to be.
+
 ### Removed
 - **The markdown toolbar's formatting buttons.** Bold, italic, heading, quote, list, code, link
   and the separator are gone. They wrote marks that are shorter to type than to reach for, which
