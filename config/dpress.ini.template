@@ -1,0 +1,72 @@
+; dpress site configuration, written by `dpress init` on %%GENERATED_AT%%
+;
+; The presence of this file marks the root of a site: the `dpress` command walks up from the
+; working directory looking for it, so the command works from anywhere inside the project.
+;
+; It is not in git, and should not be. It holds a database password and a signing secret, and the
+; only copy that matters is the one on the machine it belongs to - a committed one is either
+; wrong everywhere or a secret in a public repository.
+
+; An absolute path to this folder, without a trailing slash. `~` in the settings below means
+; this path, so the logs and the error pages follow the site wherever it lives.
+app.root_path   = "%%ROOT_PATH%%"
+app.error_pages_folder = "~/errors"
+
+; The URL the site is reached at, without a trailing slash. Every generated link starts here,
+; so on a public site this is https or the whole page is mixed content.
+app.base_url    = "%%BASE_URL%%"
+
+; `prod` hides the detail of an error from the page. Anything else shows it - useful locally,
+; and an information leak anywhere else.
+app.environment = %%ENVIRONMENT%%
+
+; The DSN has to be quoted, a bare = breaks parse_ini_file with INI_SCANNER_TYPED
+database.default.dsn          = "mysql:host=%%DB_HOST%%"
+database.default.name         = %%DB_NAME%%
+database.default.username     = %%DB_USER%%
+database.default.password     = "%%DB_PASSWORD%%"
+database.default.table_prefix = %%DB_PREFIX%%
+
+; A site serves one language. Add more only for a translated admin.
+translation.all     = en
+translation.default = en
+
+; The directory is resolved against app.root_path, so this is one level above what Apache
+; serves. Keep it there: a log holds stack traces, absolute paths and bound SQL parameters.
+log.dir   = "~/logs"
+log.level = info
+
+; Generated for this site, and for no other. It signs every session here.
+jwt.secret = "%%JWT_SECRET%%"
+jwt.cookie_name = dpress_token
+
+; Off lets a plain HTTP site log in. On anywhere that has TLS, or the session cookie is willing
+; to travel unencrypted.
+jwt.cookie_secure = %%COOKIE_SECURE%%
+
+; The front controller rewrites, so URLs have no index.php in them. Needs mod_rewrite and
+; `AllowOverride All`; with it off every URL is index.php?route=/...
+router.use_rewrite = true
+
+; The addresses allowed to speak for their clients with X-Forwarded-For. Empty means nobody, and
+; every request is whatever REMOTE_ADDR says - which is right when Apache is the front door.
+; Behind nginx, Cloudflare or a load balancer, name it here, or every visitor arrives as the
+; proxy and shares one identity with everybody else, including one rate limit allowance.
+; request.trusted_proxies = 127.0.0.1
+
+; A fallback for the site name until one is set in the admin, where the stored setting wins.
+dpress.site_name         = "%%SITE_NAME%%"
+dpress.registration_open = false
+dpress.default_roles     = reader
+
+; What the header and the browser tab fall back to when no media item is chosen for them. Paths,
+; resolved against app.base_url - dpress ships no logo and cannot guess what a site keeps in its
+; own static folder.
+dpress.default_logo      = "/static/dpress-logo.svg"
+dpress.default_icon      = "/favicon.png"
+
+; `log` writes the mail into logs/ and sends nothing, which is what a development site wants.
+; `native` uses PHP's mail().
+mail.mailer     = %%MAILER%%
+mail.from_email = "%%FROM_EMAIL%%"
+mail.from_name  = "%%SITE_NAME%%"

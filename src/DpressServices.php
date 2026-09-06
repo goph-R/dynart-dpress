@@ -28,6 +28,7 @@ use Dynart\Micro\Entities\QueryBuilder;
 use Dynart\Micro\Entities\QueryBuilder\MariaQueryBuilder;
 use Dynart\Micro\Entities\QueryExecutor;
 use Dynart\Dpress\Cli\BundleCommands;
+use Dynart\Dpress\Cli\InitCommands;
 use Dynart\Dpress\Cli\DoctorCommands;
 use Dynart\Dpress\Cli\SchemaCommands;
 use Dynart\Dpress\Cli\SystemCommands;
@@ -257,6 +258,7 @@ class DpressServices {
         Micro::add(SchemaCommands::class);
         Micro::add(DoctorCommands::class);
         Micro::add(BundleCommands::class);
+        Micro::add(InitCommands::class);
         Micro::add(SystemCommands::class);
         Micro::add(UserCommands::class);
         Micro::add(MailCommands::class);

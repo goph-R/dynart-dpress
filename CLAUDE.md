@@ -339,6 +339,27 @@ is what an upgrade runs, so writing it every time would overwrite the evidence o
 mismatch it exists to find. **Absent is not a mismatch**: a site installed before this existed has
 never recorded one, and "unknown" is the honest answer.
 
+**`dpress init` is the one command that runs before there is a site**, so it is `needsConfig =>
+false` and **takes nothing from the container** - no config to read, no database to reach, only
+the arguments and the working directory. A command that creates the configuration cannot depend
+on it. It writes `config/dpress.ini.template` with the placeholders filled and **generates
+`jwt.secret`**: that was the fiddliest step of an install and the one where getting it wrong is
+invisible, since `dpress.ini.example` ships the words "change me" and a site copied from it signs
+its sessions with a value that is in a public repository. `-dev` changes the **three settings that
+go together** - environment, `jwt.cookie_secure` and the mailer - because a secure cookie on plain
+HTTP means the login never sticks and `native` mail on a laptop is a password reset that vanishes.
+
+**The plugin loader is skipped when there is no config.** `DpressCliApp::init()` loads plugins
+because a plugin's tables are built by `dpress upgrade`, which never runs a web request - but a
+plugin's enabled list is a row in the site's database, and with no `dpress.ini` there is no
+database to ask. `Database` logs the failed query before `PluginService` catches it, so `dpress
+init`, the first command anybody ever runs, used to greet them with an error about a table called
+`db_table_prefix_missingsetting`.
+
+**`user:create` has always generated a password** when `-password` is left off - the description
+in `COMMANDS` did not say so, and the README example passed one, so the documented way to make the
+first admin put it in the shell history.
+
 **A bundle is data, not a dump.** `dpress export` writes `site.json`, `data/<table>.json` and
 `uploads/` to a folder; `dpress import` loads it. The target builds its tables from **its own
 migrations** and the bundle carries only rows - the opposite way round from `mysqldump`, and

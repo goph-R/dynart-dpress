@@ -5,6 +5,46 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.70.0] &ndash; 2026-09-06
+
+`dpress init`, so a new site starts with a command rather than a text editor.
+
+### Added
+- **`dpress init`** writes the `dpress.ini` that makes a directory a site, from a template the
+  package now ships at `config/dpress.ini.template`. It is the one command that runs **before**
+  there is a site, so it is declared `needsConfig => false` and takes nothing from the container:
+  no config to read and no database to reach. A command that creates the configuration cannot
+  depend on the configuration.
+
+  **The signing secret is generated**, which was the fiddliest step of an install and the one
+  where getting it wrong is invisible - `dpress.ini.example` ships the words "change me", and a
+  site copied from it and never edited signs every session with a value that is in a public
+  repository. `dpress doctor` catches that afterwards; this stops it happening.
+
+  **`-dev` changes the three settings that go together**, each of which is a separate afternoon:
+  `app.environment = dev` shows the error rather than hiding it, `jwt.cookie_secure = false` lets
+  a plain HTTP site log in at all, and `mail.mailer = log` writes mail into `logs/` instead of
+  sending it. It also makes `logs/` above `public/`, and it will not overwrite a `dpress.ini` that
+  is already there - doing that logs everybody out and throws away the secret.
+
+### Fixed
+- **The first command anybody runs no longer prints a database error.** `DpressCliApp::init()`
+  loaded plugins unconditionally, and a plugin's enabled list is a row in the site's database - so
+  with no `dpress.ini` the connection was attempted against a DSN that is not there and `Database`
+  logged the failure before `PluginService` caught it. `dpress init` greeted a new user with
+  `Error in query: select ... from db_table_prefix_missingsetting`. Plugins are loaded when there
+  is a config, which is the same statement as "when there is a site".
+
+### Changed
+- **`user:create` says that it generates a password.** It always has, when `-password` is left
+  off; the description in `COMMANDS` said only "Create a user" and the README example passed one
+  in, so the documented way to make the first admin put it in the shell history.
+
+- **The README's install section is the four commands**, `init` through `doctor`, rather than an
+  ini file to copy and edit by hand.
+
+---
+
 ## [0.69.0] &ndash; 2026-09-06
 
 `dpress doctor`, a bundle a site travels in, and a site that knows what address it was rendered for.

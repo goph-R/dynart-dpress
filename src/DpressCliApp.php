@@ -23,6 +23,7 @@ use Dynart\Dpress\Cli\TaxonomyCommands;
 use Dynart\Dpress\Cli\PluginCommands;
 use Dynart\Dpress\Cli\ThemeCommands;
 use Dynart\Dpress\Cli\BundleCommands;
+use Dynart\Dpress\Cli\InitCommands;
 use Dynart\Dpress\Cli\DoctorCommands;
 use Dynart\Dpress\Cli\SchemaCommands;
 use Dynart\Dpress\Cli\SystemCommands;
@@ -44,6 +45,14 @@ class DpressCliApp extends CliApp {
      * registry to keep in sync.
      */
     const COMMANDS = [
+        'init' => [
+            'callable' => [InitCommands::class, 'init'],
+            'description' => 'Write a dpress.ini here, with a generated signing secret',
+            'needsConfig' => false,
+            'params' => ['base-url', 'db-name', 'db-user', 'db-password', 'db-host', 'db-prefix',
+                         'site-name', 'email'],
+            'flags' => ['dev'],
+        ],
         'install' => [
             'callable' => [SchemaCommands::class, 'install'],
             'description' => 'Create the database schema and apply every migration',
@@ -80,7 +89,7 @@ class DpressCliApp extends CliApp {
         ],
         'user:create' => [
             'callable' => [UserCommands::class, 'create'],
-            'description' => 'Create a user',
+            'description' => 'Create a user, generating a password when none is given',
             'params' => ['email', 'password', 'name', 'role'],
             'needsConfig' => true,
         ],
@@ -299,8 +308,12 @@ class DpressCliApp extends CliApp {
      * The framework's default log directory is relative, so it lands in the working directory -
      * which for a web request is the document root. A log file in the document root is a URL.
      */
+    /** Whether a `dpress.ini` was found at all, which is the same question as "is there a site" */
+    protected bool $hasConfig = false;
+
     public function __construct(array $configPaths) {
         parent::__construct($configPaths);
+        $this->hasConfig = !empty($configPaths);
         Micro::add(LoggerInterface::class, DpressLogger::class);
     }
 
@@ -310,8 +323,17 @@ class DpressCliApp extends CliApp {
         DpressServices::registerMailer(Micro::get(ConfigInterface::class));
         $this->addCommands();
         // the same point as the web app's, and it has to happen on this path too: a plugin's
-        // tables are built by `dpress upgrade`, which never runs a web request
-        Micro::get(PluginService::class)->load();
+        // tables are built by `dpress upgrade`, which never runs a web request.
+        //
+        // **Not without a config**, which is only `init`, `help` and `version`. A plugin's enabled
+        // list is a row in the site's database, and with no `dpress.ini` there is no database to
+        // ask - the connection is attempted against a DSN that is not there, and `Database` logs
+        // the failure before `enabledNames()` catches it. So `dpress init`, the first command
+        // anybody runs, greeted them with a query error about a table named
+        // `db_table_prefix_missingsetting`.
+        if ($this->hasConfig) {
+            Micro::get(PluginService::class)->load();
+        }
         $this->initServices();
     }
 
