@@ -214,7 +214,16 @@ input[type=email], select, textarea {
     border-radius: var(--radius); font: inherit; background: var(--panel); color: inherit;
 }
 textarea { line-height: 1.5; resize: vertical; }
-textarea.markdown-editor { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13.5px; }
+/* The one place the field's metrics are decided - `markdown-highlight.js` reads them off here
+   and copies them onto the backdrop, so anything added to this rule reaches both layers. The
+   height is a starting size and not a cap: `resize: vertical` above still applies, and a drag
+   writes an inline height that wins over this. `rows` on the element is the same size again for
+   a browser that never got the stylesheet. */
+textarea.markdown-editor {
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 13.5px;
+    height: 540px;
+}
 
 .form-actions { margin-top: 22px; display: flex; gap: 10px; align-items: center; }
 

@@ -45,6 +45,12 @@ The markdown field gets colour and loses its toolbar.
   different columns on every post long enough to scroll.
 
 ### Changed
+- **The markdown field opens at 540px** rather than at eighteen rows. A starting size and not a
+  cap: `resize: vertical` still applies and a drag writes an inline height that wins over it. The
+  number lives in `admin.css`, which is where the field's metrics are decided and therefore what
+  the backdrop copies; `rows` on the element is the same size again for a browser that never got
+  the stylesheet.
+
 - **The markdown field asks the browser to leave its text alone.** `spellcheck="false"` because
   this is source and not prose - a dictionary flags every fenced identifier, every slug and every
   URL word, and under a coloured field the red underlines sit on a layer of their own, which is

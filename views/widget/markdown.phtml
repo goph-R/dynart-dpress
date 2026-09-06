@@ -17,4 +17,4 @@
  */
 $id = $form->idByNameAndField($name, $field);
 ?>
-<textarea id="<?= $id ?>" name="<?= $form->inputName($name) ?>" class="markdown-editor" rows="18" spellcheck="false" autocorrect="off"<?= esc_attrs($field['attributes'] ?? []) ?>><?= $form->value($name, true) ?></textarea>
+<textarea id="<?= $id ?>" name="<?= $form->inputName($name) ?>" class="markdown-editor" rows="26" spellcheck="false" autocorrect="off"<?= esc_attrs($field['attributes'] ?? []) ?>><?= $form->value($name, true) ?></textarea>
