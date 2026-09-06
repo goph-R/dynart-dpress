@@ -1,12 +1,76 @@
 # dpress
 
-A markdown based CMS built on [dynart-micro](../dynart-micro) and [dynart-micro-entities](../dynart-micro-entities).
+A markdown based CMS built on [dynart-micro](../dynart-micro) and
+[dynart-micro-entities](../dynart-micro-entities). PHP 8.0+, MariaDB, MIT.
 
-Status: **early**. The package skeleton and the `dpress` command line tool exist; the content model, the web front end and the admin UI do not yet. See `dynart-dpress-plan.md` for the full plan.
+It is for a site somebody writes rather than assembles: **the markdown is the truth**, the pages
+are rendered when they are saved, and a page view is a handful of queries and no build step. The
+front end ships **no JavaScript** — a page loads a script only if there is something on it that
+needs one, a code block or a plugin's widget.
+
+Status: **0.70.0**, feature complete and pre-1.0. Everything below is built. What 1.0 is waiting
+on is the schema settling down — until then a schema change means dropping and recreating the
+database, and there are no rename migrations.
+
+![The post editor](docs/images/screenshot-post-edit.jpg)
+
+## What it does
+
+**Writing.** Markdown, in a textarea that is deliberately not a WYSIWYG editor — a field whose
+value is anything other than what the author typed eventually rewrites somebody's document on
+save. It is coloured rather than replaced: a highlighted backdrop sits behind the real field, so
+the value, the selection and the undo stack are untouched. Two buttons are all that is left, for
+the two things a keyboard cannot do — inserting from the media library, which needs an id nobody
+memorises, and picking an emoji.
+
+- The first line that is only `---` splits the **lead** from the body; every one after that is a
+  **page break**, so a long post is served a page at a time with *Previous* and *Next*
+  ([pages-in-content.md](docs/pages-in-content.md)).
+- **Internal links say what they point at, never where it is**: `media#12`, `post#42`, `page#5`,
+  `category#21`, `tag#7` resolve at render time, so renaming a page moves every link to it
+  ([internal-links.md](docs/internal-links.md)).
+- **Callouts** — `> [!WARNING]` is a coloured panel, and still a plain blockquote anywhere without
+  dpress ([callouts.md](docs/callouts.md)).
+- **Shortcodes** — `{{ video('media#10') }}`, parsed as CommonMark inline syntax, so one inside a
+  code fence is left alone ([shortcodes.md](docs/shortcodes.md)).
+- **Syntax highlighting**, in the browser rather than in the stored HTML, so changing the theme
+  re-colours every post and touches no document ([code-highlighting.md](docs/code-highlighting.md)).
+- Tables, bare URLs linked in prose but not in code, and a full **revision history** on every save.
+
+**The site.** Posts and pages in one table; pages nest and live at their own paths, posts live at
+`/post/<slug>` or `/<slug>` depending on a setting, with the other shape 301ing to it. Categories
+are a tree, tags are flat, and a `featured` tag pins a strip to the front page. There is a
+`/feed`, a `/sitemap.xml`, dates in the site's own timezone, and a media library with lazy
+thumbnails and SVGs sanitised on the way in.
+
+**Themes and blocks.** A theme is [a folder with a `theme.ini` in it](docs/themes.md) — dropping
+it in installs it, and which one renders is a setting. A theme may have a layout per kind of page
+(`home`, `archive`, `post`, `page`, `auth`) and having the file is the whole registration. A
+[block](docs/blocks.md) is something in a place beside the content — a tag cloud, a category list,
+a piece of markdown — and a **menu** is assigned to the same places, its items storing a target
+rather than a URL so a rename moves them.
+
+**Who may do what.** Users, roles and plain-string permissions, JWT in cookies with rotating
+refresh tokens, rate limiting on every way in, and a site that refuses to let you remove its last
+administrator. Deleting a user never deletes what they wrote.
+
+**Extending it.** [Plugins](docs/plugins.md) are a folder under `plugins/` with a `plugin.ini`,
+enabled through a setting. Every form and every query is built by a factory that emits an event,
+so a plugin can add a field or narrow a listing without a fork; permissions, block types,
+shortcodes, field widgets, entities and migrations are all registrations. Three exist —
+[disqus](https://github.com/goph-R/dynart-dpress-disqus),
+[kofi](https://github.com/goph-R/dynart-dpress-kofi) and
+[fontawesome](https://github.com/goph-R/dynart-dpress-fontawesome) — and the Ko-fi one used to be
+in core, which is the test of whether the extension points are real.
+
+**How fast.** On a contended shared VPS, the same content on the same machine: **~43 ms of server
+time against WordPress's ~568 ms**, about 13×, with no caching plugin on either side. About 95% of
+that 43 ms is boot; the page's own work is a couple of milliseconds.
+[performance.md](docs/performance.md) is how to measure it yourself rather than take that on trust.
 
 ## Requirements
 
-- PHP 8.0+
+- PHP 8.0+, with `mbstring`, `json`, `pdo`, `dom`, `libxml` and `gd`
 - MariaDB / MySQL
 - Composer
 
@@ -19,7 +83,10 @@ project.
 ```bash
 composer install
 
-vendor/bin/dpress init -base-url https://example.com -db-name mysite -db-user mysite                        -db-password 'from your database' -site-name "My Site"
+vendor/bin/dpress init \
+    -base-url https://example.com \
+    -db-name mysite -db-user mysite -db-password 'from your database' \
+    -site-name "My Site"
 
 # create the database itself, which dpress does not do:
 #   create database `mysite` character set utf8mb4 collate utf8mb4_unicode_ci;
@@ -124,26 +191,78 @@ Two things a bundle cannot bring with it, both named by `doctor`:
 
 ## The `dpress` command
 
+`-config <path>` points at a specific `dpress.ini` instead of searching for one. `init`, `help` and
+`version` work outside a site — `init` is what makes one — and everything else needs a config.
+`dpress help` prints the same list, out of the same table the commands are declared in.
+
+### The site
+
 | Command | What it does |
 |---|---|
 | `dpress init -base-url … -db-name … -db-user …` | Write a `dpress.ini` here, with a generated signing secret |
 | `dpress install` | Create the database schema and apply every migration |
+| `dpress upgrade` | Apply the pending migrations |
+| `dpress migrate:status` | List the applied and the pending migrations |
 | `dpress doctor` | Check everything an install or a move can get silently wrong |
 | `dpress export -to <dir>` | Write the content, the uploads and the manifest to a folder |
 | `dpress import -from <dir> -confirm` | Replace this site with a bundle, and re-render it here |
-| `dpress upgrade` | Apply the pending migrations |
-| `dpress migrate:status` | List the applied and the pending migrations |
-| `dpress version` | Print the dpress version |
-| `dpress help` | Print the command list |
+| `dpress version` / `dpress help` | Print the version, or the command list |
 
-`-config <path>` points at a specific `dpress.ini` instead of searching for one. `init`, `help` and `version` work outside a site — `init` is what makes one — and everything else needs a config.
+### People
+
+| Command | What it does |
+|---|---|
+| `dpress user:create -email … -name … -role …` | Create a user, generating a password when none is given |
+| `dpress user:password -email …` | Change a password, generating one when none is given |
+| `dpress user:list` | List the users |
+| `dpress user:status -email … -status …` | Set a user active, pending or blocked |
+| `dpress user:role -email … -role … [-revoke]` | Grant a role, or revoke it |
+| `dpress user:delete -email … -confirm` | Delete a user, keeping what they wrote |
+| `dpress role:list` | List the roles and their permissions |
+
+### Content
+
+| Command | What it does |
+|---|---|
+| `dpress content:create -title … -author …` | Create a post or a page, from `-markdown` or a `-file` |
+| `dpress content:list` | List the content |
+| `dpress content:publish -id … [-unpublish]` | Publish content, or take it back to draft |
+| `dpress content:delete -id …` | Delete content, keeping its history |
+| `dpress content:history -id …` | Show the revision history of a piece of content |
+| `dpress content:rerender` | Re-render every markdown body, after a rendering change |
+| `dpress content:prune` | Remove the unsaved drafts "New" made that nobody came back to |
+| `dpress taxonomy:list` | List the categories and the tags |
+
+### Media
+
+| Command | What it does |
+|---|---|
+| `dpress media:import -file …` | Import a file into the media library |
+| `dpress media:list` | List the media library |
+| `dpress media:delete -id … [-restore]` | Mark media deleted, or bring it back |
+| `dpress media:purge -id … -confirm` | Delete the file itself, or the whole bin with `-all` |
+| `dpress media:sanitize -confirm` | Re-sanitise SVGs stored before the sanitiser existed |
+| `dpress media:protect` | Rewrite the uploads `.htaccess` that stops uploads being executed |
+| `dpress media:regenerate` | Clear the generated thumbnails so they are rebuilt on demand |
+
+### Presentation and plugins
+
+| Command | What it does |
+|---|---|
+| `dpress theme:list` / `dpress theme:set -name …` | List the installed themes, or switch |
+| `dpress plugin:list` | List the installed plugins and what went wrong with any of them |
+| `dpress plugin:enable -name …` / `plugin:disable -name …` | Turn a plugin on or off |
+| `dpress menu:list` | List the menus, their places and their items |
+| `dpress setting:list` / `dpress setting:set -name … -value …` | List the settings and where each value comes from, or change one |
+| `dpress mail:test -email … [-render]` | Render a test mail, and send it unless `-render` is given |
 
 `doctor` exits **1** when something is broken and **0** when there are only warnings, so a deploy
 script can end with it. A warning is something a site runs with — `utf8`, a development
 environment, an unrecorded render address — and failing a deploy over one is how a check becomes
 something people append `|| true` to. `-quiet` prints only what is not `ok`.
 
-`install` is safe to repeat — it applies whatever is pending. That matters because a migration that fails part way leaves the site half installed, and refusing to run again would strand it there.
+`install` is safe to repeat — it applies whatever is pending. That matters because a migration that
+fails part way leaves the site half installed, and refusing to run again would strand it there.
 
 ## Layout
 
@@ -153,21 +272,94 @@ bin/
   dpress.bat      batch launcher (Windows)
   dpress.php      the real entry point, both launchers delegate here
   autoload.php    finds the Composer autoloader
+config/
+  dpress.ini.template   what `dpress init` writes, with the placeholders filled in
 src/
   Dpress.php            version and the shared constants
   DpressCliApp.php      the CLI application and its command table
+  DpressWebApp.php      the web application and its middleware order
   DpressServices.php    DI registrations and the core migration list
+  Block/                the block registry and the three core types
   Cli/                  the command implementations
-  Migration/            the schema migrations
-  Service/              the CMS services
+  Content/              the markdown pipeline: links, callouts, shortcodes, feed, sitemap
+  Controller/           the front end, and Admin/ behind it
+  Entity/               the tables
+  Form/                 the form factory and the validators
+  Mail/                 the mailers
+  Media/                storage, image processing, the SVG sanitiser
+  Migration/            the schema
+  Plugin/               the loader
+  Query/                the query factory and the core queries
+  Security/             permissions, hashing, rate limiting, the auth cookies
+  Service/              the CMS services, and the doctor
+  Theme/                themes, places, page assets
+views/                  the built-in templates, front end and admin
+assets/                 the admin's CSS and JS, served from the package
+icons/                  the admin's inline SVGs
+translations/           en.ini, and micro's own strings
 ```
 
-The two launchers stay deliberately dumb: they resolve their own directory and hand off to `dpress.php`, so all the logic lives in PHP and there is one implementation rather than two.
+The two launchers stay deliberately dumb: they resolve their own directory and hand off to
+`dpress.php`, so all the logic lives in PHP and there is one implementation rather than two.
+
+The admin's assets are **served from the package** by `AssetController`, so installing the package
+installs the admin — there is no publish step to forget after an upgrade, which would otherwise
+leave last version's list code talking to this version's endpoints.
+
+## Documentation
+
+`CLAUDE.md` is the long version — what is built and, more usefully, why each decision went the way
+it did. The `docs/` folder is a page per feature:
+
+| | |
+|---|---|
+| [themes.md](docs/themes.md) | Writing a theme: the folder, the layouts per kind of page, the assets |
+| [blocks.md](docs/blocks.md) | Blocks, places, and adding a type |
+| [plugins.md](docs/plugins.md) | What a plugin is, and every point it can hook |
+| [internal-links.md](docs/internal-links.md) | `media#12` and friends, and why nothing stored holds a URL |
+| [shortcodes.md](docs/shortcodes.md) | `{{ video('media#10') }}`, and writing one |
+| [callouts.md](docs/callouts.md) | `> [!WARNING]` |
+| [code-highlighting.md](docs/code-highlighting.md) | Fenced code, and why the colours are not stored |
+| [autolinks.md](docs/autolinks.md) | Bare URLs in prose |
+| [pages-in-content.md](docs/pages-in-content.md) | Long posts, served a page at a time |
+| [media-in-the-editor.md](docs/media-in-the-editor.md) | Attachments against references, which are not the same thing |
+| [comments.md](docs/comments.md) | Comments, through Disqus |
+| [performance.md](docs/performance.md) | How to measure a dpress site, and what the numbers were |
+| [roadmap.md](docs/roadmap.md) | What is left, and what each one has to decide first |
+
+[CHANGELOG.md](CHANGELOG.md) is written for reading rather than as a release note: every entry says
+what changed and what it was like before.
+
+## Tests
+
+```bash
+# the PHP suite, from ../dynart-dpress-test/
+php vendor/bin/phpunit --stderr
+
+# the browser side, from this repo — a stub DOM, no dependency, no build step
+node assets/dynamic-list.test.js
+node assets/admin.test.js
+node assets/markdown-highlight.test.js
+node assets/emoji.test.js
+```
+
+The PHP suite covers what the server sends and the four JS suites cover what the browser does with
+it. Run them all when touching the admin: a list whose constructor could not run was released once,
+because only the first of those existed.
 
 ## Related repositories
 
 | Repository | What it is |
 |---|---|
+| [`dynart-micro`](https://github.com/goph-R/dynart-micro) | the framework underneath |
+| [`dynart-micro-entities`](https://github.com/goph-R/dynart-micro-entities) | the ORM, the migrations and the audit trail |
 | `dynart-dpress` | this package, the CMS itself |
 | `dynart-dpress-test` | the PHPUnit suite, symlinking this via a path repository |
-| `dynart-dpress-app` | a runnable site used for development |
+| `dynart-dpress-app` | a runnable site: the config, the themes, the uploads, the front controller |
+| [`dynart-dpress-disqus`](https://github.com/goph-R/dynart-dpress-disqus) | comments |
+| [`dynart-dpress-kofi`](https://github.com/goph-R/dynart-dpress-kofi) | a Ko-fi button, and the proof that a block type can leave core |
+| [`dynart-dpress-fontawesome`](https://github.com/goph-R/dynart-dpress-fontawesome) | an icon shortcode |
+
+## License
+
+MIT. See [LICENSE](LICENSE).
