@@ -7,7 +7,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [0.69.0] &ndash; 2026-09-06
 
-`dpress doctor`, and a site that knows what address it was rendered for.
+`dpress doctor`, a bundle a site travels in, and a site that knows what address it was rendered for.
 
 ### Added
 - **`dpress doctor`** - one command for the two things that fail the same way: installing a site
@@ -30,6 +30,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
   **A service returning rows, a command printing them.** Every judgement is in `Doctor`; the
   colours are in `DoctorCommands`. That is what lets the checks be tested against a
   half-configured site with no console.
+
+- **`dpress export` and `dpress import`** - the three things that have to travel together and
+  live in three different places: the rows, the uploaded files, and the handful of facts that
+  decide whether either means anything on the other end. A database dump alone is the usual way
+  to move a site and it is the one that loses the pictures and points every link at the old host.
+
+  **Data, not schema.** The target builds its tables from its own migrations and the bundle
+  carries only rows - the opposite way round from `mysqldump`, and better for the reason `install`
+  is safe to repeat: the schema that ends up on the new server is the one *that server's* dpress
+  believes in. **JSON, not SQL**, so rows go back through prepared statements and there is no
+  escaping to get wrong and no `mysqldump` to have installed and on `PATH`. **A folder, not an
+  archive**, because `tar` already exists and `ext-zip` would be a dependency forever.
+
+  **`import` re-renders the site for its new address itself**, which is the whole reason a bundle
+  carries a manifest. Stored HTML holds absolute URLs, so a site restored under a new domain
+  points at the old one on every link with nothing on the page to say so - and a step that can be
+  forgotten in that position will be. It is guarded by `-confirm`, a flag rather than a prompt,
+  because a command that stops to ask cannot run from a deploy script.
+
+  **The table list comes from the database**, so a plugin's own table travels too. Four do not:
+  `migration_history`, because the new server's record is the true account of what it did, and
+  `refresh_token`, `user_token` and `auth_attempt`, which are session state rather than content -
+  left out for the same reason they are not audited, that they hold credentials and are
+  short-lived while a bundle is as durable as an artifact gets. Everybody signs in again on the
+  new server, which is the right outcome. `dpress.ini` is never in a bundle.
 
 - **`Setting::CONTENT_RENDERED_FOR`**, the address the stored HTML was last rendered against.
   Internal links are resolved at save time and `Router::url()` prefixes `app.base_url`, so

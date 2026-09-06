@@ -339,6 +339,31 @@ is what an upgrade runs, so writing it every time would overwrite the evidence o
 mismatch it exists to find. **Absent is not a mismatch**: a site installed before this existed has
 never recorded one, and "unknown" is the honest answer.
 
+**A bundle is data, not a dump.** `dpress export` writes `site.json`, `data/<table>.json` and
+`uploads/` to a folder; `dpress import` loads it. The target builds its tables from **its own
+migrations** and the bundle carries only rows - the opposite way round from `mysqldump`, and
+better for the reason `install` is safe to repeat: the schema on the new server is the one that
+server's dpress believes in rather than a snapshot of the old one's. Rows go back through prepared
+statements, so there is no escaping to get wrong and no `mysqldump` to have on `PATH`. A folder
+rather than an archive, because `tar` exists and `ext-zip` would be a dependency forever.
+
+**The table list is read from the database**, so a plugin's own table travels too. Four are
+skipped: `migration_history`, because the target's own record is the true account of what that
+server did; and `refresh_token`, `user_token` and `auth_attempt`, which are **session state, not
+content** - excluded for the same reason they are not audited, that they hold credentials and are
+short-lived while a bundle is as durable as an artifact gets. `dpress.ini` is never in one.
+
+**`import` re-renders rather than recommending it.** It is the whole point of carrying a manifest:
+a step that can be forgotten while the site looks perfect is a step that will be. It also loads
+with `foreign_key_checks = 0` rather than working out a parent-before-child order, which would be
+a fact about the schema maintained beside it and wrong the first time somebody adds a table.
+
+**A plugin's table cannot exist on the first import**, and that is ordering rather than a bug: a
+plugin's migrations are registered when the loader runs it, the loader reads the enabled list from
+`dp_setting`, and that row arrives *with the import*. The second run boots with the plugins on and
+loads their rows, which is why the command says to run it again rather than reloading the plugin
+loader inside a container that has already been built.
+
 **The extension list comes out of `composer.json`**, not a second list here. And the log-directory
 check is **lexical, not filesystem** - a site set to log into `public/` that has not logged yet is
 the one moment it is free to fix, and `realpath()` on a directory that does not exist answers

@@ -60,20 +60,50 @@ reader clicks leaves the site.
 
 ```bash
 # on the old machine
-mysqldump -u user -p olddb > site.sql
-tar czf uploads.tar.gz -C public uploads
+vendor/bin/dpress export -to ./bundle
+tar czf bundle.tgz bundle
 
 # on the new one, after composer install and a dpress.ini with the new app.base_url
-mysql -u user -p newdb < site.sql
-tar xzf uploads.tar.gz -C public
-vendor/bin/dpress upgrade            # the target may be a newer dpress than the dump
-vendor/bin/dpress content:rerender   # rewrites every stored URL for the new address
+tar xzf bundle.tgz
+vendor/bin/dpress import -from ./bundle -confirm
 vendor/bin/dpress doctor
 ```
 
-`content:rerender` is the step that matters, and `doctor` is how you find out you forgot it: the
-site records the address its HTML was rendered for, and the check compares that against
-`app.base_url`.
+`import` creates the schema if it is not there, loads the rows, copies the uploads and then
+**re-renders every stored document for this site's address** — not offered, not suggested, done.
+A step that can be forgotten in that position is a step that will be.
+
+### What is in a bundle
+
+```
+bundle/
+  site.json          version, address, theme, plugins, row counts
+  data/<table>.json  the rows
+  uploads/           the files
+```
+
+**Data, not schema.** The new server builds its tables from its own migrations and the bundle only
+carries rows, so the schema that ends up there is the one that server's dpress believes in rather
+than a snapshot of the old one's. It also means no `mysqldump` to have installed and on `PATH`.
+
+**A folder, not an archive**, because `tar` and `zip` both exist already and neither has to become
+a PHP extension this package requires.
+
+**`dpress.ini` is not in it.** It holds the database password and the signing secret, and every
+value in it describes the machine rather than the site.
+
+**Sessions do not travel** — `refresh_token`, `user_token` and `auth_attempt` are left out for the
+same reason they are not audited: they hold credentials and are short-lived, and a bundle is as
+durable as an artifact gets. Everybody signs in again on the new server, which is the right
+outcome.
+
+Export and import want **the same dpress version** on both sides; `import` says so and takes
+`-force` if you know the difference is safe.
+
+### After an import
+
+`doctor` is how you find out what is left, and the checks it runs are the ones a page view will
+not tell you about:
 
 ```
 X   Rendered for    https://old.example.com, but this site is https://example.com
@@ -81,15 +111,15 @@ X   Rendered for    https://old.example.com, but this site is https://example.co
         and nothing on the site will say so.
 ```
 
-Three more things do not travel in a database dump:
+Two things a bundle cannot bring with it, both named by `doctor`:
 
-- **`public/uploads/`** — files on disk. The rows know their paths; the paths are relative and
-  survive the move, but the files have to be copied.
-- **Plugins.** The enabled list is in `dp_setting`, the clones are not, and a plugin that is
-  enabled with nothing on disk is **skipped silently** — the site works and one feature is gone.
-  `doctor` names them.
-- **The theme**, the same way. A theme that is set but not installed leaves the site rendering the
-  built-in templates, which looks deliberate.
+- **Plugin code.** The enabled list travels in `dp_setting`; the clones do not, and a plugin that
+  is enabled with nothing on disk is **skipped silently** — the site works and one feature is
+  gone. A plugin's own *table* is also made only when the plugin is loaded, and the list of
+  enabled plugins arrives with the import — so clone the missing ones and **run the import once
+  more**, and the second pass boots with them on and loads their rows.
+- **The theme.** A theme that is set but not installed leaves the site rendering the built-in
+  templates, which looks deliberate.
 
 ## The `dpress` command
 
@@ -97,6 +127,8 @@ Three more things do not travel in a database dump:
 |---|---|
 | `dpress install` | Create the database schema and apply every migration |
 | `dpress doctor` | Check everything an install or a move can get silently wrong |
+| `dpress export -to <dir>` | Write the content, the uploads and the manifest to a folder |
+| `dpress import -from <dir> -confirm` | Replace this site with a bundle, and re-render it here |
 | `dpress upgrade` | Apply the pending migrations |
 | `dpress migrate:status` | List the applied and the pending migrations |
 | `dpress version` | Print the dpress version |

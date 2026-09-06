@@ -22,6 +22,7 @@ use Dynart\Dpress\Cli\MediaCommands;
 use Dynart\Dpress\Cli\TaxonomyCommands;
 use Dynart\Dpress\Cli\PluginCommands;
 use Dynart\Dpress\Cli\ThemeCommands;
+use Dynart\Dpress\Cli\BundleCommands;
 use Dynart\Dpress\Cli\DoctorCommands;
 use Dynart\Dpress\Cli\SchemaCommands;
 use Dynart\Dpress\Cli\SystemCommands;
@@ -58,6 +59,19 @@ class DpressCliApp extends CliApp {
             'description' => 'Check everything an install or a move can get silently wrong',
             'needsConfig' => true,
             'flags' => ['quiet'],
+        ],
+        'export' => [
+            'callable' => [BundleCommands::class, 'export'],
+            'description' => 'Write the content, the uploads and the manifest to a folder',
+            'needsConfig' => true,
+            'params' => ['to'],
+        ],
+        'import' => [
+            'callable' => [BundleCommands::class, 'import'],
+            'description' => 'Replace this site with a bundle, and re-render it for this address',
+            'needsConfig' => true,
+            'params' => ['from'],
+            'flags' => ['confirm', 'force'],
         ],
         'migrate:status' => [
             'callable' => [SchemaCommands::class, 'status'],
