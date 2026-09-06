@@ -1,4 +1,4 @@
-# dpress
+# Dpress
 
 A markdown based CMS built on [dynart-micro](../dynart-micro) and
 [dynart-micro-entities](../dynart-micro-entities). PHP 8.0+, MariaDB, MIT.
@@ -30,7 +30,7 @@ memorises, and picking an emoji.
   `category#21`, `tag#7` resolve at render time, so renaming a page moves every link to it
   ([internal-links.md](docs/internal-links.md)).
 - **Callouts** — `> [!WARNING]` is a coloured panel, and still a plain blockquote anywhere without
-  dpress ([callouts.md](docs/callouts.md)).
+  Dpress ([callouts.md](docs/callouts.md)).
 - **Shortcodes** — `{{ video('media#10') }}`, parsed as CommonMark inline syntax, so one inside a
   code fence is left alone ([shortcodes.md](docs/shortcodes.md)).
 - **Syntax highlighting**, in the browser rather than in the stored HTML, so changing the theme
@@ -88,7 +88,7 @@ vendor/bin/dpress init \
     -db-name mysite -db-user mysite -db-password 'from your database' \
     -site-name "My Site"
 
-# create the database itself, which dpress does not do:
+# create the database itself, which Dpress does not do:
 #   create database `mysite` character set utf8mb4 collate utf8mb4_unicode_ci;
 
 vendor/bin/dpress install
@@ -151,7 +151,7 @@ bundle/
 ```
 
 **Data, not schema.** The new server builds its tables from its own migrations and the bundle only
-carries rows, so the schema that ends up there is the one that server's dpress believes in rather
+carries rows, so the schema that ends up there is the one that server's Dpress believes in rather
 than a snapshot of the old one's. It also means no `mysqldump` to have installed and on `PATH`.
 
 **A folder, not an archive**, because `tar` and `zip` both exist already and neither has to become
@@ -165,7 +165,7 @@ same reason they are not audited: they hold credentials and are short-lived, and
 durable as an artifact gets. Everybody signs in again on the new server, which is the right
 outcome.
 
-Export and import want **the same dpress version** on both sides; `import` says so and takes
+Export and import want **the same Dpress version** on both sides; `import` says so and takes
 `-force` if you know the difference is safe.
 
 ### After an import
@@ -324,7 +324,7 @@ it did. The `docs/` folder is a page per feature:
 | [pages-in-content.md](docs/pages-in-content.md) | Long posts, served a page at a time |
 | [media-in-the-editor.md](docs/media-in-the-editor.md) | Attachments against references, which are not the same thing |
 | [comments.md](docs/comments.md) | Comments, through Disqus |
-| [performance.md](docs/performance.md) | How to measure a dpress site, and what the numbers were |
+| [performance.md](docs/performance.md) | How to measure a Dpress site, and what the numbers were |
 | [roadmap.md](docs/roadmap.md) | What is left, and what each one has to decide first |
 
 [CHANGELOG.md](CHANGELOG.md) is written for reading rather than as a release note: every entry says
