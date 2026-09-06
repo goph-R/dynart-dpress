@@ -26,10 +26,11 @@ class AssetController extends AbstractController {
 
     /** Only these, by name. Nothing here takes a path from the request. */
     const ASSETS = [
-        'dynamic-list.js' => 'application/javascript; charset=utf-8',
-        'admin.js'        => 'application/javascript; charset=utf-8',
-        'admin.css'       => 'text/css; charset=utf-8',
-        'logo.svg'        => 'image/svg+xml',
+        'dynamic-list.js'       => 'application/javascript; charset=utf-8',
+        'markdown-highlight.js' => 'application/javascript; charset=utf-8',
+        'admin.js'              => 'application/javascript; charset=utf-8',
+        'admin.css'             => 'text/css; charset=utf-8',
+        'logo.svg'              => 'image/svg+xml',
     ];
 
     /**

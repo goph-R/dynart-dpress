@@ -1,10 +1,13 @@
 <?php
 /**
- * The markdown field: a textarea with a toolbar, deliberately not an editor
+ * The markdown field: a textarea, deliberately not an editor
  *
- * The toolbar is built by `admin.js` around any `textarea.markdown-editor`, so the class is not
- * decoration - it is the binding. `attributes` is where the content builder puts
- * `data-attach-hidden`, which is what makes the toolbar grow its attach button.
+ * `admin.js` binds anything matching `textarea.markdown-editor`, so the class is not decoration -
+ * it is the binding, and it is what `markdown-highlight.js` paints its colours behind. Neither
+ * of them changes the value: with the scripts off this is a textarea and the field still works.
+ *
+ * `attributes` is where the content builder puts `data-insert-media`, which is what grows the one
+ * button the field has.
  */
 $id = $form->idByNameAndField($name, $field);
 ?>

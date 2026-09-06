@@ -442,24 +442,21 @@
     }
 
     /**
-     * A toolbar over a markdown textarea
+     * What sits around a markdown textarea: colour behind it, and one button over it
      *
-     * Deliberately not an editor. A markdown field whose value is anything other than exactly
-     * what the author typed is a field that eventually rewrites somebody's document on save, and
-     * the whole content model here is "the markdown is the truth". This wraps a selection and
-     * gets out of the way; the textarea keeps working with the script disabled.
+     * Deliberately not an editor, and since 0.67.0 deliberately not a toolbar either. The
+     * formatting buttons - bold, italic, heading, quote, list, code, link, separator - are gone.
+     * They wrote marks that are shorter to type than to reach for, which is the point of markdown
+     * and the reason nobody used them: a whole blog was migrated through this field and only the
+     * one button that is *not* a formatting mark was ever pressed. What is left is that button,
+     * because writing `![alt](media#12)` means knowing an id the library has and the author
+     * does not.
+     *
+     * The colouring is `markdown-highlight.js` and changes nothing about the field: a `<pre>`
+     * behind it, painted from the value, unable to write back. A field whose value is anything
+     * other than exactly what the author typed eventually rewrites somebody's document on save,
+     * and the content model here is "the markdown is the truth".
      */
-    var MARKDOWN_ACTIONS = [
-        {label: 'B', title: 'Bold', prefix: '**', suffix: '**'},
-        {label: 'I', title: 'Italic', prefix: '_', suffix: '_'},
-        {label: 'H', title: 'Heading', line: '## '},
-        {label: '“”', title: 'Quote', line: '> '},
-        {label: '•', title: 'List', line: '- '},
-        {label: '</>', title: 'Code', prefix: '`', suffix: '`'},
-        {label: '🔗', title: 'Link', prefix: '[', suffix: '](https://)'},
-        {label: '—', title: 'Lead separator', block: '\n---\n'}
-    ];
-
     function initMarkdown(root) {
         root.querySelectorAll('textarea.markdown-editor').forEach(function (textarea) {
             if (textarea.dataset.markdownBound) {
@@ -467,22 +464,12 @@
             }
             textarea.dataset.markdownBound = '1';
 
-            var toolbar = document.createElement('div');
-            toolbar.className = 'markdown-toolbar';
-            MARKDOWN_ACTIONS.forEach(function (action) {
-                var button = document.createElement('button');
-                button.type = 'button';
-                button.title = action.title;
-                button.textContent = action.label;
-                button.addEventListener('click', function () {
-                    apply(textarea, action);
-                });
-                toolbar.appendChild(button);
-            });
-            // The one toolbar button that is not a formatting mark: it picks a file from the
-            // library and writes a reference to it here. It attaches nothing and needs no post
-            // id, so it works on something that has never been saved.
+            // It picks a file from the library and writes a reference to it here. It attaches
+            // nothing and needs no post id, so it works on something that has never been saved.
+            // No button, no bar: a screen with nothing to put in it should not grow an empty one.
             if (textarea.hasAttribute('data-insert-media')) {
+                var toolbar = document.createElement('div');
+                toolbar.className = 'markdown-toolbar';
                 var insert = document.createElement('button');
                 insert.type = 'button';
                 insert.className = 'markdown-insert';
@@ -494,9 +481,13 @@
                     });
                 });
                 toolbar.appendChild(insert);
+                textarea.parentNode.insertBefore(toolbar, textarea);
             }
 
-            textarea.parentNode.insertBefore(toolbar, textarea);
+            // Last, because it wraps the textarea and the toolbar belongs above the wrapper
+            if (Dpress.markdown) {
+                Dpress.markdown.attach(textarea);
+            }
 
             // a tab in a code block should indent, not leave the field
             textarea.addEventListener('keydown', function (event) {
@@ -508,24 +499,15 @@
         });
     }
 
-    function apply(textarea, action) {
-        if (action.block) {
-            var at = textarea.selectionEnd;
-            textarea.value = textarea.value.slice(0, at) + action.block + textarea.value.slice(at);
-            textarea.selectionStart = textarea.selectionEnd = at + action.block.length;
-            textarea.focus();
-            return;
-        }
-        if (action.line) {
-            var start = textarea.value.lastIndexOf('\n', Math.max(0, textarea.selectionStart - 1)) + 1;
-            textarea.value = textarea.value.slice(0, start) + action.line + textarea.value.slice(start);
-            textarea.selectionStart = textarea.selectionEnd = textarea.selectionEnd + action.line.length;
-            textarea.focus();
-            return;
-        }
-        replaceSelection(textarea, action.prefix, action.suffix, true);
-    }
-
+    /**
+     * Writes at the cursor, and says so
+     *
+     * Assigning `value` fires no `input` event - the browser only raises one for a person - so
+     * anything watching the field goes stale the moment something here writes into it. The
+     * colouring behind the field was the first such watcher and would have shown the text as it
+     * was before the insert; announcing it here rather than calling the highlighter directly
+     * means the next watcher needs no change at this end either.
+     */
     function replaceSelection(textarea, prefix, suffix, keepSelection) {
         var start = textarea.selectionStart;
         var end = textarea.selectionEnd;
@@ -538,6 +520,13 @@
             textarea.selectionStart = textarea.selectionEnd = start + prefix.length + selected.length;
         }
         textarea.focus();
+        notifyInput(textarea);
+    }
+
+    function notifyInput(element) {
+        if (global.Event && typeof element.dispatchEvent === 'function') {
+            element.dispatchEvent(new global.Event('input', {bubbles: true}));
+        }
     }
 
     // --- attachments, in the content editor ---

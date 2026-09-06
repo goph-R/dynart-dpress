@@ -34,11 +34,12 @@ php vendor/bin/phpunit --stderr
 # the browser side, from this repo - a stub DOM, no dependency, no build step
 node assets/dynamic-list.test.js
 node assets/admin.test.js
+node assets/markdown-highlight.test.js
 ```
 
-The PHP suite covers what the server sends; the two JS suites cover what the browser does
-with it. Run both when touching the admin — a list whose constructor could not run was released
-once because only the first existed.
+The PHP suite covers what the server sends; the three JS suites cover what the browser does
+with it. Run them all when touching the admin — a list whose constructor could not run was
+released once because only the first existed.
 
 ## Architecture
 
@@ -293,7 +294,7 @@ Everything behind `/admin`. **A screen is two actions**: one that renders the pa
 
 **Deletes and publishes are POSTs.** A link that changes something can be followed by a prefetcher, a crawler or an `<img>` on another page. Every admin screen renders one hidden form carrying a CSRF token, inside `<main>` so a partial load brings a fresh one; `Dpress.post()` points it at the action and submits it. `requireAction()` is what validates it, and a failure is a 403 rather than a redirect with a message.
 
-**The markdown field is a textarea with a toolbar, deliberately not an editor.** A markdown field whose value is anything other than what the author typed eventually rewrites somebody's document on save, and the content model is "the markdown is the truth".
+**The markdown field is a textarea, deliberately not an editor.** A markdown field whose value is anything other than what the author typed eventually rewrites somebody's document on save, and the content model is "the markdown is the truth". It is **coloured** since 0.67.0 and that changes nothing about it: `assets/markdown-highlight.js` puts a `<pre>` behind the textarea holding the same characters in colour and turns the field's own text transparent over the top, so the value, the selection, the undo stack and the no-JavaScript fallback are all untouched and nothing in the highlighter can write back. **The grammar is ours** rather than a library's - an off-the-shelf mode knows `**bold**` and nothing about `media#12`, `{{ shortcode() }}` or `> [!WARNING]`, and those are the marks worth confirming while typing. The `---` rule is `MarkdownRenderer::separatorLines()` transcribed and a test greps for the constants it copied, because a highlighter that disagrees with the splitter about where a post breaks is worse than none. **No metric is written twice**: everything that decides where a character lands is read off the textarea onto the backdrop, so `textarea.markdown-editor` in `admin.css` stays the one place the field's font and padding are chosen, and the scrollbar's gutter is added to the backdrop's padding or the two wrap at different columns. Two palettes, Dracula in the dark scheme and the same roles at 4.5:1 on white in the light one. **The toolbar's formatting buttons are gone** (0.67.0): they wrote marks shorter to type than to reach for. The library insert button stays, because `![alt](media#12)` needs an id the author does not have, and a field without `data-insert-media` grows no bar at all.
 
 **The sections are a sidebar on the left**, one icon each, and the icon is an inline SVG so it takes the colour of the link it sits in. `--radius` (3px) and `--width` (1280px) in `admin.css` are the two numbers the whole admin is built from; a component with its own corner radius has drifted.
 

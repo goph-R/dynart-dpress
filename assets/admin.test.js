@@ -243,6 +243,27 @@ const tests = {
         assert.ok(true);
     },
 
+    /**
+     * Assigning `value` fires no `input` event - a browser raises one for a person and not for a
+     * script - so the colouring behind the field went on showing the text as it was before the
+     * insert. It is announced here rather than repainted here, so the next thing that watches
+     * the field needs no change at this end either.
+     */
+    'writing into the field announces itself'() {
+        const heard = [];
+        const textarea = field('a');
+        textarea.dispatchEvent = function (event) { heard.push(event.type); };
+        window.Dpress.insertMedia(IMAGE, textarea);
+        assert.deepStrictEqual(heard, ['input']);
+    },
+
+    /** A field that cannot take a listener is still a field somebody can type into */
+    'a stub with no events is still writable'() {
+        const textarea = field('a');
+        window.Dpress.insertMedia(IMAGE, textarea);
+        assert.strictEqual(textarea.value, 'a![A sunset](media#1)');
+    },
+
     // --- the menu item editor: what "Points at" decides about the other two fields ---
 
     /**

@@ -5,6 +5,64 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.67.0] &ndash; 2026-09-06
+
+The markdown field gets colour and loses its toolbar.
+
+### Added
+- **Syntax highlighting in the markdown field, painted behind it.** `assets/markdown-highlight.js`
+  puts a `<pre>` under the textarea holding the same characters in colour and turns the textarea's
+  own text transparent over it. The textarea is still the element: it keeps the value, the
+  selection, the undo stack, the spellchecker and the form, and nothing in the highlighter can
+  write back into it - which is the only shape this feature may take when the content model is
+  "the markdown is the truth". With the script off the field is exactly what it was.
+
+  **The grammar is this site's markdown**, not markdown in general, which is the reason it is 300
+  lines of ours rather than a library. An off-the-shelf mode knows `**bold**` and knows nothing
+  about `media#12`, `{{ shortcode() }}`, `> [!WARNING]`, or that a line which is exactly `---`
+  cuts the post in two - and those are the marks an author most wants confirmed while typing. A
+  destination that resolves to something dpress knows is weighted; one that does not is an
+  ordinary URL, so a mistyped `media#l2` is visible before Save rather than after Preview.
+
+  **The separator rule is `MarkdownRenderer::separatorLines()` transcribed** - trailing whitespace
+  trimmed, exactly three dashes, no indent, not inside a fence, never line zero. A highlighter
+  that disagreed with the splitter about where a post breaks would be worse than none, so a test
+  in `AdminTest` greps the script for the constants it copied: nothing at runtime connects the two
+  sides, and a prefix added in PHP would otherwise just quietly stop being coloured.
+
+  **Two palettes, because the admin has two.** Dracula in the dark scheme, on Dracula's own
+  `#282a36` rather than `--panel` - a code surface is what this is, and it is the ground
+  `enlighterjs.dracula` renders a code block on, so a fenced block looks in the editor roughly
+  like it will on the page. In the light scheme the same *roles* in hues that hold at least 4.5:1
+  on white, rather than the same hexes dimmed: this is text somebody reads for an hour.
+
+  **No metric is written twice.** Every property that decides where a character lands is read off
+  the textarea and copied onto the backdrop, so `textarea.markdown-editor` in `admin.css` stays
+  the one place the field's font, size and padding are chosen. A second declaration is how the
+  colours end up sliding off the letters halfway down a long post, on one browser only. The
+  scrollbar's gutter is added to the backdrop's right padding for the same reason - it comes out
+  of the textarea's line width and not out of the backdrop's, so without it the two wrap at
+  different columns on every post long enough to scroll.
+
+### Removed
+- **The markdown toolbar's formatting buttons.** Bold, italic, heading, quote, list, code, link
+  and the separator are gone. They wrote marks that are shorter to type than to reach for, which
+  is the point of markdown and the reason they went unused: a whole blog was migrated through this
+  field and only the one button that is *not* a formatting mark was ever pressed.
+
+  **The insert button stays**, because writing `![alt](media#12)` means knowing an id that the
+  library has and the author does not - it is the one thing in that bar the keyboard cannot do.
+  A field with no `data-insert-media` now grows no bar at all rather than an empty one.
+
+### Fixed
+- **Writing into the field announces itself.** `Dpress.insertMedia()` assigns `value`, and a
+  browser raises `input` for a person and not for a script - so the colouring would have gone on
+  showing the text as it was before the insert. `replaceSelection()` dispatches the event rather
+  than calling the highlighter, so the next thing that watches the field needs no change at this
+  end either.
+
+---
+
 ## [0.66.0] &ndash; 2026-09-06
 
 The featured tag stops being something a visitor meets.

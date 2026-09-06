@@ -22,6 +22,27 @@
     --radius: 3px;
     --width: 1280px;
     --nav-width: 196px;
+
+    /* The markdown field's colours, in light. Dracula is a dark theme and there is no honest
+       light Dracula, so this is the same *roles* in hues that hold their contrast on white
+       rather than the same hex values dimmed - which is what a dark palette on a light ground
+       always looks like. Every one of these is at least 4.5:1 on `--panel`, because it is
+       ordinary text somebody reads for an hour, not a decoration on a code block. */
+    --md-bg: var(--panel);
+    --md-ink: var(--ink);
+    --md-selection: rgba(37, 99, 235, .22);
+    --md-marker: #78716c;
+    --md-heading: #7c3aed;
+    --md-strong: #c2410c;
+    --md-em: #a16207;
+    --md-code: #15803d;
+    --md-quote: #78716c;
+    --md-callout: #c2410c;
+    --md-list: #be185d;
+    --md-link: #0369a1;
+    --md-url: #be185d;
+    --md-shortcode: #7c3aed;
+    --md-separator: var(--danger);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -32,6 +53,27 @@
         --muted: #a1a1aa;
         --line: #3f3f46;
         --accent: #fafafa;
+
+        /* Dracula, unchanged: #282a36 ground, and the palette's own eight. The field keeps its
+           own background rather than `--panel`, which is the one place the admin's greys are
+           overruled - a code surface is what this is, and the colours were chosen against that
+           ground. It is also the ground `enlighterjs.dracula` renders a code block on, so a
+           fenced block looks in the editor roughly like it will on the page. */
+        --md-bg: #282a36;
+        --md-ink: #f8f8f2;
+        --md-selection: rgba(68, 71, 90, .6);
+        --md-marker: #6272a4;
+        --md-heading: #bd93f9;
+        --md-strong: #ffb86c;
+        --md-em: #f1fa8c;
+        --md-code: #50fa7b;
+        --md-quote: #6272a4;
+        --md-callout: #ffb86c;
+        --md-list: #ff79c6;
+        --md-link: #8be9fd;
+        --md-url: #ff79c6;
+        --md-shortcode: #bd93f9;
+        --md-separator: #ff5555;
     }
 }
 
@@ -207,11 +249,67 @@ button.link { background: none; border: 0; color: var(--muted); cursor: pointer;
 .media-field-preview img { max-height: 64px; border-radius: var(--radius); display: block; }
 
 
+/* One button now, so the bar is only an alignment - see `initMarkdown`. It is still a flex row
+   because a plugin adding a second one should not have to restyle the first. */
 .markdown-toolbar { display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; }
 .markdown-toolbar button {
     background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
     padding: 3px 9px; font: inherit; font-size: 13px; cursor: pointer; color: var(--ink); min-width: 32px;
 }
+
+/* --- the markdown field's colouring ---
+
+   The `<pre>` is a backdrop: it sits behind the textarea and holds the same characters in
+   colour, and the textarea's own text is turned transparent over it. Only the *painting* is
+   declared here - every metric that decides where a character lands is read off the textarea by
+   `markdown-highlight.js` and copied onto the backdrop, so `textarea.markdown-editor` above
+   stays the one place the field's font, size and padding are chosen. Writing them a second time
+   here is how the colours end up sliding off the letters halfway down a long post. */
+
+.markdown-field { position: relative; }
+
+.markdown-highlight {
+    position: absolute; inset: 0; margin: 0; z-index: 0;
+    overflow: hidden; pointer-events: none;
+    border: 1px solid transparent;   /* the textarea draws the visible one; this only takes room */
+    border-radius: var(--radius);
+    background: var(--md-bg); color: var(--md-ink);
+}
+
+textarea.markdown-editor.is-highlighted {
+    position: relative; z-index: 1;
+    background: transparent;
+    color: transparent;
+    -webkit-text-fill-color: transparent;   /* Safari ignores a transparent `color` here */
+    caret-color: var(--md-ink);
+}
+
+/* The browser's selection is opaque, and an opaque band over transparent text would hide the
+   colours underneath it rather than highlight them. */
+textarea.markdown-editor.is-highlighted::selection { background: var(--md-selection); }
+
+.markdown-highlight .md-marker      { color: var(--md-marker); }
+.markdown-highlight .md-heading     { color: var(--md-heading); font-weight: 700; }
+.markdown-highlight .md-strong      { color: var(--md-strong); font-weight: 700; }
+.markdown-highlight .md-em          { color: var(--md-em); font-style: italic; }
+.markdown-highlight .md-code,
+.markdown-highlight .md-code-inline { color: var(--md-code); }
+.markdown-highlight .md-fence       { color: var(--md-marker); }
+.markdown-highlight .md-quote       { color: var(--md-quote); font-style: italic; }
+.markdown-highlight .md-callout     { color: var(--md-callout); font-weight: 700; }
+.markdown-highlight .md-list        { color: var(--md-list); }
+.markdown-highlight .md-link        { color: var(--md-link); }
+.markdown-highlight .md-url         { color: var(--md-url); text-decoration: underline; }
+.markdown-highlight .md-shortcode   { color: var(--md-shortcode); }
+
+/* A reference into this site is a destination like any other, so it takes the destination's
+   colour - and it is weighted, because "did that resolve to something dpress knows" is the one
+   question an author asks about a link they typed by hand. */
+.markdown-highlight .md-ref { color: var(--md-url); font-weight: 700; }
+
+/* The only line in a document that changes what a *reader* gets: the first one cuts the lead off
+   the body, and every one after it is a page break. Nothing else in the field is red. */
+.markdown-highlight .md-separator { color: var(--md-separator); font-weight: 700; }
 
 .filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
 /* the minimum is for the things somebody types or picks in, which is what a filter usually is.
