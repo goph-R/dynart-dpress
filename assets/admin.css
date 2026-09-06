@@ -259,12 +259,25 @@ button.link { background: none; border: 0; color: var(--muted); cursor: pointer;
 .media-field-preview img { max-height: 64px; border-radius: var(--radius); display: block; }
 
 
-/* One button now, so the bar is only an alignment - see `initMarkdown`. It is still a flex row
-   because a plugin adding a second one should not have to restyle the first. */
-.markdown-toolbar { display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; }
+/* `justify-content` rather than a `margin-left: auto` on one of them, which is what held the bar
+   right while there was a single button: with two, the auto margin put one at each end instead of
+   next to each other. This way the bar is right-aligned however many buttons are on it, so a
+   plugin adding a third needs to restyle nothing. */
+.markdown-toolbar {
+    display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; justify-content: flex-end;
+}
 .markdown-toolbar button {
     background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
     padding: 3px 9px; font: inherit; font-size: 13px; cursor: pointer; color: var(--ink); min-width: 32px;
+}
+.markdown-toolbar button:hover { border-color: var(--accent); }
+
+/* The face is the label, so it is set at the size a label would be read at rather than inheriting
+   13px - and in the emoji faces, so it is the colour drawing and not the black-and-white glyph a
+   monochrome fallback would pick. */
+.markdown-toolbar .markdown-emoji {
+    font-size: 16px; line-height: 1.1; padding: 2px 8px;
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
 }
 
 /* --- the markdown field's colouring ---
@@ -402,8 +415,52 @@ td[data-property="id"] { white-space: nowrap; color: var(--muted); font-variant-
 .panel.attachments h2 { font-size: 16px; margin: 0; }
 .panel.attachments .form-description { margin: 0 0 14px; }
 /* the toolbar's odd one out: it attaches a file rather than marking up text, so it sits apart */
-.markdown-toolbar .markdown-insert { margin-left: auto; }
 .markdown-toolbar .markdown-insert[disabled] { opacity: .45; cursor: not-allowed; }
+
+/* --- the emoji picker dialog ---
+   The media picker's shape, because they are the same kind of thing: pick one, and the dialog is
+   done. What differs is that this one has its whole list already and needs no endpoint. */
+
+dialog.emoji-picker {
+    /* Wide enough for the eight group names on one line - at 460px the row scrolled sideways and
+       "Symbols" was off the end, which is a group nobody would find. `overflow-x` below is still
+       the fallback for a screen narrower than this. */
+    width: min(600px, 94vw); border: 0; border-radius: var(--radius); padding: 0;
+    background: var(--panel); color: var(--ink);
+}
+dialog.emoji-picker::backdrop { background: rgba(0, 0, 0, .45); }
+dialog.emoji-picker header {
+    display: flex; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--line);
+}
+dialog.emoji-picker h2 { font-size: 16px; margin: 0; flex: 1; }
+dialog.emoji-picker .close { background: none; border: 0; font-size: 22px; cursor: pointer; color: var(--muted); }
+
+/* The groups scroll sideways on a narrow screen rather than wrapping into three rows and pushing
+   the emoji off the bottom of the dialog. */
+.emoji-groups {
+    display: flex; gap: 4px; padding: 10px 18px; overflow-x: auto;
+    border-bottom: 1px solid var(--line);
+}
+.emoji-groups button {
+    background: none; border: 1px solid transparent; border-radius: var(--radius);
+    padding: 4px 9px; font: inherit; font-size: 13px; cursor: pointer;
+    color: var(--muted); white-space: nowrap;
+}
+.emoji-groups button:hover { color: var(--ink); }
+.emoji-groups button.current { background: var(--accent); color: var(--bg); }
+
+/* A fixed height, so switching groups does not resize the dialog under the pointer - the next
+   click would otherwise land on whatever moved into that spot. */
+.emoji-list {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
+    gap: 2px; padding: 12px 14px; height: 260px; overflow-y: auto;
+}
+.emoji-list .emoji {
+    background: none; border: 0; border-radius: var(--radius); cursor: pointer;
+    font-size: 22px; line-height: 1; padding: 5px 0;
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+}
+.emoji-list .emoji:hover, .emoji-list .emoji:focus-visible { background: rgba(127, 127, 127, .18); }
 
 .badge-published, .badge-active { background: #dcfce7; color: #166534; }
 .badge-draft, .badge-pending { background: #fef3c7; color: #92400e; }

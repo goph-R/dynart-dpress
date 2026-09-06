@@ -5,6 +5,50 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.68.0] &ndash; 2026-09-06
+
+An emoji picker on the markdown field.
+
+### Added
+- **An emoji picker**, as the button to the left of *Insert from library*. It opens a dialog of
+  around 900 characters in eight groups and writes the one you click at the cursor.
+
+  **An emoji is text**, so there is nothing here on the server and nothing at render time: what
+  goes in the document is the character itself. That is the same rule the rest of the editor
+  follows, and it is why this can be a picker rather than a shortcode. `SchemaService::CHARSET`
+  is already `utf8mb4` for exactly this reason - on MySQL's three-byte `utf8` an emoji is not
+  stored badly, it is stored as `????` - so the storage question was answered before this
+  existed.
+
+  **The list is curated and written out**, not generated. A generated one is about 1,900 entries
+  with names, arriving as a blob nobody reads or reviews; this is what somebody writing a post
+  actually reaches for, and it is a diff a person can read when it changes. It is split on a
+  **space**, because a family is several code points joined by a zero-width joiner and a heart is
+  a character plus a variation selector - splitting by character would tear both into pieces that
+  render as something else, and a space is the one separator no emoji contains. `emoji.test.js`
+  checks that, plus duplicates, stray ASCII and lost variation selectors: a hand-written list of
+  900 characters is exactly where those go wrong.
+
+  **No flags**, and that is a decision rather than an omission: a curated flag list means choosing
+  which countries are on it, which is not a call a CMS should make for a site owner. The field
+  takes any character, so anybody who wants one can type it.
+
+  **No names, so no search.** A name table is the same size again as the emoji, and a screen
+  reader already announces each button by the character's own Unicode name without one.
+
+### Changed
+- **The toolbar is right-aligned by `justify-content` rather than by a margin on one button.**
+  `margin-left: auto` held the bar right while a single button was on it; with two, it put one at
+  each end instead of next to each other. Now the alignment holds for however many buttons there
+  are, which is what a plugin adding a third needs.
+
+- **A pictogram on the emoji button, where the library button is words.** 0.67.0 replaced an
+  emoji with a label and the reasoning still holds: this button's face is a *sample of what it
+  inserts*, so the drawing is the label rather than standing in for one. Both carry an
+  `aria-label`, because an emoji face is not an accessible name.
+
+---
+
 ## [0.67.0] &ndash; 2026-09-06
 
 The markdown field gets colour and loses its toolbar.

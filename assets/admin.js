@@ -457,6 +457,18 @@
      * other than exactly what the author typed eventually rewrites somebody's document on save,
      * and the content model here is "the markdown is the truth".
      */
+    /** A toolbar button, because two of them differing only in their text is not two things */
+    function button(label, title, className, clicked) {
+        var element = document.createElement('button');
+        element.type = 'button';
+        element.className = className;
+        element.textContent = label;
+        element.title = title;
+        element.setAttribute('aria-label', title);   // an emoji face is not an accessible name
+        element.addEventListener('click', clicked);
+        return element;
+    }
+
     function initMarkdown(root) {
         root.querySelectorAll('textarea.markdown-editor').forEach(function (textarea) {
             if (textarea.dataset.markdownBound) {
@@ -464,27 +476,36 @@
             }
             textarea.dataset.markdownBound = '1';
 
+            var toolbar = document.createElement('div');
+            toolbar.className = 'markdown-toolbar';
+
+            // Both buttons write something the keyboard cannot, which is the whole test for
+            // being on this bar - the formatting buttons went in 0.67.0 because typing `**` is
+            // quicker than reaching for a button that types `**`.
+            if (Dpress.emoji) {
+                // A pictogram here, where "Insert from library" is words, and the difference is
+                // the point: this button's face is a sample of what it inserts, so the drawing
+                // *is* the label. A picture of a frame was standing in for one.
+                toolbar.appendChild(button('🙂', 'Insert an emoji', 'markdown-emoji', function () {
+                    Dpress.emoji.pick(function (character) {
+                        replaceSelection(textarea, character, '', false);
+                    });
+                }));
+            }
+
             // It picks a file from the library and writes a reference to it here. It attaches
             // nothing and needs no post id, so it works on something that has never been saved.
-            // No button, no bar: a screen with nothing to put in it should not grow an empty one.
             if (textarea.hasAttribute('data-insert-media')) {
-                var toolbar = document.createElement('div');
-                toolbar.className = 'markdown-toolbar';
-                var insert = document.createElement('button');
-                insert.type = 'button';
-                insert.className = 'markdown-insert';
-                // Words rather than a pictogram. It is the only button on the bar, so there is no
-                // row of icons for it to be consistent with; an emoji renders as whichever
-                // drawing the operating system has at whatever size it feels like; and "Insert
-                // from library" says what it does, which a picture of a frame does not.
-                insert.textContent = 'Insert from library';
-                insert.title = 'Insert a file from the library';
-                insert.addEventListener('click', function () {
-                    Dpress.pickMedia(function (item) {
-                        Dpress.insertMedia(item, textarea);
-                    });
-                });
-                toolbar.appendChild(insert);
+                toolbar.appendChild(button('Insert from library', 'Insert a file from the library',
+                    'markdown-insert', function () {
+                        Dpress.pickMedia(function (item) {
+                            Dpress.insertMedia(item, textarea);
+                        });
+                    }));
+            }
+
+            // No button, no bar: a screen with nothing to put in it should not grow an empty one
+            if (toolbar.firstChild) {
                 textarea.parentNode.insertBefore(toolbar, textarea);
             }
 

@@ -28,6 +28,7 @@ class AssetController extends AbstractController {
     const ASSETS = [
         'dynamic-list.js'       => 'application/javascript; charset=utf-8',
         'markdown-highlight.js' => 'application/javascript; charset=utf-8',
+        'emoji.js'              => 'application/javascript; charset=utf-8',
         'admin.js'              => 'application/javascript; charset=utf-8',
         'admin.css'             => 'text/css; charset=utf-8',
         'logo.svg'              => 'image/svg+xml',

@@ -29,6 +29,7 @@ use Dynart\Dpress\Controller\Admin\AssetController;
           // is last because it is the one that calls into the other two. ?>
     <script src="<?= esc_attr(AssetController::url('dynamic-list.js')) ?>" defer></script>
     <script src="<?= esc_attr(AssetController::url('markdown-highlight.js')) ?>" defer></script>
+    <script src="<?= esc_attr(AssetController::url('emoji.js')) ?>" defer></script>
     <script src="<?= esc_attr(AssetController::url('admin.js')) ?>" defer></script>
     <?php // A plugin's own files, after the admin's, so `Dpress.addInit` exists by the time one
           // calls it. Deferred like the others, which also keeps them in this order. ?>
