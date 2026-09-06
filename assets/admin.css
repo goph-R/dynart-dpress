@@ -223,6 +223,7 @@ textarea.markdown-editor {
     font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
     font-size: 13.5px;
     height: 540px;
+    overscroll-behavior: contain;
 }
 
 .form-actions { margin-top: 22px; display: flex; gap: 10px; align-items: center; }

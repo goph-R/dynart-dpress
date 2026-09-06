@@ -489,15 +489,59 @@
                 Dpress.markdown.attach(textarea);
             }
 
-            // a tab in a code block should indent, not leave the field
             textarea.addEventListener('keydown', function (event) {
-                if (event.key === 'Tab' && !event.shiftKey && !event.ctrlKey && !event.altKey) {
+                if (event.ctrlKey || event.altKey || event.metaKey) {
+                    return;
+                }
+                // a tab in a code block should indent, not leave the field
+                if (event.key === 'Tab' && !event.shiftKey) {
                     event.preventDefault();
                     replaceSelection(textarea, '    ', '', false);
+                    return;
+                }
+                // Shift is left alone: shift+PageDown selects a page, and taking that away to
+                // stop the window moving would be trading a real editing key for a scroll bug.
+                if ((event.key === 'PageDown' || event.key === 'PageUp') && !event.shiftKey) {
+                    event.preventDefault();
+                    Dpress.pageField(textarea, event.key === 'PageUp');
                 }
             });
         });
     }
+
+    /**
+     * Pages the markdown field, and never the page behind it
+     *
+     * The field is 540px inside a screen that scrolls, so the browser's own PageDown spends what
+     * the field cannot absorb on the window - and not only at the boundary: measured in Chrome,
+     * the *first* press took the field to its bottom and moved the window 127px in the same
+     * keystroke, and two presses had the admin 592px down the page. `overscroll-behavior` fixes
+     * the wheel and does not fix this, so the key is done here instead: prevented always, so
+     * there is no remainder for the window to spend, and the scrolling is ours.
+     *
+     * **A page less a tenth**, because a reader who loses the line they were on has to find it
+     * again. When there is nowhere left to go the caret goes to that end of the document rather
+     * than the key doing nothing - a key that is dead at the bottom of a long post reads as the
+     * editor having hung.
+     *
+     * The caret is otherwise left where it was, which is what PageDown does in anything being
+     * read rather than typed into. Typing brings the view back to it, as it always did.
+     */
+    var PAGE_KEEP = 0.9;
+
+    Dpress.pageField = function (textarea, up) {
+        var height = textarea.clientHeight;
+        var max = Math.max(0, textarea.scrollHeight - height);
+        var step = Math.max(1, Math.round(height * PAGE_KEEP));
+        var before = textarea.scrollTop;
+        var next = Math.max(0, Math.min(max, up ? before - step : before + step));
+        textarea.scrollTop = next;
+        if (next === before) {
+            var at = up ? 0 : (textarea.value || '').length;
+            textarea.selectionStart = textarea.selectionEnd = at;
+        }
+        return next;
+    };
 
     /**
      * Writes at the cursor, and says so

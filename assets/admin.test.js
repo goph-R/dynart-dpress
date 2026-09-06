@@ -40,6 +40,16 @@ function field(value, start, end) {
     };
 }
 
+/**
+ * A scrollable field, as `pageField` reads one: a viewport, a content height and a position
+ */
+function scrollable(top, height, content) {
+    return {
+        scrollTop: top, clientHeight: height, scrollHeight: content,
+        value: 'x'.repeat(500), selectionStart: 250, selectionEnd: 250
+    };
+}
+
 const IMAGE = {
     id: 1, category: 'image', file_name: 'sunset.jpg', alt: 'A sunset', title: 'Sunset Photo',
     url: '/uploads/2026/08/sunset-a1b2c3.jpg'
@@ -262,6 +272,50 @@ const tests = {
         const textarea = field('a');
         window.Dpress.insertMedia(IMAGE, textarea);
         assert.strictEqual(textarea.value, 'a![A sunset](media#1)');
+    },
+
+    // --- PageUp / PageDown, which must not reach the page behind the field ---
+
+    'a page down moves most of a screen, keeping a strip of it'() {
+        const field = scrollable(0, 500, 2000);
+        assert.strictEqual(window.Dpress.pageField(field, false), 450);
+        assert.strictEqual(window.Dpress.pageField(field, false), 900);
+    },
+
+    'a page up goes back the same way'() {
+        const field = scrollable(900, 500, 2000);
+        assert.strictEqual(window.Dpress.pageField(field, true), 450);
+    },
+
+    /**
+     * The reason this exists at all: whatever the field cannot absorb, the browser spends on the
+     * window behind it. Clamping here means there is never a remainder, at either end.
+     */
+    'it stops at the ends rather than overshooting'() {
+        assert.strictEqual(window.Dpress.pageField(scrollable(1400, 500, 2000), false), 1500);
+        assert.strictEqual(window.Dpress.pageField(scrollable(100, 500, 2000), true), 0);
+    },
+
+    /**
+     * A key that does nothing at the bottom of a long post reads as the editor having hung, so
+     * the caret goes to that end instead
+     */
+    'at the end it moves the caret rather than doing nothing'() {
+        const bottom = scrollable(1500, 500, 2000);
+        window.Dpress.pageField(bottom, false);
+        assert.strictEqual(bottom.selectionStart, 500);
+        assert.strictEqual(bottom.selectionEnd, 500);
+
+        const top = scrollable(0, 500, 2000);
+        window.Dpress.pageField(top, true);
+        assert.strictEqual(top.selectionStart, 0);
+    },
+
+    /** A post shorter than the field has nowhere to scroll and must not throw */
+    'a field with nothing to scroll is survivable'() {
+        const field = scrollable(0, 500, 300);
+        assert.strictEqual(window.Dpress.pageField(field, false), 0);
+        assert.strictEqual(field.selectionStart, 500);
     },
 
     // --- the menu item editor: what "Points at" decides about the other two fields ---

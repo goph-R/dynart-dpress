@@ -45,6 +45,22 @@ The markdown field gets colour and loses its toolbar.
   different columns on every post long enough to scroll.
 
 ### Changed
+- **Scrolling the markdown field no longer scrolls the admin behind it.** The field is 540px
+  inside a screen that scrolls, so whatever it could not absorb went to the window - measured in
+  Chrome, four wheel notches over a field already at its bottom moved the page 480px, and the
+  *first* PageDown took the field to its end and moved the window 127px in the same keystroke,
+  with two presses putting the admin 592px down the page.
+
+  Two halves, because one fix does not cover both. The wheel is `overscroll-behavior: contain`,
+  which is the property that exists for exactly this and needs no listener - worth having for its
+  own sake, since a non-passive `wheel` handler is the one thing here browsers actively push back
+  on. The keys are `Dpress.pageField()`, which prevents the default **always** rather than only at
+  the boundary: the leak happens inside a single press, so leaving the browser any remainder at
+  all leaves it something to spend on the window. It moves a page less a tenth, so a reader does
+  not lose the line they were on, and at either end it puts the caret there instead - a key that
+  does nothing at the bottom of a long post reads as the editor having hung. Shift is left alone,
+  because shift+PageDown selects a page and that is a real editing key.
+
 - **The markdown field opens at 540px** rather than at eighteen rows. A starting size and not a
   cap: `resize: vertical` still applies and a drag writes an inline height that wins over it. The
   number lives in `admin.css`, which is where the field's metrics are decided and therefore what
