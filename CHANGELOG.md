@@ -43,6 +43,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 - **The README's install section is the four commands**, `init` through `doctor`, rather than an
   ini file to copy and edit by hand.
 
+### Removed
+- **`dpress.ini.example` in the app skeleton.** `init` writes from `config/dpress.ini.template`
+  inside this package, so there is one shape of the file rather than two that drift apart - and
+  the deleted one was the copy that said "change me", which is the value `doctor` exists to catch.
+  The doctor message no longer names it: it says the secret still says "change me", which is the
+  fact rather than a pointer to a file that is gone.
+
 ---
 
 ## [0.69.0] &ndash; 2026-09-06

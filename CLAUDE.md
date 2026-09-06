@@ -344,8 +344,10 @@ false` and **takes nothing from the container** - no config to read, no database
 the arguments and the working directory. A command that creates the configuration cannot depend
 on it. It writes `config/dpress.ini.template` with the placeholders filled and **generates
 `jwt.secret`**: that was the fiddliest step of an install and the one where getting it wrong is
-invisible, since `dpress.ini.example` ships the words "change me" and a site copied from it signs
-its sessions with a value that is in a public repository. `-dev` changes the **three settings that
+invisible, since a config written by hand can say "change me" and a site signing its sessions with
+a value out of a public repository gives no sign of it. The app skeleton's `dpress.ini.example` is
+**gone** for this reason: `init` writes from the package's template, so there is one shape of the
+file rather than two that drift apart. `-dev` changes the **three settings that
 go together** - environment, `jwt.cookie_secure` and the mailer - because a secure cookie on plain
 HTTP means the login never sticks and `native` mail on a laptop is a password reset that vanishes.
 

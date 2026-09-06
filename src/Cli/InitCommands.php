@@ -16,9 +16,11 @@ use Dynart\Micro\CliOutputInterface;
  *
  * **The secret is generated, not typed.** It was the fiddliest step of an install - a `php -r`
  * one-liner somebody had to know about, in a file somebody had to remember to edit - and it is
- * the step where getting it wrong is invisible: `dpress.ini.example` ships the words "change me",
- * and a site copied from it and never edited signs its sessions with a value that is in a public
- * repository. `dpress doctor` catches that afterwards; this stops it happening.
+ * the step where getting it wrong is invisible: the example config the app skeleton used to ship
+ * said "change me", and a site copied from it and never edited signed its sessions with a value
+ * that is in a public repository. `dpress doctor` catches that afterwards; this stops it
+ * happening, and is why that example is gone - `init` writes from the template in this package,
+ * so there is one shape of the file rather than two that drift apart.
  */
 class InitCommands extends AbstractCommands {
 

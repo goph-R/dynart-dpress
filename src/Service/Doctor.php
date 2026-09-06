@@ -184,9 +184,10 @@ class Doctor {
     /**
      * The secret that signs every session on the site
      *
-     * The placeholder is the one worth catching: `dpress.ini.example` ships the words "change me",
-     * and a site copied from it and never edited signs its sessions with a value that is in a
-     * public repository.
+     * The placeholder is the one worth catching. `dpress init` generates a real one now, but a
+     * config written by hand - or copied from the example the app skeleton used to ship - can
+     * still say "change me", and a site signing its sessions with a value out of a public
+     * repository gives no sign of it.
      */
     protected function secret(): array {
         $secret = (string)$this->config->get('jwt.secret', '');
@@ -194,8 +195,7 @@ class Doctor {
             return $this->fail('JWT secret', 'not set', $this->secretFix());
         }
         if (stripos($secret, 'change me') !== false) {
-            return $this->fail('JWT secret', 'still the placeholder from dpress.ini.example',
-                $this->secretFix());
+            return $this->fail('JWT secret', 'still says "change me"', $this->secretFix());
         }
         if (strlen($secret) < 32) {
             return $this->fail('JWT secret', strlen($secret).' characters, HS256 needs 32',
