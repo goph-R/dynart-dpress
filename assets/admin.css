@@ -278,6 +278,11 @@ button.link { background: none; border: 0; color: var(--muted); cursor: pointer;
 
 textarea.markdown-editor.is-highlighted {
     position: relative; z-index: 1;
+    /* A textarea is `inline-block` on a baseline, so the wrapper keeps a line's worth of
+       descender room under it - 6.25px at this font - and an `inset: 0` backdrop stretches into
+       it. The field then ends 6px below where its text does. Block takes it away; the field is
+       already `width: 100%`, so nothing else about it changes. */
+    display: block;
     background: transparent;
     color: transparent;
     -webkit-text-fill-color: transparent;   /* Safari ignores a transparent `color` here */
