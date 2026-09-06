@@ -24,6 +24,24 @@ class Setting extends Entity {
     protected static string $eventName = 'setting';
 
     /** The theme the site renders with */
+    /**
+     * The `app.base_url` the stored HTML was last rendered against
+     *
+     * `body_html` and `lead_html` hold **absolute** URLs, because `Router::url()` prefixes
+     * `app.base_url` and internal links are resolved at save time - which is what makes a page
+     * view free and what makes moving a site the one operation that needs saying out loud. A
+     * dump restored under a new domain keeps pointing at the old one, and the front page looks
+     * perfect while every link one click in is wrong.
+     *
+     * So the site records what it was rendered for, and `dpress doctor` compares it. Written by
+     * `content:rerender`, and by a **fresh** install - never by an upgrade, which would overwrite
+     * the evidence of exactly the mismatch this exists to find.
+     *
+     * Absent is not a mismatch: a site installed before this existed has never recorded it, and
+     * "unknown" is the honest answer rather than an accusation.
+     */
+    const CONTENT_RENDERED_FOR = 'content_rendered_for';
+
     const THEME = 'theme';
 
     /**

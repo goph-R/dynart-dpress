@@ -2,9 +2,13 @@
 
 namespace Dynart\Dpress\Cli;
 
+use Dynart\Micro\AbstractApp;
 use Dynart\Micro\CliOutput;
 use Dynart\Micro\CliOutputInterface;
+use Dynart\Micro\ConfigInterface;
+use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Service\SchemaService;
+use Dynart\Dpress\Service\SettingService;
 
 /**
  * The install / upgrade commands
@@ -14,6 +18,8 @@ class SchemaCommands extends AbstractCommands {
     public function __construct(
         CliOutputInterface $output,
         protected SchemaService $schema,
+        protected SettingService $settings,
+        protected ConfigInterface $config,
     ) {
         parent::__construct($output);
     }
@@ -37,8 +43,32 @@ class SchemaCommands extends AbstractCommands {
             return 0;
         }
         $this->reportApplied($applied);
+        if (!$wasInstalled) {
+            $this->recordRenderAddress();
+        }
         $this->success('Installed.');
         return 0;
+    }
+
+    /**
+     * A brand new site has no content, so it is trivially rendered for wherever it is
+     *
+     * **Only when it was not installed before.** `install` is safe to repeat and is what an
+     * upgrade path runs, so writing this every time would overwrite the recorded address with the
+     * current one - which is precisely the evidence `dpress doctor` reads to notice that a site
+     * was restored somewhere else. The check would then pass on exactly the site it exists for.
+     */
+    protected function recordRenderAddress(): void {
+        try {
+            $this->settings->set(
+                Setting::CONTENT_RENDERED_FOR,
+                rtrim((string)$this->config->get(AbstractApp::CONFIG_BASE_URL, ''), '/')
+            );
+        } catch (\Throwable $e) {
+            // A note about a site with nothing in it. Failing the install over it would be the
+            // tail wagging the dog; `doctor` reports it as "never recorded" either way.
+            $this->output->writeLine('Could not record the render address: '.$e->getMessage());
+        }
     }
 
     public function upgrade(): int {

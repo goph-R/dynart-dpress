@@ -27,6 +27,7 @@ use Dynart\Micro\Entities\PdoBuilder;
 use Dynart\Micro\Entities\QueryBuilder;
 use Dynart\Micro\Entities\QueryBuilder\MariaQueryBuilder;
 use Dynart\Micro\Entities\QueryExecutor;
+use Dynart\Dpress\Cli\DoctorCommands;
 use Dynart\Dpress\Cli\SchemaCommands;
 use Dynart\Dpress\Cli\SystemCommands;
 use Dynart\Dpress\Cli\UserCommands;
@@ -113,6 +114,7 @@ use Dynart\Dpress\Content\Feed;
 use Dynart\Dpress\Content\Sitemap;
 use Dynart\Dpress\Content\PageContext;
 use Dynart\Dpress\Service\RoleService;
+use Dynart\Dpress\Service\Doctor;
 use Dynart\Dpress\Service\SchemaService;
 use Dynart\Dpress\Service\UserService;
 
@@ -205,6 +207,7 @@ class DpressServices {
         Micro::add(PasswordHasher::class);
         Micro::add(RateLimiter::class);
         Micro::add(SchemaService::class);
+        Micro::add(Doctor::class);
         Micro::add(RoleService::class);
         Micro::add(UserService::class);
         Micro::add(AuthService::class);
@@ -249,6 +252,7 @@ class DpressServices {
         Micro::add(CategoryListBlock::class);
         Micro::add(MarkdownBlock::class);
         Micro::add(SchemaCommands::class);
+        Micro::add(DoctorCommands::class);
         Micro::add(SystemCommands::class);
         Micro::add(UserCommands::class);
         Micro::add(MailCommands::class);

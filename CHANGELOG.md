@@ -5,6 +5,52 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.69.0] &ndash; 2026-09-06
+
+`dpress doctor`, and a site that knows what address it was rendered for.
+
+### Added
+- **`dpress doctor`** - one command for the two things that fail the same way: installing a site
+  and moving one. The rule for what is in it is not "could this be misconfigured" but **"would
+  anybody find out"**. A broken database says so on the first page view; a log directory inside
+  `public/` is a secret leak that looks like nothing at all.
+
+  It checks PHP and the extensions `composer.json` declares (read from it, not listed again), the
+  base URL's shape and scheme, the environment, the JWT secret - including the *placeholder from
+  `dpress.ini.example`*, which is a value in a public repository signing somebody's sessions - the
+  log directory's location and writability, `uploads/` and its `.htaccess`, the database, its
+  charset, the migrations, the recorded render address, enabled plugins with nothing on disk, and
+  a theme that is set but not installed.
+
+  **Exit 1 on a failure, 0 on warnings only**, so a deploy script can end with it. A warning is
+  something a site runs with - `utf8`, a development environment - and failing a release over one
+  is how a check becomes something people append `|| true` to. `-quiet` prints only what is not
+  `ok`.
+
+  **A service returning rows, a command printing them.** Every judgement is in `Doctor`; the
+  colours are in `DoctorCommands`. That is what lets the checks be tested against a
+  half-configured site with no console.
+
+- **`Setting::CONTENT_RENDERED_FOR`**, the address the stored HTML was last rendered against.
+  Internal links are resolved at save time and `Router::url()` prefixes `app.base_url`, so
+  `body_html` holds **absolute** URLs - which is what makes a page view free, and what makes a
+  database restored under a new domain keep pointing at the machine it was written on. Nothing
+  errors: the front page renders, the theme is right, and the first link a reader clicks leaves
+  the site.
+
+  `content:rerender` records it, **after the blocks have been rebuilt too** or the claim is made
+  while a sidebar still points at the old host. A **fresh** install records it as well; a repeat
+  install does not, because `install` is what an upgrade path runs and overwriting the address
+  every time would erase the evidence of exactly the mismatch this exists to find. **Absent is not
+  a mismatch** - a site installed before this existed has simply never said so.
+
+### Changed
+- **The README documents installing and moving**, including the `mysqldump` + `uploads/` + 
+  `content:rerender` sequence and the three things that do not travel in a dump: the uploaded
+  files, the plugin clones (enabled in `dp_setting`, skipped silently when missing) and the theme.
+
+---
+
 ## [0.68.0] &ndash; 2026-09-06
 
 An emoji picker on the markdown field.

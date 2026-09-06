@@ -2,14 +2,18 @@
 
 namespace Dynart\Dpress\Cli;
 
+use Dynart\Micro\AbstractApp;
 use Dynart\Micro\CliOutput;
 use Dynart\Micro\CliOutputInterface;
+use Dynart\Micro\ConfigInterface;
 use Dynart\Dpress\DpressException;
 use Dynart\Dpress\Content\Dates;
 use Dynart\Dpress\Entity\Content;
+use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Service\ContentHistoryService;
 use Dynart\Dpress\Service\BlockService;
 use Dynart\Dpress\Service\ContentService;
+use Dynart\Dpress\Service\SettingService;
 use Dynart\Dpress\Service\UserService;
 
 /**
@@ -28,6 +32,8 @@ class ContentCommands extends AbstractCommands {
         protected UserService $users,
         protected BlockService $blocks,
         protected Dates $dates,
+        protected SettingService $settings,
+        protected ConfigInterface $config,
     ) {
         parent::__construct($output);
     }
@@ -202,7 +208,14 @@ class ContentCommands extends AbstractCommands {
     public function rerender(array $params = []): int {
         $count = $this->content->rerenderAll();
         $blocks = $this->blocks->rerenderAll();
-        return $this->success("Re-rendered $count item(s) and $blocks block(s).");
+        // **Recorded once both have run.** This is the site saying "every stored URL on me points
+        // at this address", and it is what `dpress doctor` compares against the config to catch a
+        // dump restored under a new domain - the failure that renders perfectly and is wrong on
+        // the first link somebody clicks. Written before the blocks were rebuilt, it would make
+        // the claim while a sidebar still pointed at the old host.
+        $baseUrl = rtrim((string)$this->config->get(AbstractApp::CONFIG_BASE_URL, ''), '/');
+        $this->settings->set(Setting::CONTENT_RENDERED_FOR, $baseUrl);
+        return $this->success("Re-rendered $count item(s) and $blocks block(s) for $baseUrl.");
     }
 
     /**

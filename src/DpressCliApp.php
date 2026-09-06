@@ -22,6 +22,7 @@ use Dynart\Dpress\Cli\MediaCommands;
 use Dynart\Dpress\Cli\TaxonomyCommands;
 use Dynart\Dpress\Cli\PluginCommands;
 use Dynart\Dpress\Cli\ThemeCommands;
+use Dynart\Dpress\Cli\DoctorCommands;
 use Dynart\Dpress\Cli\SchemaCommands;
 use Dynart\Dpress\Cli\SystemCommands;
 use Dynart\Dpress\Cli\UserCommands;
@@ -51,6 +52,12 @@ class DpressCliApp extends CliApp {
             'callable' => [SchemaCommands::class, 'upgrade'],
             'description' => 'Apply the pending migrations',
             'needsConfig' => true,
+        ],
+        'doctor' => [
+            'callable' => [DoctorCommands::class, 'doctor'],
+            'description' => 'Check everything an install or a move can get silently wrong',
+            'needsConfig' => true,
+            'flags' => ['quiet'],
         ],
         'migrate:status' => [
             'callable' => [SchemaCommands::class, 'status'],

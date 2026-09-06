@@ -312,6 +312,38 @@ Everything behind `/admin`. **A screen is two actions**: one that renders the pa
 **A template must never pass `get_defined_vars()` to a nested `fetch()`.** A template body is `include`d inside `View::fetch()` and shares its scope, so that hands down the *path of the file being included*; the nested fetch extracts it over its own and includes the caller instead — forever. micro 0.17.0 unsets the reserved names, but naming the variables is still the honest way to write it.
 
 
+### Installing and moving a site
+
+**`dpress doctor` is one command for both**, because they fail the same way. The rule for what
+belongs in it is not "could this be misconfigured" but **"would anybody find out"** - a broken
+database says so on the first page view and needs no command; a log directory inside `public/` is
+a secret leak that looks like nothing. `SchemaCommands::checkDatabase()` was this in miniature and
+`Doctor` generalises it rather than inventing a second idea. Every row that is not `ok` carries
+the thing to *do* about it, which the charset warning established: a warning nobody can act on is
+noise. It exits **1** on a failure and **0** on warnings only, so a deploy can end with it and a
+`utf8` database does not fail a release.
+
+**A service returning rows, a command printing them.** `Doctor::run()` holds every judgement and
+`DoctorCommands` holds the colours, which is what lets the checks be tested against a
+half-configured site with no console - and what would let an admin screen show the same list
+without a second implementation drifting from this one.
+
+**The stored HTML carries the domain, and that is what makes moving a site dangerous.** Internal
+links are resolved at save time and `Router::url()` prefixes `app.base_url`, so `body_html` holds
+**absolute** URLs - which is what makes a page view free and what makes a restored dump point at
+the machine it was written on. Nothing errors; the front page is perfect and the first link leaves
+the site. So the site **records what it was rendered for** in `Setting::CONTENT_RENDERED_FOR`, and
+doctor compares it. Written by `content:rerender` (after the blocks too, or the claim is made
+while a sidebar is still wrong) and by a **fresh** install only - `install` is safe to repeat and
+is what an upgrade runs, so writing it every time would overwrite the evidence of exactly the
+mismatch it exists to find. **Absent is not a mismatch**: a site installed before this existed has
+never recorded one, and "unknown" is the honest answer.
+
+**The extension list comes out of `composer.json`**, not a second list here. And the log-directory
+check is **lexical, not filesystem** - a site set to log into `public/` that has not logged yet is
+the one moment it is free to fix, and `realpath()` on a directory that does not exist answers
+`false`, so the leak would stay quiet until it had already happened.
+
 ### Logging
 
 **`DpressLogger` exists so a dpress site never logs into its own document root.** `Logger`'s default directory is the relative `logs`, and a relative path resolves against the working directory — `public/` for a web request — so a site that configured nothing served its own stack traces at `/logs/...`. Both apps register it in their constructor, before `fullInit()` builds the logger.
