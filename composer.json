@@ -24,6 +24,7 @@
         "php": ">=8.0",
         "dynart/micro": "@stable",
         "dynart/micro-entities": "@stable",
+        "ext-mbstring": "*",
         "ext-json": "*",
         "ext-pdo": "*",
         "ext-dom": "*",
