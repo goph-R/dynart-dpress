@@ -457,11 +457,14 @@ dialog.emoji-picker .close { background: none; border: 0; font-size: 22px; curso
    would otherwise land on whatever moved into that spot. */
 .emoji-list { height: 300px; overflow-y: auto; padding: 0 14px 12px; }
 
-/* Sticky, so the group a run of faces belongs to is still named after scrolling into the middle
-   of it - which is the thing tabs alone could not do. */
+/* **Not sticky**, though it was and it read better that way: a stuck heading has to be repositioned
+   and repainted on every scroll frame, which takes the list off the compositor's cheap path and is
+   felt as lag through 900 buttons of colour emoji. Worse with a wheel than with the scrollbar only
+   because a wheel notch animates about sixty frames where a drag makes a handful - the cost is the
+   same either way, the wheel just asks for it more often. The tab row already says which group is
+   which, so this was paying a frame budget for a second answer to a question already answered. */
 .emoji-list h3 {
-    position: sticky; top: 0; z-index: 1; margin: 0;
-    padding: 10px 4px 6px; background: var(--panel);
+    margin: 0; padding: 10px 4px 6px;
     font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
 }
 .emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 2px; }

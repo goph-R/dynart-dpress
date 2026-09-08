@@ -5,6 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.71.2] &ndash; 2026-09-08
+
+### Fixed
+- **The emoji picker scrolls smoothly again.** The section headings were `position: sticky`, and a
+  stuck element has to be repositioned and repainted on every scroll frame - which takes the list
+  off the compositor's cheap path, through 900 buttons of colour emoji. It showed worse with a
+  wheel than with the scrollbar because a wheel notch animates about sixty frames where a drag
+  makes a handful; the cost was the same either way, the wheel just asked for it more often.
+
+  The headings stay, they simply scroll with the list. The tab row already names the group, so
+  sticky was spending a frame budget on a second answer to a question already answered.
+
+---
+
 ## [0.71.1] &ndash; 2026-09-08
 
 ### Changed
