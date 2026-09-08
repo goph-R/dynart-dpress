@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.71.1] &ndash; 2026-09-08
+
+### Changed
+- **Sparkles moved from Nature to Symbols**, next to `💯`. It sat with the weather because that is
+  where the stars are, and it is almost never used as one - it means *new*, *magic* or *shiny*, so
+  it belongs with the marks people add for tone. The search added in 0.71.0 had already made it
+  findable; this is where somebody browsing looks for it.
+
+---
+
 ## [0.71.0] &ndash; 2026-09-08
 
 The emoji picker gets a search, and sections instead of tabs.
