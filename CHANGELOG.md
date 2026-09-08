@@ -5,6 +5,45 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.71.0] &ndash; 2026-09-08
+
+The emoji picker gets a search, and sections instead of tabs.
+
+### Added
+- **Search in the emoji picker.** Type and the list narrows; a group with no hits disappears from
+  the tab row *and* from the list, because `search()` returns groups rather than a flat list and
+  both are drawn from the same answer - so the tabs cannot offer a group the list is not showing.
+
+  **A prefix of a word, and every term.** A substring match answers `art` with `heart`, which
+  reads as the picker not understanding the question. Terms are *and*-ed, so `red heart` is one
+  emoji rather than every red thing plus every heart.
+
+- **`assets/emoji-words.js`**, the keywords, **keyed by the character**. Two parallel arrays go
+  out of step on the first insertion and nothing says so - the picker would answer the wrong face
+  for every word after the mistake, and it would look like bad keywords rather than a shifted
+  index. A map cannot drift, and the test asserts every emoji has an entry and that no entry is
+  left over, so a gap is a failed test rather than a search that quietly finds nothing.
+
+  Written rather than generated, for the reason the emoji list is: CLDR is ~1,900 entries with
+  several names apiece and arrives as a blob nobody reviews. These are the words somebody types,
+  and the Unicode name is often not among them - nobody searches "face with tears of joy".
+
+  Its own file because it is data where `emoji.js` is behaviour, and because it is the half that
+  grows: a keyword nobody thought of is a one line diff that touches nothing else. It is also
+  optional - a missing words file costs the search and leaves the picker working.
+
+### Changed
+- **Sections with headings, and the tabs are jumps into them.** Tabs alone put every group a click
+  away from every other and nothing could be browsed; one long scroll alone put the last group a
+  long way from the first. The headings are sticky, so the group a run of faces belongs to is
+  still named after scrolling into the middle of it - which is the thing tabs alone could not do.
+
+  The list is **rebuilt on each keystroke** rather than hiding and showing 907 buttons: about a
+  millisecond, one code path for "draw these groups" instead of two, and no stale `hidden` can
+  survive into the next query.
+
+---
+
 ## [0.70.0] &ndash; 2026-09-06
 
 `dpress init`, so a new site starts with a command rather than a text editor.

@@ -1,12 +1,12 @@
 /**
- * A test for the emoji list, with no toolchain at all
+ * A test for the emoji list and its search, with no toolchain at all
  *
  *   node assets/emoji.test.js
  *
- * The picker is a dialog and is left to the browser; this covers the part with the mistakes in
- * it, which is a hand-written list of several hundred characters. Every failure here is one
+ * The picker is a dialog and is left to the browser; this covers the two parts with mistakes in
+ * them. One is a hand-written list of several hundred characters — every failure here is one
  * somebody would otherwise find by opening the picker and seeing a blank square, a duplicate, or
- * a family torn into three people.
+ * a family torn into three people. The other is the search, which is a string in and a list out.
  */
 'use strict';
 
@@ -15,10 +15,17 @@ const path = require('path');
 const assert = require('assert');
 
 global.window = global;
+eval(fs.readFileSync(path.join(__dirname, 'emoji-words.js'), 'utf8'));
 eval(fs.readFileSync(path.join(__dirname, 'emoji.js'), 'utf8'));
 
-const groups = window.Dpress.emoji.groups();
+const emoji = window.Dpress.emoji;
+const groups = emoji.groups();
 const every = groups.reduce((all, group) => all.concat(group.items), []);
+const characters = every.map(item => item.character);
+
+/** The characters a query answers with, flattened out of its groups */
+const found = query => emoji.search(query).reduce((all, g) => all.concat(g.items), [])
+    .map(item => item.character);
 
 const tests = {
 
@@ -35,58 +42,47 @@ const tests = {
      * an entry containing none is what every emoji actually is
      */
     'no entry is empty or contains whitespace'() {
-        every.forEach(one => {
+        characters.forEach(one => {
             assert.ok(one.length > 0, 'an empty entry');
             assert.ok(!/\s/.test(one), `whitespace inside ${JSON.stringify(one)}`);
         });
     },
 
-    /**
-     * A duplicate is a curation slip and shows as the same face twice in one grid
-     */
     'nothing appears twice'() {
         const seen = new Map();
         const twice = [];
-        groups.forEach(group => group.items.forEach(one => {
-            if (seen.has(one)) {
-                twice.push(`${one} in ${seen.get(one)} and ${group.name}`);
+        groups.forEach(group => group.items.forEach(item => {
+            if (seen.has(item.character)) {
+                twice.push(`${item.character} in ${seen.get(item.character)} and ${group.name}`);
             } else {
-                seen.set(one, group.name);
+                seen.set(item.character, group.name);
             }
         }));
         assert.deepStrictEqual(twice, []);
     },
 
-    /**
-     * An entry that is plain ASCII is a typo - a stray letter left in the string reads as an
-     * emoji nobody can see
-     */
     'nothing is ordinary text that wandered in'() {
-        every.forEach(one => {
+        characters.forEach(one => {
             assert.ok(!/^[\x00-\x7F]+$/.test(one), `${JSON.stringify(one)} is ASCII, not an emoji`);
         });
     },
 
     /**
-     * Splitting a run of emoji by *character* is the bug this list is written to avoid: a family
+     * Splitting a run of emoji by *character* is the bug the list is written to avoid: a family
      * is several code points joined by a zero-width joiner, and `Array.from` would tear it into
      * pieces that render as separate people. Splitting on a space keeps them whole.
      */
     'a joined sequence survives as one entry'() {
-        const joined = every.filter(one => one.indexOf('‍') !== -1);
+        const joined = characters.filter(one => one.indexOf('‍') !== -1);
         assert.ok(joined.length > 0, 'the list no longer exercises the case it is written for');
         joined.forEach(one => {
             assert.ok(Array.from(one).length > 1, `${one} should be more than one code point`);
         });
     },
 
-    /**
-     * A variation selector is what makes a character render as the colour emoji rather than the
-     * black-and-white glyph, and it is the thing most easily lost copying a list around
-     */
     'the ones that need a variation selector still have it'() {
-        assert.ok(every.indexOf('❤️') !== -1, 'the red heart lost its variation selector');
-        assert.ok(every.indexOf('✔️') !== -1, 'the check mark lost its variation selector');
+        assert.ok(characters.indexOf('❤️') !== -1, 'the red heart lost its variation selector');
+        assert.ok(characters.indexOf('✔️') !== -1, 'the check mark lost its variation selector');
     },
 
     /**
@@ -94,20 +90,101 @@ const tests = {
      * not a decision a CMS should make on a site owner's behalf. The field takes any character.
      */
     'there are no country flags to have to curate'() {
-        const flags = every.filter(one => /[\u{1F1E6}-\u{1F1FF}]/u.test(one));
+        const flags = characters.filter(one => /[\u{1F1E6}-\u{1F1FF}]/u.test(one));
         assert.deepStrictEqual(flags, []);
     },
 
     'the list is big enough to be worth a dialog and small enough to read'() {
-        assert.ok(every.length > 300, `only ${every.length} emoji`);
+        assert.ok(characters.length > 300, `only ${characters.length} emoji`);
         // Unicode has around 1,900. The bound is here to catch somebody pasting the whole table
         // in, not to cap a list a person wrote and can still read.
-        assert.ok(every.length < 1300, `${every.length} looks like a generated table`);
+        assert.ok(characters.length < 1300, `${characters.length} looks like a generated table`);
     },
 
-    /** Split once and kept, because the picker asks for them every time it opens */
     'the groups are computed once'() {
-        assert.strictEqual(window.Dpress.emoji.groups(), groups);
+        assert.strictEqual(emoji.groups(), groups);
+    },
+
+    // --- the words, which are what the search searches ---
+
+    /**
+     * The map is keyed by the character precisely so it cannot drift out of step with the list.
+     * This is what makes that true: an emoji added to `GROUPS` and forgotten in `emojiWords` is a
+     * failed test rather than a face that silently answers to nothing.
+     */
+    'every emoji has words to be found by'() {
+        const wordless = every.filter(item => item.words.trim() === '').map(item => item.character);
+        assert.deepStrictEqual(wordless, [], 'these have no keywords');
+    },
+
+    /** A word left in the map for an emoji no longer on the list is dead weight nobody will spot */
+    'no words are left over for an emoji that is gone'() {
+        const orphans = Object.keys(window.Dpress.emojiWords).filter(c => characters.indexOf(c) === -1);
+        assert.deepStrictEqual(orphans, []);
+    },
+
+    'the words are lower case, so a capitalised query still matches'() {
+        const shouty = every.filter(item => item.words !== item.words.toLowerCase());
+        assert.deepStrictEqual(shouty.map(i => i.character), []);
+    },
+
+    // --- the search ---
+
+    'a word finds the obvious thing'() {
+        assert.ok(found('sparkle').indexOf('✨') !== -1);
+        assert.ok(found('rocket').indexOf('🚀') !== -1);
+        assert.ok(found('laugh').indexOf('😂') !== -1);
+        assert.ok(found('pear').indexOf('🍐') !== -1);
+    },
+
+    /**
+     * A prefix, not a substring: `art` answering with `heart` reads as the picker not
+     * understanding the question
+     */
+    'a term matches the start of a word and not the middle of one'() {
+        assert.ok(found('hea').indexOf('❤️') !== -1, 'a prefix should match');
+        assert.strictEqual(found('art').indexOf('❤️'), -1, 'the middle of "heart" should not');
+    },
+
+    /** Terms narrow rather than widen, or `red heart` is every red thing plus every heart */
+    'two terms both have to match'() {
+        assert.deepStrictEqual(found('red heart'), ['❤️']);
+        assert.ok(found('heart').length > 10, 'one term on its own is broad');
+    },
+
+    'case and stray spaces do not matter'() {
+        assert.deepStrictEqual(found('  ROCKET  '), found('rocket'));
+    },
+
+    /**
+     * A group with nothing in it is dropped whole, which is what lets the tab row and the sections
+     * be the same answer - the tabs cannot show a group the list is not showing
+     */
+    'a group with no hits is not returned at all'() {
+        const result = emoji.search('rocket');
+        assert.strictEqual(result.length, 1);
+        assert.strictEqual(result[0].name, 'Travel');
+        result.forEach(group => assert.ok(group.items.length > 0));
+    },
+
+    'a query that matches nothing returns no groups'() {
+        assert.deepStrictEqual(emoji.search('xyzzy'), []);
+    },
+
+    /** An empty box is not a search: it is the whole list, and the same object every time */
+    'an empty query is every group'() {
+        assert.strictEqual(emoji.search(''), groups);
+        assert.strictEqual(emoji.search('   '), groups);
+        assert.strictEqual(emoji.search(null), groups);
+        assert.strictEqual(emoji.search(undefined), groups);
+    },
+
+    /** Searching must not hand out the arrays the picker will redraw from next time */
+    'a search does not alter the groups it filtered'() {
+        const before = groups.map(g => g.items.length);
+        emoji.search('heart');
+        emoji.search('xyzzy');
+        assert.deepStrictEqual(groups.map(g => g.items.length), before);
     }
 };
 
@@ -125,5 +202,5 @@ Object.keys(tests).forEach(name => {
     }
 });
 const count = Object.keys(tests).length;
-console.log(failed ? `\n${failed} of ${count} failed` : `\nOK (${count} tests, ${every.length} emoji)`);
+console.log(failed ? `\n${failed} of ${count} failed` : `\nOK (${count} tests, ${characters.length} emoji)`);
 process.exit(failed ? 1 : 0);

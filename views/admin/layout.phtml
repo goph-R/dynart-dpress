@@ -29,6 +29,9 @@ use Dynart\Dpress\Controller\Admin\AssetController;
           // is last because it is the one that calls into the other two. ?>
     <script src="<?= esc_attr(AssetController::url('dynamic-list.js')) ?>" defer></script>
     <script src="<?= esc_attr(AssetController::url('markdown-highlight.js')) ?>" defer></script>
+    <?php // The words before the picker: `emoji.js` reads them when it first builds its groups,
+          // and a picker that came up before them would have a search that finds nothing. ?>
+    <script src="<?= esc_attr(AssetController::url('emoji-words.js')) ?>" defer></script>
     <script src="<?= esc_attr(AssetController::url('emoji.js')) ?>" defer></script>
     <script src="<?= esc_attr(AssetController::url('admin.js')) ?>" defer></script>
     <?php // A plugin's own files, after the admin's, so `Dpress.addInit` exists by the time one

@@ -435,8 +435,12 @@ dialog.emoji-picker header {
 dialog.emoji-picker h2 { font-size: 16px; margin: 0; flex: 1; }
 dialog.emoji-picker .close { background: none; border: 0; font-size: 22px; cursor: pointer; color: var(--muted); }
 
+.emoji-search { padding: 12px 18px 0; }
+.emoji-search input { width: 100%; }
+
 /* The groups scroll sideways on a narrow screen rather than wrapping into three rows and pushing
-   the emoji off the bottom of the dialog. */
+   the emoji off the bottom of the dialog. A search hides the ones with nothing behind them, so
+   this row is also the answer to "which groups matched". */
 .emoji-groups {
     display: flex; gap: 4px; padding: 10px 18px; overflow-x: auto;
     border-bottom: 1px solid var(--line);
@@ -449,18 +453,26 @@ dialog.emoji-picker .close { background: none; border: 0; font-size: 22px; curso
 .emoji-groups button:hover { color: var(--ink); }
 .emoji-groups button.current { background: var(--accent); color: var(--bg); }
 
-/* A fixed height, so switching groups does not resize the dialog under the pointer - the next
-   click would otherwise land on whatever moved into that spot. */
-.emoji-list {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
-    gap: 2px; padding: 12px 14px; height: 260px; overflow-y: auto;
+/* A fixed height, so filtering does not resize the dialog under the pointer - the next click
+   would otherwise land on whatever moved into that spot. */
+.emoji-list { height: 300px; overflow-y: auto; padding: 0 14px 12px; }
+
+/* Sticky, so the group a run of faces belongs to is still named after scrolling into the middle
+   of it - which is the thing tabs alone could not do. */
+.emoji-list h3 {
+    position: sticky; top: 0; z-index: 1; margin: 0;
+    padding: 10px 4px 6px; background: var(--panel);
+    font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
 }
-.emoji-list .emoji {
+.emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 2px; }
+.emoji-grid .emoji {
     background: none; border: 0; border-radius: var(--radius); cursor: pointer;
     font-size: 22px; line-height: 1; padding: 5px 0;
     font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
 }
-.emoji-list .emoji:hover, .emoji-list .emoji:focus-visible { background: rgba(127, 127, 127, .18); }
+.emoji-grid .emoji:hover, .emoji-grid .emoji:focus-visible { background: rgba(127, 127, 127, .18); }
+
+.emoji-empty { color: var(--muted); font-size: 14px; padding: 18px 4px; margin: 0; }
 
 .badge-published, .badge-active { background: #dcfce7; color: #166534; }
 .badge-draft, .badge-pending { background: #fef3c7; color: #92400e; }

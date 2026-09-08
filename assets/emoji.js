@@ -102,16 +102,25 @@
     ];
 
     /**
-     * The groups, with each list split once rather than on every open
+     * The groups, each emoji paired with the words it can be found by
+     *
+     * Split once and kept, because the picker asks on every open and the search asks on every
+     * keystroke. `Dpress.emojiWords` is a separate file and may not be there - a picker without a
+     * search is still a working picker, so a missing words file costs the search and nothing else.
      */
     var groups = null;
 
     function all() {
         if (groups === null) {
+            var words = (global.Dpress && global.Dpress.emojiWords) || {};
             groups = GROUPS.map(function (group) {
                 return {
                     name: group.name,
-                    items: group.items.split(' ').filter(function (one) { return one !== ''; })
+                    items: group.items.split(' ')
+                        .filter(function (one) { return one !== ''; })
+                        .map(function (character) {
+                            return {character: character, words: words[character] || ''};
+                        })
                 };
             });
         }
@@ -119,82 +128,159 @@
     }
 
     /**
+     * Does one emoji answer to what somebody typed?
+     *
+     * **Every term, and each as the start of a word.** A substring match answers `art` with
+     * `heart`, which reads as the picker not understanding the question; a prefix match answers
+     * `hea` with `heart` and `art` with the palette, which is what a person expects of a search
+     * box. Terms are *and*-ed so a second word narrows rather than widens - `red heart` is one
+     * emoji and not every red thing plus every heart.
+     */
+    function matches(item, terms) {
+        var words = item.words.split(' ');
+        return terms.every(function (term) {
+            return words.some(function (word) { return word.indexOf(term) === 0; });
+        });
+    }
+
+    function termsOf(query) {
+        return String(query === null || query === undefined ? '' : query)
+            .toLowerCase().split(/\s+/)
+            .filter(function (term) { return term !== ''; });
+    }
+
+    /**
+     * The groups that still have something in them, given a query
+     *
+     * **Groups rather than a flat list, and a group with no hits is dropped whole.** The tab row
+     * and the sections are then the same answer to the same question, so they cannot disagree
+     * about which groups are showing - which is the entire trick behind hiding a tab when its
+     * section has nothing in it.
+     *
+     * Exported because it is the part with the judgement in it and needs no DOM to test.
+     */
+    function search(query) {
+        var wanted = termsOf(query);
+        if (wanted.length === 0) {
+            return all();
+        }
+        var found = [];
+        all().forEach(function (group) {
+            var items = group.items.filter(function (item) { return matches(item, wanted); });
+            if (items.length > 0) {
+                found.push({name: group.name, items: items});
+            }
+        });
+        return found;
+    }
+
+    /**
      * Opens the picker and hands back the character somebody chose
      *
      * The same shape as `Dpress.pickMedia()` - a `<dialog>`, `showModal()`, and one way out
      * through the callback - so the two dialogs behave identically and Escape does what Escape
-     * does without either of them implementing it.
+     * does without either implementing it.
      *
-     * **One group at a time.** Sections in one long scroll would have every group a scroll away
-     * from every other; a row of buttons puts each of them one click away, which is the reason
-     * the admin's own sections are a rail rather than a page.
+     * **Sections in one scroll, with the tabs as jumps into it.** Tabs alone put every group a
+     * click away from every other and nothing could be browsed; one long scroll alone put the
+     * last group a long way from the first. Headed sections read straight through and the tabs
+     * still reach any of them in one click - so the row is navigation rather than state, which is
+     * also what lets a search drop the tabs with no hits behind them.
+     *
+     * **The list is rebuilt on each keystroke** rather than hiding and showing 907 buttons: it is
+     * about a millisecond, it is one code path for "draw these groups" instead of two, and no
+     * stale `hidden` can survive into the next query.
      */
     function pick(chosen) {
         var dialog = document.createElement('dialog');
         dialog.className = 'emoji-picker';
         dialog.innerHTML =
             '<header><h2>Emoji</h2><button type="button" class="close" title="Close">&times;</button></header>' +
+            '<div class="emoji-search">' +
+            '<input type="search" autofocus placeholder="Search…" aria-label="Search emoji">' +
+            '</div>' +
             '<nav class="emoji-groups"></nav>' +
             '<div class="emoji-list"></div>';
         document.body.appendChild(dialog);
 
+        var input = dialog.querySelector('input');
         var nav = dialog.querySelector('.emoji-groups');
         var list = dialog.querySelector('.emoji-list');
-
-        function show(index) {
-            nav.querySelectorAll('button').forEach(function (button, at) {
-                button.classList.toggle('current', at === index);
-                button.setAttribute('aria-selected', at === index ? 'true' : 'false');
-            });
-            list.textContent = '';
-            all()[index].items.forEach(function (character) {
-                var button = document.createElement('button');
-                button.type = 'button';
-                button.className = 'emoji';
-                // No `aria-label`: a screen reader announces the character by its own Unicode
-                // name, which is better than any short label written here would be.
-                button.textContent = character;
-                button.addEventListener('click', function () {
-                    close();
-                    chosen(character);
-                });
-                list.appendChild(button);
-            });
-            list.scrollTop = 0;
-        }
-
-        all().forEach(function (group, index) {
-            var button = document.createElement('button');
-            button.type = 'button';
-            button.textContent = group.name;
-            button.setAttribute('role', 'tab');
-            if (index === 0) {
-                // `showModal()` focuses the first focusable thing it finds, which is the close
-                // button - a keyboard lands on *leave* rather than on the list it just opened.
-                button.autofocus = true;
-            }
-            button.addEventListener('click', function () {
-                show(index);
-            });
-            nav.appendChild(button);
-        });
-        nav.setAttribute('role', 'tablist');
 
         function close() {
             dialog.close();
             dialog.remove();
         }
 
+        function draw(query) {
+            var found = search(query);
+            nav.textContent = '';
+            list.textContent = '';
+
+            if (found.length === 0) {
+                var empty = document.createElement('p');
+                empty.className = 'emoji-empty';
+                empty.textContent = 'Nothing matches “' + query + '”.';
+                list.appendChild(empty);
+                return;
+            }
+
+            found.forEach(function (group) {
+                var section = document.createElement('section');
+                var heading = document.createElement('h3');
+                heading.textContent = group.name;
+                section.appendChild(heading);
+
+                var grid = document.createElement('div');
+                grid.className = 'emoji-grid';
+                group.items.forEach(function (item) {
+                    var button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'emoji';
+                    button.title = item.words.split(' ')[0] || '';
+                    // No `aria-label`: a screen reader announces the character by its own Unicode
+                    // name, which is better than the one keyword written here would be.
+                    button.textContent = item.character;
+                    button.addEventListener('click', function () {
+                        close();
+                        chosen(item.character);
+                    });
+                    grid.appendChild(button);
+                });
+                section.appendChild(grid);
+                list.appendChild(section);
+
+                var tab = document.createElement('button');
+                tab.type = 'button';
+                tab.textContent = group.name;
+                // Scrolls the list, not the page. `scrollIntoView()` on a section inside a modal
+                // moves the dialog itself in some browsers.
+                tab.addEventListener('click', function () {
+                    list.scrollTop = section.offsetTop - list.offsetTop;
+                    nav.querySelectorAll('button').forEach(function (other) {
+                        other.classList.toggle('current', other === tab);
+                    });
+                });
+                nav.appendChild(tab);
+            });
+            list.scrollTop = 0;
+        }
+
+        input.addEventListener('input', function () {
+            draw(input.value);
+        });
+
         dialog.querySelector('.close').addEventListener('click', close);
         dialog.addEventListener('cancel', function () {
             dialog.remove();   // Escape, which `<dialog>` gives us
         });
-        show(0);
+        draw('');
         dialog.showModal();
     }
 
     Dpress.emoji = {
         groups: all,
+        search: search,
         pick: pick
     };
 
