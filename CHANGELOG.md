@@ -5,6 +5,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.72.0] &ndash; 2026-09-08
+
+### Changed
+- **The emoji picker shows one group at a time again while browsing**, and every matching group
+  while searching. That is a performance decision rather than a design one: a colour emoji is an
+  image the browser paints, and 907 of them in a scrolling box is enough work per frame to be felt
+  on a laptop - as lag with a wheel, which animates about sixty frames a notch, and just under the
+  threshold of noticing with the scrollbar.
+
+  0.71.0 made it one long scroll with headings; 0.71.2 unstuck those headings on the theory that
+  sticky positioning was the cost. Neither helped, because neither reduced what had to be painted.
+  **The number of glyphs on screen was the whole problem** - a tab shows at most 155.
+
+  A search still shows every matching group with a heading each, because a search is a handful of
+  hits and can afford it, and the tab row is jumps into that list with the empty groups gone. So
+  the two shapes are: browsing is tabs, searching is sections.
+
+---
+
 ## [0.71.2] &ndash; 2026-09-08
 
 ### Fixed

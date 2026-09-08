@@ -181,15 +181,18 @@
      * through the callback - so the two dialogs behave identically and Escape does what Escape
      * does without either implementing it.
      *
-     * **Sections in one scroll, with the tabs as jumps into it.** Tabs alone put every group a
-     * click away from every other and nothing could be browsed; one long scroll alone put the
-     * last group a long way from the first. Headed sections read straight through and the tabs
-     * still reach any of them in one click - so the row is navigation rather than state, which is
-     * also what lets a search drop the tabs with no hits behind them.
+     * **One group while browsing, every matching group while searching.** Which is two shapes for
+     * one dialog, and the reason is cost: a colour emoji is an image the browser paints, and 907
+     * of them in a scrolling box is enough work per frame to be felt on a laptop - as lag with a
+     * wheel, which animates about sixty frames a notch, and just under the threshold of noticing
+     * with the scrollbar. A tab shows at most 155. It was tried as sections-with-headings first,
+     * and the headings were tried sticky and then not; neither helped, because neither reduced
+     * what had to be painted. **The number of glyphs on screen was the whole problem.**
      *
-     * **The list is rebuilt on each keystroke** rather than hiding and showing 907 buttons: it is
-     * about a millisecond, it is one code path for "draw these groups" instead of two, and no
-     * stale `hidden` can survive into the next query.
+     * A search is different and can afford to be: it is a handful of hits across a few groups, so
+     * it shows them all with a heading each, and the tab row becomes jumps into that list. The
+     * groups with no hits leave both at once, because `search()` answers with groups and the row
+     * and the sections are drawn from the same answer.
      */
     function pick(chosen) {
         var dialog = document.createElement('dialog');
@@ -206,17 +209,64 @@
         var input = dialog.querySelector('input');
         var nav = dialog.querySelector('.emoji-groups');
         var list = dialog.querySelector('.emoji-list');
+        /** Which group is showing when nothing is typed. Kept, so clearing a search comes back. */
+        var current = 0;
 
         function close() {
             dialog.close();
             dialog.remove();
         }
 
+        function gridOf(group) {
+            var grid = document.createElement('div');
+            grid.className = 'emoji-grid';
+            group.items.forEach(function (item) {
+                var button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'emoji';
+                button.title = item.words.split(' ')[0] || '';
+                // No `aria-label`: a screen reader announces the character by its own Unicode
+                // name, which is better than the one keyword written here would be.
+                button.textContent = item.character;
+                button.addEventListener('click', function () {
+                    close();
+                    chosen(item.character);
+                });
+                grid.appendChild(button);
+            });
+            return grid;
+        }
+
+        function tab(name) {
+            var button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = name;
+            nav.appendChild(button);
+            return button;
+        }
+
         function draw(query) {
-            var found = search(query);
+            var searching = termsOf(query).length > 0;
             nav.textContent = '';
             list.textContent = '';
 
+            if (!searching) {
+                // Browsing: the tabs are the state, and only the chosen group is in the document
+                all().forEach(function (group, index) {
+                    var button = tab(group.name);
+                    button.classList.toggle('current', index === current);
+                    button.setAttribute('aria-selected', index === current ? 'true' : 'false');
+                    button.addEventListener('click', function () {
+                        current = index;
+                        draw('');
+                    });
+                });
+                list.appendChild(gridOf(all()[current]));
+                list.scrollTop = 0;
+                return;
+            }
+
+            var found = search(query);
             if (found.length === 0) {
                 var empty = document.createElement('p');
                 empty.className = 'emoji-empty';
@@ -225,43 +275,24 @@
                 return;
             }
 
+            // Searching: every matching group at once, headed, and the tabs jump into them
             found.forEach(function (group) {
                 var section = document.createElement('section');
                 var heading = document.createElement('h3');
                 heading.textContent = group.name;
                 section.appendChild(heading);
-
-                var grid = document.createElement('div');
-                grid.className = 'emoji-grid';
-                group.items.forEach(function (item) {
-                    var button = document.createElement('button');
-                    button.type = 'button';
-                    button.className = 'emoji';
-                    button.title = item.words.split(' ')[0] || '';
-                    // No `aria-label`: a screen reader announces the character by its own Unicode
-                    // name, which is better than the one keyword written here would be.
-                    button.textContent = item.character;
-                    button.addEventListener('click', function () {
-                        close();
-                        chosen(item.character);
-                    });
-                    grid.appendChild(button);
-                });
-                section.appendChild(grid);
+                section.appendChild(gridOf(group));
                 list.appendChild(section);
 
-                var tab = document.createElement('button');
-                tab.type = 'button';
-                tab.textContent = group.name;
+                var button = tab(group.name);
                 // Scrolls the list, not the page. `scrollIntoView()` on a section inside a modal
                 // moves the dialog itself in some browsers.
-                tab.addEventListener('click', function () {
+                button.addEventListener('click', function () {
                     list.scrollTop = section.offsetTop - list.offsetTop;
                     nav.querySelectorAll('button').forEach(function (other) {
-                        other.classList.toggle('current', other === tab);
+                        other.classList.toggle('current', other === button);
                     });
                 });
-                nav.appendChild(tab);
             });
             list.scrollTop = 0;
         }
