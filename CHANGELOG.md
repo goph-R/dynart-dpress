@@ -5,6 +5,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.73.0] &ndash; 2026-09-12
+
+### Fixed
+- **`vendor/bin/dpress.bat` works in `cmd.exe`.** `bin/dpress` was a bash script, so Composer
+  generated a Windows launcher that called `bash` - and in a plain `cmd.exe` the only `bash` on
+  the PATH is usually WSL's, which cannot open a `C:\...` path and answers
+  `No such file or directory` for a file that is sitting right there. Composer picks the launcher
+  by reading the first line of the bin entry, so the fix is the shebang: `bin/dpress` now starts
+  `#!/usr/bin/env php` and the generated bat calls `php`.
+
+### Changed
+- **`bin/dpress.php` is gone; `bin/dpress` is the entry point.** With a php shebang the launcher
+  had nothing left to launch - it would have been a PHP file whose only job was to require another
+  PHP file beside it. Nothing on Linux changes: the file was always run through php, one process
+  later. `bin/dpress.bat` stays for running from a source checkout, and now calls `bin/dpress`.
+
+  Anyone invoking `php vendor/dynart/dpress/bin/dpress.php` as a workaround should drop the
+  `.php`.
+
+---
+
 ## [0.72.0] &ndash; 2026-09-08
 
 ### Changed

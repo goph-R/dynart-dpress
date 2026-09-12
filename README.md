@@ -268,9 +268,8 @@ fails part way leaves the site half installed, and refusing to run again would s
 
 ```
 bin/
-  dpress          bash launcher (Linux, macOS)
-  dpress.bat      batch launcher (Windows)
-  dpress.php      the real entry point, both launchers delegate here
+  dpress          the command itself, a PHP file with a php shebang
+  dpress.bat      batch launcher, for running from a source checkout
   autoload.php    finds the Composer autoloader
 config/
   dpress.ini.template   what `dpress init` writes, with the placeholders filled in
@@ -299,8 +298,12 @@ icons/                  the admin's inline SVGs
 translations/           en.ini, and micro's own strings
 ```
 
-The two launchers stay deliberately dumb: they resolve their own directory and hand off to
-`dpress.php`, so all the logic lives in PHP and there is one implementation rather than two.
+`bin/dpress` starts `#!/usr/bin/env php` rather than `#!/usr/bin/env bash`, and that one line is
+what makes the command work on Windows. Composer reads it to decide what the `vendor/bin/dpress.bat`
+it writes should call: a php shebang gets `php`, anything else gets `bash` - and in a plain
+`cmd.exe` the only `bash` on the PATH is usually WSL's, which cannot open a `C:\...` path and
+reports the command as missing while it is sitting right there. On Linux it costs nothing, since
+the file was always run through php anyway.
 
 The admin's assets are **served from the package** by `AssetController`, so installing the package
 installs the admin — there is no publish step to forget after an upgrade, which would otherwise

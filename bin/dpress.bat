@@ -1,2 +1,2 @@
 @echo off
-php "%~dp0dpress.php" %*
+php "%~dp0dpress" %*

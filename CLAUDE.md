@@ -22,7 +22,7 @@ vendor/bin/dpress install
 vendor/bin/dpress migrate:status
 
 # from anywhere
-php ../dynart-dpress/bin/dpress.php migrate:status -config path/to/dpress.ini
+php ../dynart-dpress/bin/dpress migrate:status -config path/to/dpress.ini
 ```
 
 ## Running Tests
@@ -55,13 +55,13 @@ released once because only the first existed.
 
 ### The CLI
 
-`bin/dpress` (bash) and `bin/dpress.bat` (batch, deliberately not PowerShell) both delegate to `bin/dpress.php`. The launchers only resolve their own directory; all logic is in PHP so there is one implementation.
+`bin/dpress` is the command: a PHP file with a `#!/usr/bin/env php` shebang, not a launcher that delegates. The shebang is load-bearing on Windows — Composer reads the first line to decide what `vendor/bin/dpress.bat` should call, and a bash shebang produced a bat that called `bash`, which in a plain `cmd.exe` is usually WSL's and cannot open a `C:\...` path. `bin/dpress.bat` (batch, deliberately not PowerShell) is only for running from a source checkout.
 
 `bin/autoload.php` finds the Composer autoloader across the three ways dpress can be installed: checked out standalone, installed into a site's `vendor/`, or symlinked through a path repository.
 
 **Config discovery**: `-config <path>` wins; otherwise the tree is walked upward from the working directory looking for `dpress.ini`.
 
-**`DpressCliApp::COMMANDS`** is the single source of truth for the command table — callable, description and whether the command needs a config. `dpress help` renders it, and `bin/dpress.php` consults `commandNeedsConfig()` before booting. Keeping it as data avoids a second registry drifting out of sync, and means an *unknown* command reaches the app and gets the help rather than a config error it never asked for.
+**`DpressCliApp::COMMANDS`** is the single source of truth for the command table — callable, description and whether the command needs a config. `dpress help` renders it, and `bin/dpress` consults `commandNeedsConfig()` before booting. Keeping it as data avoids a second registry drifting out of sync, and means an *unknown* command reaches the app and gets the help rather than a config error it never asked for.
 
 Commands must return `int` (or `string`) — `CliApp::process()` passes the return value straight to `finish()`, and `null` is a TypeError.
 
