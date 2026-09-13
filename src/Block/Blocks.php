@@ -95,7 +95,7 @@ class Blocks {
     public function render(Block $block): string {
         if (!isset($this->types[$block->type])) {
             $this->logger->warning(
-                "dpress: no block type called '$block->type'. Registered: "
+                "Dpress: no block type called '$block->type'. Registered: "
                 .(join(', ', array_keys($this->types)) ?: 'none')
             );
             return '<!-- no block type called '.htmlspecialchars($block->type).' -->';

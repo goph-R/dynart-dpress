@@ -1,11 +1,11 @@
-# Measuring dpress
+# Measuring Dpress
 
-The point of dpress is to be fast without a caching plugin, on ordinary hosting, for people who
+The point of Dpress is to be fast without a caching plugin, on ordinary hosting, for people who
 are happy editing `themes/*.phtml` and writing markdown. That is a claim, and a claim you cannot
 reproduce is a slogan — so this is how to measure it, what the numbers were the first time, and
 which levers actually move them.
 
-Everything here needs no instrumentation: dpress already logs every query, and `curl` already
+Everything here needs no instrumentation: Dpress already logs every query, and `curl` already
 reports the time.
 
 ---
@@ -13,7 +13,7 @@ reports the time.
 ## 1. Is OPcache on?
 
 **Check it first**, though it is not the whole story: measured here it took a request from
-44.9 ms to 31.1 ms — worth having, and a third of the problem rather than all of it. A dpress
+44.9 ms to 31.1 ms — worth having, and a third of the problem rather than all of it. A Dpress
 page loads **153 files, 667 KB of PHP**, and compiling them is what OPcache removes.
 
 **The CLI and the web server have separate configurations**, and `opcache.enable_cli` is off by
@@ -131,7 +131,7 @@ echo '<?php echo 1;' > public/tiny.php     # + PHP startup   (delete it afterwar
 bench "https://example.com/tiny.php"
 ```
 
-Anything above the second number is dpress and its database. Anything below it is somebody
+Anything above the second number is Dpress and its database. Anything below it is somebody
 else's problem — and `ab`/`wrk` measure concurrency, which is a different question from *how
 long does one page take*, the one that decides whether the site feels fast.
 
@@ -155,7 +155,7 @@ register_shutdown_function(function () {
 Measured 2026-08-05 on the development machine — XAMPP, Windows, PHP 8.2, MariaDB 10.4 — as
 `time_starttransfer - time_pretransfer`, median of 20 requests. **`/admin` answering 401 is the
 useful one**: it boots everything and then does almost no work, so it separates the cost of
-*being dpress* from the cost of *rendering a page*.
+*being Dpress* from the cost of *rendering a page*.
 
 | | no OPcache | OPcache on |
 |---|---|---|
@@ -275,7 +275,7 @@ The comparison is the point, so it should be one nobody can wave away:
 - **Same host, same PHP version, same OPcache settings, same database server.** A number from a
   laptop against a number from a VPS is not a comparison.
 - **Same content**: a comparable number of posts, a menu of the same size, the same page depth.
-- **Both stock.** dpress with no plugins against WordPress with no plugins and a default theme.
+- **Both stock.** Dpress with no plugins against WordPress with no plugins and a default theme.
   Adding a caching plugin to one side is a different claim — "faster than WordPress with a page
   cache in front of it" is a much harder claim and probably not a true one.
 - **Measure server time**, not a Lighthouse score. Lighthouse mostly measures the theme's assets
@@ -285,14 +285,14 @@ The comparison is the point, so it should be one nobody can wave away:
 - **Say what was measured.** "Front page, 20 posts, 8 menu items, PHP 8.2 + OPcache, MariaDB on
   the same host, median of 30 requests" is a result. "3× faster" is marketing.
 
-The honest framing: dpress is not faster because of a clever trick, it is faster because it does
+The honest framing: Dpress is not faster because of a clever trick, it is faster because it does
 less. No options table to load, no block parser, no theme customiser, and the markdown is rendered
 once at save time rather than on every view. If a measurement ever shows otherwise, the
 measurement is right and this document is wrong.
 
 ### The first production measurement
 
-`gopherlab.net` moved from WordPress to dpress on 2026-09-05, and the WordPress site was kept
+`gopherlab.net` moved from WordPress to Dpress on 2026-09-05, and the WordPress site was kept
 running, unchanged, on `wp.gopherlab.net` on the same machine. That makes the comparison this
 section asks for available for real, on every count except the two admitted below.
 
@@ -307,8 +307,8 @@ cost is identical on both sides and cancels.
 
 | | median TTFB |
 |---|---|
-| `gopherlab.net/` — dpress | **75 ms** |
-| `gopherlab.net/<post>` — dpress | **74 ms** |
+| `gopherlab.net/` — Dpress | **75 ms** |
+| `gopherlab.net/<post>` — Dpress | **74 ms** |
 | `wp.gopherlab.net/` — WordPress | 627 ms |
 | `wp.gopherlab.net/<post>` — WordPress | 600 ms |
 | `gopherlab.net/favicon.png` — a static file, no PHP | 32 ms |
@@ -326,9 +326,9 @@ it belongs here as an observation and not as the result.
 
 **Where this breaks the rules above.** Two of them, and worth saying plainly:
 
-- **Neither side is stock.** dpress is serving a custom theme and three plugins (Ko-fi,
+- **Neither side is stock.** Dpress is serving a custom theme and three plugins (Ko-fi,
   Font Awesome, Disqus). WordPress is running the theme and plugins the blog actually had. So
-  this is not "dpress against WordPress" — it is *the site I had against the site I have*, which
+  this is not "Dpress against WordPress" — it is *the site I had against the site I have*, which
   is a narrower claim and the only one a migration can honestly support.
 - **No query counts.** The rule above says to print them next to the milliseconds and this entry
   does not. Getting them means `log.level = debug` on a production site, which writes every

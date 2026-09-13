@@ -1,6 +1,6 @@
 # Syntax highlighting
 
-**Status: built** (dpress 0.34.0).
+**Status: built** (Dpress 0.34.0).
 
 ````
 ```php
@@ -46,7 +46,7 @@ its code is written in.
 
 ## 2. What it costs, and what it does not
 
-**A page with no code block loads nothing.** The front end of dpress ships no JavaScript at all,
+**A page with no code block loads nothing.** The front end of Dpress ships no JavaScript at all,
 and that stays true for every page that has no code on it. The test is one `str_contains` over
 HTML already in memory — the same guard `Shortcodes::expand()` uses.
 

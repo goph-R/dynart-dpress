@@ -122,7 +122,7 @@ use Dynart\Dpress\Service\SchemaService;
 use Dynart\Dpress\Service\UserService;
 
 /**
- * The service and migration registry shared by every kind of dpress application
+ * The service and migration registry shared by every kind of Dpress application
  *
  * `CliApp` and `WebApp` have no common ancestor in the framework, so the wiring both of them
  * need lives here rather than in a base class.

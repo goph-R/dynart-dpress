@@ -133,7 +133,7 @@ class Setting extends Entity {
      *
      * A pair of URLs for one post is what a move costs, so this is a **site** decision and
      * not a preference: every backlink, every search result and every link anybody ever wrote
-     * points at one shape. `post` is what dpress has always done and stays the default, so an
+     * points at one shape. `post` is what Dpress has always done and stays the default, so an
      * upgrade moves nothing; `root` is what WordPress does, and what a blog coming from one
      * needs if its addresses are to survive the move.
      *
@@ -142,7 +142,7 @@ class Setting extends Entity {
      */
     const POST_PATH = 'post_path';
 
-    /** `/post/<slug>` - the default, and what every dpress site has had until now */
+    /** `/post/<slug>` - the default, and what every Dpress site has had until now */
     const POST_PATH_PREFIXED = 'post';
 
     /** `/<slug>` - one flat namespace, which the globally unique slug already guarantees */

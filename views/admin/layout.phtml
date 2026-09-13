@@ -51,11 +51,11 @@ use Dynart\Dpress\Controller\Admin\AssetController;
 
 <header class="admin-header">
     <div class="admin-header-inner">
-        <?php // dpress's own logo, always - the admin is dpress, whoever the site belongs to, and
+        <?php // Dpress's own logo, always - the admin is Dpress, whoever the site belongs to, and
               // `site_logo` is the site's own mark for its own pages. The name stays next to it,
               // because "which site am I in" is a question anybody running two of them has. ?>
         <a class="brand" href="<?= esc_attr(route_url('/admin')) ?>">
-            <img src="<?= esc_attr(AssetController::url('logo.svg')) ?>" alt="dpress">
+            <img src="<?= esc_attr(AssetController::url('logo.svg')) ?>" alt="Dpress">
         </a>
         <span class="site"><?= esc_html($site_name ?? '') ?></span>
         <a href="<?= esc_attr(route_url('/')) ?>">View site</a>

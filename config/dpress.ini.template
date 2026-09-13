@@ -1,4 +1,4 @@
-; dpress site configuration, written by `dpress init` on %%GENERATED_AT%%
+; Dpress site configuration, written by `dpress init` on %%GENERATED_AT%%
 ;
 ; The presence of this file marks the root of a site: the `dpress` command walks up from the
 ; working directory looking for it, so the command works from anywhere inside the project.
@@ -60,7 +60,7 @@ dpress.registration_open = false
 dpress.default_roles     = reader
 
 ; What the header and the browser tab fall back to when no media item is chosen for them. Paths,
-; resolved against app.base_url - dpress ships no logo and cannot guess what a site keeps in its
+; resolved against app.base_url - Dpress ships no logo and cannot guess what a site keeps in its
 ; own static folder.
 dpress.default_logo      = "/static/dpress-logo.svg"
 dpress.default_icon      = "/favicon.png"

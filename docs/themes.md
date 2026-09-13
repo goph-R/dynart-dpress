@@ -97,7 +97,7 @@ A theme keeps its stylesheet, fonts and pictures in its own `assets/`, and they 
 up itself.
 
 - **Cache-busted by the theme's own version** from `theme.ini`, not by the CMS's — a theme is
-  released on its own schedule, and upgrading dpress should not expire a font nothing touched.
+  released on its own schedule, and upgrading Dpress should not expire a font nothing touched.
   The answer carries `Cache-Control: public, max-age=31536000, immutable`.
 - **The active theme's, and no other.** The theme name is not in the URL. There is one theme
   rendering and a name in the URL would be a way to read out of any folder under `themes/`

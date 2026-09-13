@@ -107,7 +107,7 @@ class Shortcodes {
     public function render(string $name, array $arguments): string {
         if (!isset($this->shortcodes[$name])) {
             $this->logger->warning(
-                "dpress: no shortcode called '$name'. Registered: ".(join(', ', $this->names()) ?: 'none')
+                "Dpress: no shortcode called '$name'. Registered: ".(join(', ', $this->names()) ?: 'none')
             );
             return '<!-- no shortcode called '.htmlspecialchars($name).' -->';
         }

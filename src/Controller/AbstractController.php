@@ -78,7 +78,7 @@ abstract class AbstractController {
      * Settings win over the config, so an editor can change these while the site runs
      */
     protected function siteName(): string {
-        return (string)Micro::get(SettingService::class)->get(Setting::SITE_NAME, 'dpress');
+        return (string)Micro::get(SettingService::class)->get(Setting::SITE_NAME, 'Dpress');
     }
 
     /**

@@ -40,7 +40,7 @@
                 }
                 return response.json();
             }).then(done).catch(function (error) {
-                console.error('dpress: the list could not be loaded', error);
+                console.error('Dpress: the list could not be loaded', error);
                 if (typeof failed === 'function') {
                     failed(error);
                 }
@@ -61,7 +61,7 @@
         }
         var form = document.querySelector('form[data-action-form]');
         if (!form) {
-            console.error('dpress: no action form on this page');
+            console.error('Dpress: no action form on this page');
             return;
         }
         form.querySelectorAll('[data-action-id]').forEach(function (input) {
@@ -216,7 +216,7 @@
                 // attachments panel is changed by two buttons that are not part of the list
                 element.dpressList = Dpress.list(element, JSON.parse(element.getAttribute('data-list')));
             } catch (error) {
-                console.error('dpress: the list configuration could not be read', error);
+                console.error('Dpress: the list configuration could not be read', error);
             }
         });
     }
@@ -245,7 +245,7 @@
                         }
                     })
                     .catch(function (error) {
-                        console.error('dpress: the action failed', error);
+                        console.error('Dpress: the action failed', error);
                         global.alert('That did not work. Reload the page and try again.');
                     });
             };
@@ -613,7 +613,7 @@
             Dpress.send(attachUrl, {media_id: item.id})
                 .then(refreshAttachments)
                 .catch(function (error) {
-                    console.error('dpress: the file could not be attached', error);
+                    console.error('Dpress: the file could not be attached', error);
                     global.alert('That file could not be attached. Reload the page and try again.');
                 });
         });
@@ -835,7 +835,7 @@
                             }
                         })
                         .catch(function (error) {
-                            console.error('dpress: that move was refused', error);
+                            console.error('Dpress: that move was refused', error);
                             // the screen is showing a move the server did not make, so it is the
                             // screen that is wrong: ask for it again rather than guess it back
                             Dpress.navigate(global.location.href, false);
@@ -960,7 +960,7 @@
     Dpress.pickMedia = function (chosen) {
         var endpoint = document.body.getAttribute('data-media-endpoint');
         if (!endpoint) {
-            console.error('dpress: the page does not say where the media list is');
+            console.error('Dpress: the page does not say where the media list is');
             return;
         }
         var uploadUrl = document.body.getAttribute('data-media-upload') || '';
@@ -1236,7 +1236,7 @@
                 if (id !== navigation) {
                     return; // and a stale failure must not drag the browser off the newer screen
                 }
-                console.warn('dpress: ' + target + ' did not load into the page, going there', error);
+                console.warn('Dpress: ' + target + ' did not load into the page, going there', error);
                 global.location.href = target;
             });
     };
@@ -1391,7 +1391,7 @@
             try {
                 fn(root);
             } catch (error) {
-                console.error('dpress: a plugin initialiser failed', error);
+                console.error('Dpress: a plugin initialiser failed', error);
             }
         });
     };

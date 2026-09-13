@@ -1,6 +1,6 @@
 # Media in the editor
 
-**Status: built** (micro-entities 0.7.0, dpress 0.15.0 through 0.17.0), with **two** parts of the
+**Status: built** (micro-entities 0.7.0, Dpress 0.15.0 through 0.17.0), with **two** parts of the
 design withdrawn — §2 and §3, which were the same idea twice.
 
 - §3, reconciling attachments against the markdown, was built in 0.15.0 and removed in 0.16.0:
@@ -45,7 +45,7 @@ side is configured in ways no client-side renderer will match:
   iframe, watch it work in the preview, watch it vanish on publish.
 - Plain CommonMark, no GFM extension — **the server does not render tables.** Most browser
   renderers default to GFM and do. Write a table, see a table, publish pipe characters.
-- The `---` lead/body split is dpress's own rule, and no third-party renderer knows it exists.
+- The `---` lead/body split is Dpress's own rule, and no third-party renderer knows it exists.
 - `MarkdownRenderer::setConverter()` lets a plugin swap the converter entirely, so on such a
   site a client-side preview is wrong by construction.
 
@@ -126,7 +126,7 @@ What reads it:
 `addColumn`**. So either:
 
 - **(a)** the migration writes the two `alter table` statements itself (`content_attachment` and
-  its `_aud` mirror), which is four lines of MariaDB-specific SQL in a dpress migration; or
+  its `_aud` mirror), which is four lines of MariaDB-specific SQL in a Dpress migration; or
 - **(b)** `QueryExecutor::addColumn(string $className, string $columnName)` is added upstream in
   micro-entities, built from the same `#[Column]` metadata the `create table` is built from, and
   the migration is one call per table.
@@ -233,7 +233,7 @@ POST /admin/media/upload/json   ->  ['item' => <the same row shape the list retu
 
 - A separate action rather than content-negotiating the existing one. The form path stays
   exactly as it is — it is the no-JavaScript route into the library and should not acquire
-  branches — and returning an array is all a dpress controller has to do to send JSON.
+  branches — and returning an array is all a Dpress controller has to do to send JSON.
 - `requirePermission(Permissions::MEDIA_CREATE)` as ever.
 - **CSRF: `requireAction()`**, the same hidden `admin_action` token every row action posts with.
   It is already rendered inside `<main>` on every admin screen and already refreshed by partial
@@ -277,7 +277,7 @@ needs nothing from it either way.
 **micro-entities (0.7.0)**
 - `QueryBuilder::addColumn()` / `MariaQueryBuilder`, `QueryExecutor::addColumn()`.
 
-**dpress (0.15.0)**
+**Dpress (0.15.0)**
 - `src/Entity/ContentAttachment.php` — `hidden`.
 - `src/Migration/AddHiddenToContentAttachment.php` — `0008`, both tables.
 - `src/Query/CoreQueries.php` — `contentAttachments()` filters `hidden`.
@@ -297,7 +297,7 @@ needs nothing from it either way.
 - Nothing. `attachmentsOf()` keeps its meaning, so the themes keep working and inline images
   simply stop appearing twice.
 
-**dpress (0.24.0) — taking §2 back out again**
+**Dpress (0.24.0) — taking §2 back out again**
 - `src/Entity/ContentAttachment.php` — `hidden` gone. The column goes with it in `CreateSchema`,
   which is a squash rather than a migration, so there is nothing to alter.
 - `src/Query/CoreQueries.php` — `contentAttachments()` has no flag and no context.
@@ -351,7 +351,7 @@ Each step leaves the admin working, and the first two are worth shipping even if
 1. ~~`QueryExecutor::addColumn()` upstream~~ — **done**, micro-entities 0.7.0, as
    `addColumnWithAudit()` so the mirror cannot be forgotten.
 2. ~~`ContentAttachment.hidden`, migration `0008`, the query filter, `syncInlineAttachments()`
-   wired into save.~~ — **done**, dpress 0.15.0. Pasting an image URL by hand now does the right
+   wired into save.~~ — **done**, Dpress 0.15.0. Pasting an image URL by hand now does the right
    thing, with no JavaScript involved at all.
 3. `POST /admin/media/upload/json`, and the upload pane in the existing picker dialog. The
    picker is reachable from the media field today, so this is testable before touching the

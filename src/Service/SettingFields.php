@@ -49,7 +49,7 @@ class SettingFields {
     public function add(string $name, string $type = 'string', array $field = []): void {
         if (!in_array($type, self::TYPES, true)) {
             $this->logger->warning(
-                "dpress: the setting '$name' asked for the type '$type'. Known: ".join(', ', self::TYPES)
+                "Dpress: the setting '$name' asked for the type '$type'. Known: ".join(', ', self::TYPES)
             );
             return;
         }

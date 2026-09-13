@@ -15,7 +15,7 @@ start with decisions rather than with guessing. Two of the four are built since.
 ## 1. Where a post lives
 
 > **Built in 0.47.0.** `post_path` is a setting: `/post/<slug>` (the default, and what every
-> dpress site had before) or `/<slug>`. The section below is what it was decided from, kept
+> Dpress site had before) or `/<slug>`. The section below is what it was decided from, kept
 > because the reasoning is the same one anybody weighing the two shapes has to do.
 >
 > It went exactly as sketched: `findByPath()` stopped rejecting a post, `publicPath()` answers
@@ -25,7 +25,7 @@ start with decisions rather than with guessing. Two of the four are built since.
 > is part of the switch.
 
 The blog's posts are at the root with a trailing slash:
-`https://gopherlab.net/internet-dosbox-x-windows-3-11/`. Here is what dpress does with that shape
+`https://gopherlab.net/internet-dosbox-x-windows-3-11/`. Here is what Dpress does with that shape
 today:
 
 | URL | today |

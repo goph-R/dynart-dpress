@@ -108,7 +108,7 @@ abstract class AbstractAdminController extends AbstractController {
         // rather than passing its own variables down, so it has to be view data as well. The
         // composed title is here rather than in the layout because both the `<title>` element and
         // the fragment's `data-title` need exactly the same string.
-        $this->view->set('page_title', ((string)($variables['title'] ?? '') ?: 'Admin').' – '.($this->siteName() ?: 'dpress'));
+        $this->view->set('page_title', ((string)($variables['title'] ?? '') ?: 'Admin').' – '.($this->siteName() ?: 'Dpress'));
         return $this->view->fetch($template, $variables);
     }
 

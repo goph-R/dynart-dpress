@@ -1,6 +1,6 @@
 # Shortcodes
 
-**Status: built** (dpress 0.32.0, embeds in 0.33.0).
+**Status: built** (Dpress 0.32.0, embeds in 0.33.0).
 
 ```
 {{ video('media#10') }}
@@ -40,7 +40,7 @@ renders those characters, and so does a fenced block. That is not a special case
 `{{` being claimed by a **CommonMark inline parser** rather than by a regular expression over the
 markdown. CommonMark claims a code span before any inline parser is offered the text.
 
-This is the one place dpress deliberately differs from WordPress in *mechanism* rather than in
+This is the one place Dpress deliberately differs from WordPress in *mechanism* rather than in
 taste. A regex cannot tell a shortcode from a shortcode being quoted, and a CMS whose own
 documentation cannot be written in it has a bad idea in it.
 
@@ -49,7 +49,7 @@ cover it without anything of ours.
 
 ## 3. When it runs — **on the page, not on save**
 
-This is the important one, and it is where dpress gives something up.
+This is the important one, and it is where Dpress gives something up.
 
 Everything else about a document is resolved once, at save: the markdown becomes `body_html`,
 `media#10` becomes a URL, and a page view parses nothing. Shortcodes break that rule on purpose.

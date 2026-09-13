@@ -194,7 +194,7 @@ class PluginService {
         }
         $this->loadWasRun = true;
         if ($this->isOff()) {
-            $this->logger->info('dpress: '.self::CONFIG_OFF.' is set, so no plugins were loaded');
+            $this->logger->info('Dpress: '.self::CONFIG_OFF.' is set, so no plugins were loaded');
             return [];
         }
         foreach ($this->enabledNames() as $name) {
@@ -203,7 +203,7 @@ class PluginService {
                 // enabled and no longer on disk. The same fail-soft a missing theme gets: the
                 // site renders, and the screen says which one went.
                 $this->plugins[$name] = new Plugin($name, '', [], Plugin::STATUS_MISSING);
-                $this->logger->warning("dpress: the plugin '$name' is enabled but is not in ".$this->path());
+                $this->logger->warning("Dpress: the plugin '$name' is enabled but is not in ".$this->path());
                 continue;
             }
             $this->loadOne($plugin);
@@ -239,7 +239,7 @@ class PluginService {
             // Throwable, not Exception: a plugin naming a class that does not exist raises an
             // Error, and that is the single most likely way for one to be broken.
             $plugin->fail($e->getMessage());
-            $this->logger->error("dpress: the plugin '{$plugin->name}' failed to load: ".$e->getMessage());
+            $this->logger->error("Dpress: the plugin '{$plugin->name}' failed to load: ".$e->getMessage());
         }
     }
 
@@ -346,7 +346,7 @@ class PluginService {
             $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
             if ($extension !== 'css' && $extension !== 'js') {
                 $this->logger->warning(
-                    "dpress: the plugin '{$record->name}' offers '$file' to the page, and only"
+                    "Dpress: the plugin '{$record->name}' offers '$file' to the page, and only"
                         ." css and js can go in a head."
                 );
                 continue;

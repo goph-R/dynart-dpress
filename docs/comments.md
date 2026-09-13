@@ -1,6 +1,6 @@
 # Comments, through Disqus
 
-**Status: built.** §3 landed in dpress 0.62.0 and the plugin is
+**Status: built.** §3 landed in Dpress 0.62.0 and the plugin is
 [dynart-dpress-disqus](https://github.com/goph-R/dynart-dpress-disqus) 1.0.0. What is *not*
 built is §8, the counts - see the plugin README for why.
 
@@ -135,7 +135,7 @@ one is what every existing comment is attached to forever**, and changing it lat
 The rules that follow from that:
 
 - **Never key on the URL.** A slug edit, moving off a subfolder, or `www` appearing would each
-  detach every thread on the site. dpress already refuses to store URLs anywhere for exactly this
+  detach every thread on the site. Dpress already refuses to store URLs anywhere for exactly this
   reason (`media#12`, `post#42`).
 - **Key on `dpress-<content id>`** for anything written here. The id is the one thing about a post
   that never changes.
@@ -176,7 +176,7 @@ The order matters, and the middle step is the one that goes wrong.
    the site moved to HTTPS carries `http://`, and one written before a domain change carries the
    old host. `"$id https://gopherlab.net/?p=$id"` would be right for most of the archive and
    silently wrong for the oldest posts, which are exactly the ones with the comments on them.
-3. **Import into dpress**, so every post has its new id.
+3. **Import into Dpress**, so every post has its new id.
 4. **Fill `disqus_thread`** — old identifier against new content id. A CLI command,
    `disqus:map -file map.csv`, taking `old_identifier,new_slug` and resolving slugs to ids, with a
    dry run by default. This is the step that has to be re-runnable, because the first attempt will

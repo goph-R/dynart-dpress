@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to **dpress** are documented in this file.
+All notable changes to **Dpress** are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
@@ -188,7 +188,7 @@ The emoji picker gets a search, and sections instead of tabs.
 
   **Data, not schema.** The target builds its tables from its own migrations and the bundle
   carries only rows - the opposite way round from `mysqldump`, and better for the reason `install`
-  is safe to repeat: the schema that ends up on the new server is the one *that server's* dpress
+  is safe to repeat: the schema that ends up on the new server is the one *that server's* Dpress
   believes in. **JSON, not SQL**, so rows go back through prepared statements and there is no
   escaping to get wrong and no `mysqldump` to have installed and on `PATH`. **A folder, not an
   archive**, because `tar` already exists and `ext-zip` would be a dependency forever.
@@ -286,7 +286,7 @@ The markdown field gets colour and loses its toolbar.
   lines of ours rather than a library. An off-the-shelf mode knows `**bold**` and knows nothing
   about `media#12`, `{{ shortcode() }}`, `> [!WARNING]`, or that a line which is exactly `---`
   cuts the post in two - and those are the marks an author most wants confirmed while typing. A
-  destination that resolves to something dpress knows is weighted; one that does not is an
+  destination that resolves to something Dpress knows is weighted; one that does not is an
   ordinary URL, so a mistyped `media#l2` is visible before Save rather than after Preview.
 
   **The separator rule is `MarkdownRenderer::separatorLines()` transcribed** - trailing whitespace
@@ -455,7 +455,7 @@ A sitemap, and the `robots.txt` that points at it.
 The site has an RSS feed, which it has never had.
 
 ### Added
-- **`/feed`.** A blog that moves and stops publishing a feed does not hear about it: nobody writes in to say their reader went quiet, they simply stop reading. WordPress served `/feed/` from the day it was installed, so every site migrating to dpress arrives with subscribers pointed at an address that answered 404.
+- **`/feed`.** A blog that moves and stops publishing a feed does not hear about it: nobody writes in to say their reader went quiet, they simply stop reading. WordPress served `/feed/` from the day it was installed, so every site migrating to Dpress arrives with subscribers pointed at an address that answered 404.
 
   RSS 2.0, because that is what those subscriptions already understand. `<description>` carries the lead and `<content:encoded>` the whole post, so a reader shows either without the site having an opinion - deliberately **not** a setting, since "summary or full text" is a preference that earns a support question from every reader that resolves it differently.
 
@@ -582,7 +582,7 @@ A plugin can reach a visitor.
 - **`AbstractPlugin::blocks()`** — the same definition `Blocks::add()` takes, so a block type arrives from a folder under `plugins/` the way `widgets()` and `shortcodes()` already did. It was reachable from `register()` before; it is now declarative, which means the loader can read what a plugin *would* do without running it.
 
 ### Changed
-- **A plugin's assets moved to `/assets/plugin/<plugin>/<file>`**, beside the theme's and the highlighter's, and out from under `/admin` — where they were while the only thing a plugin could contribute was an admin widget's behaviour. A stylesheet a visitor loads should not have the word `admin` in its address: it invites a firewall rule that blocks the admin from the outside and takes the site's icons with it. The URL carries the **plugin's** version, so a plugin releasing a new stylesheet expires that stylesheet and upgrading dpress expires nothing.
+- **A plugin's assets moved to `/assets/plugin/<plugin>/<file>`**, beside the theme's and the highlighter's, and out from under `/admin` — where they were while the only thing a plugin could contribute was an admin widget's behaviour. A stylesheet a visitor loads should not have the word `admin` in its address: it invites a firewall rule that blocks the admin from the outside and takes the site's icons with it. The URL carries the **plugin's** version, so a plugin releasing a new stylesheet expires that stylesheet and upgrading Dpress expires nothing.
 - **A plugin may serve whatever a theme may** — `AssetController::PLUGIN_TYPES` *is* `ThemeAssets::TYPES` now, one list rather than two answers to one question. It was `js`, `css` and `svg`; it is images and **web fonts** as well, which a plugin shipping an icon set cannot do without.
 - **`AbstractController::withCodeAssets()` is `withPageAssets()`**, and the syntax highlighter is registered into the registry rather than special-cased in the controller — the first entry of a mechanism rather than the only thing that mechanism was for. A mechanism the core does not eat is a mechanism nobody tests.
 
@@ -784,7 +784,7 @@ CommonMark's own autolinker does three things rather than one, and this does the
 ## [0.47.0] &ndash; 2026-09-04
 
 ### Added
-- **Posts can live at `/<slug>`.** The `post_path` setting is `/post/the-slug` (the default, and what every dpress site has had until now) or `/the-slug`. A blog moving from WordPress has its posts at the root, and only the second shape carries its addresses across - which is what a move actually costs, since backlinks and search rankings point at the old ones.
+- **Posts can live at `/<slug>`.** The `post_path` setting is `/post/the-slug` (the default, and what every Dpress site has had until now) or `/the-slug`. A blog moving from WordPress has its posts at the root, and only the second shape carries its addresses across - which is what a move actually costs, since backlinks and search rankings point at the old ones.
 - `ContentService::postsAtRoot()` and `postPath()`; `$post_path` in every template, so a listing builds a post link without knowing which shape is in force.
 
 ### Changed
@@ -1002,7 +1002,7 @@ Per-block visibility rules — "posts only", "home only" — are deliberately le
 - A plain blockquote is **grey** rather than pink, and carries a quote mark.
 
 ### Notes
-**The syntax is valid CommonMark either way**, which is the whole reason for choosing it. Anywhere without dpress — a README, an editor preview, a document exported from here — it is still a blockquote, still readable, with a visible `[!WARNING]` where the styling would have been. A convention that only works inside one CMS breaks the moment a document leaves it.
+**The syntax is valid CommonMark either way**, which is the whole reason for choosing it. Anywhere without Dpress — a README, an editor preview, a document exported from here — it is still a blockquote, still readable, with a visible `[!WARNING]` where the styling would have been. A convention that only works inside one CMS breaks the moment a document leaves it.
 
 It also means **the content is markdown**: bold, links, lists and code work inside a panel because CommonMark parsed them before any of this ran. A shortcode could not do that — `{{ warning('…') }}` takes a string, and a panel holds prose.
 
@@ -1311,7 +1311,7 @@ The templates and the manifest were two places one fact could live and only one 
 ### Changed
 - **The site logo and the favicon are chosen from the media library.** `site_logo` and `site_icon` hold a media id and use the same picker every other media field does. This replaces the `asset` field of 0.26.0, which kept the value a path and put a Choose… button beside a text box — that answered a docblock rather than the request, and it is gone: the widget, its template, its binder, `MediaView::sitePathOf()` and the `site_path` on media rows.
 - **A fallback is what makes that safe.** `AbstractController::brandingAsset()` renders the chosen item when there is one and it is still in the library, and `dpress.default_logo` / `dpress.default_icon` when there is not. Never chosen, deleted, purged and a fresh installation all take that one branch — there is one way for this to be missing rather than four. **Soft-deleted counts as gone**: something in the bin should leave the header rather than wait for a purge.
-- The defaults are paths, resolved against `app.base_url`, and **empty in core** — dpress ships no logo and cannot know what a site keeps in its own `static` folder. The development app sets them in `dpress.ini`.
+- The defaults are paths, resolved against `app.base_url`, and **empty in core** — Dpress ships no logo and cannot know what a site keeps in its own `static` folder. The development app sets them in `dpress.ini`.
 
 ### Notes
 The concern the old design protected against was real; what it needed was a fallback, not a path. Every property is still held: the header renders before anything has been uploaded, on pages with no content on them, and deleting a picture cannot take it down.
@@ -1464,7 +1464,7 @@ Plugins.
 
 **A failed plugin registers no controllers.** Found by testing it: the first version registered them before `register()` ran, so a plugin that threw left its routes live — a public URL running the code of a plugin that had just declared itself broken. They now go in only after `register()` returns. The container cannot unregister anything, so its widgets and permissions do remain; those are untidy rather than dangerous, and its entity and migration remaining is what keeps its table from being dropped out from under its data.
 
-Measured, because `docs/performance.md` claimed "no plugin API to boot" as a reason dpress is fast and that stopped being true: **one enabled plugin costs about 1 ms, none costs nothing measurable.** The document now says so with the numbers.
+Measured, because `docs/performance.md` claimed "no plugin API to boot" as a reason Dpress is fast and that stopped being true: **one enabled plugin costs about 1 ms, none costs nothing measurable.** The document now says so with the numbers.
 
 **Needs micro 0.20.0.**
 
@@ -1478,7 +1478,7 @@ The schema is one migration again.
 - **The eight migrations are squashed into `CreateSchema`** (`0001_create_schema`). Eight files describing a schema nobody had ever applied incrementally were eight files to read to find out what a table looks like, and the `alter` that added `ContentAttachment.hidden` is now just a column on the entity. One ordered list of tables, one call each — whether a table gets an audit mirror is the entity's own answer, because `createTableWithAudit()` builds one only where the class is `#[Auditable]`.
 
 ### Notes
-**Every existing database has to be dropped and recreated.** That is deliberate and it is a pre-1.0 licence: dpress is on no public domain holding data anybody minds losing. **After 1.0 this stops** and migrations become append-only.
+**Every existing database has to be dropped and recreated.** That is deliberate and it is a pre-1.0 licence: Dpress is on no public domain holding data anybody minds losing. **After 1.0 this stops** and migrations become append-only.
 
 Verified by installing the squashed schema into a scratch database and diffing it against the real one: byte-identical except that `hidden` now sits where the entity declares it rather than appended at the end, which is cosmetic in SQL. The seeded roles and the editor's 23 permissions are identical too. The dev database was then rebuilt on it, with its content dumped and restored — 6 posts and pages, 6 media, 4 users, 3 menu items, 6 attachments, 82 revisions, all matching the dump row for row.
 
@@ -1672,7 +1672,7 @@ Needs micro-entities 0.7.0 for `addColumnWithAudit()`.
 ## [0.14.4] &ndash; 2026-08-05
 
 ### Security
-- **A dpress site no longer writes its logs into the document root.** `Logger`'s default directory is the relative `logs`, resolved against the working directory — which for a web request is `public/`. So a site that configured no log directory served its own error log, complete with stack traces, absolute filesystem paths and bound SQL parameters, at `/logs/log_2026-08-05.txt`. `DpressLogger` defaults to `~/logs`, one level above what Apache serves, and both apps register it before the logger is built.
+- **A Dpress site no longer writes its logs into the document root.** `Logger`'s default directory is the relative `logs`, resolved against the working directory — which for a web request is `public/`. So a site that configured no log directory served its own error log, complete with stack traces, absolute filesystem paths and bound SQL parameters, at `/logs/log_2026-08-05.txt`. `DpressLogger` defaults to `~/logs`, one level above what Apache serves, and both apps register it before the logger is built.
 
 ### Notes
 The dangerous option should not be the one you get by saying nothing. A site that wants its logs somewhere else still sets `log.dir`; a site that sets nothing is now safe by default.
@@ -1776,7 +1776,7 @@ The admin moves between screens without reloading itself, and a list screen cost
 ## [0.12.1] &ndash; 2026-08-04
 
 ### Changed
-- **The admin wears dpress's own logo, always.** It ships in `assets/logo.svg` and `AssetController` serves it with the version in the URL, so it is cached forever like the rest of the admin's assets - and it is safe for exactly the reason an uploaded SVG is not: it is a file this package ships, not one somebody sent us. `site_logo` stays what it was, the site's own mark for the site's own pages, and the admin no longer reads it.
+- **The admin wears Dpress's own logo, always.** It ships in `assets/logo.svg` and `AssetController` serves it with the version in the URL, so it is cached forever like the rest of the admin's assets - and it is safe for exactly the reason an uploaded SVG is not: it is a file this package ships, not one somebody sent us. `site_logo` stays what it was, the site's own mark for the site's own pages, and the admin no longer reads it.
 - The site's name sits next to that logo. "Which site am I in" is a question anybody running two of them has, and the header used to answer it.
 - The tab icon in the admin is still `site_icon`, because that is the tab an editor keeps open next to the site itself.
 
@@ -2080,7 +2080,7 @@ The package skeleton and the command line tool. No content model yet.
 - Config discovery: `-config <path>`, otherwise the directory tree is walked upward looking for a `dpress.ini`
 - Commands: `install`, `upgrade`, `migrate:status`, `version`, `help`
 - `DpressCliApp` with the command table as data, so `dpress help` and the config-requirement check read from one source
-- `DpressServices` — the DI registrations and core migration list shared by every kind of dpress application
+- `DpressServices` — the DI registrations and core migration list shared by every kind of Dpress application
 - `SchemaService` — install / upgrade / status, between the migration runner and whatever drives it
 - `Migration\CreateRevisionTable` — the first migration, creating the table the auditing depends on
 - `Dpress` — version and the shared constants

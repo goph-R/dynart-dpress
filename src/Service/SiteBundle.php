@@ -147,7 +147,7 @@ class SiteBundle {
         $this->foreignKeysOff(function () use ($from, $mine, &$loaded, &$skipped) {
             foreach ($this->bundleTables($from) as $table => $path) {
                 if (!in_array($table, $mine, true)) {
-                    // A table this dpress does not have - a plugin's, most likely, that is not
+                    // A table this Dpress does not have - a plugin's, most likely, that is not
                     // installed here. Reported rather than dropped in silence.
                     $skipped[] = $table;
                     continue;

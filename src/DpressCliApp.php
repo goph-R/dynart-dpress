@@ -276,7 +276,7 @@ class DpressCliApp extends CliApp {
         ],
         'version' => [
             'callable' => [SystemCommands::class, 'version'],
-            'description' => 'Print the dpress version',
+            'description' => 'Print the Dpress version',
             'needsConfig' => false,
         ],
         'help' => [

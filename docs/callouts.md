@@ -36,7 +36,7 @@ is a sentence.
 ## Why a blockquote
 
 **The syntax is valid CommonMark either way**, and that is the whole reason for it. Anywhere without
-dpress — a README on a git host, an editor preview, a document exported from here — it is still a
+Dpress — a README on a git host, an editor preview, a document exported from here — it is still a
 blockquote, still readable, with a visible `[!WARNING]` where the styling would have been. A
 convention that only works inside one CMS breaks the moment a document leaves it, and markdown that
 cannot leave is not really markdown.

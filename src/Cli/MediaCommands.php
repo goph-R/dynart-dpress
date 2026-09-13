@@ -225,7 +225,7 @@ class MediaCommands extends AbstractCommands {
      * under PHP-FPM, because `php_flag` is a mod_php directive and Apache refuses a directive
      * it does not know rather than skipping it.
      *
-     * Overwrites without asking, on purpose: this file belongs to dpress, and a site that has
+     * Overwrites without asking, on purpose: this file belongs to Dpress, and a site that has
      * edited it wants its own rules in the vhost, not here where an upload can rewrite them.
      */
     public function protect(array $params = []): int {

@@ -1,6 +1,6 @@
 # Plugins
 
-**Status: built** (dpress 0.23.0, needs micro 0.20.0).
+**Status: built** (Dpress 0.23.0, needs micro 0.20.0).
 
 A plugin is **a folder under `plugins/` with a `plugin.ini` in it** — the same rule a theme
 follows, because dropping a folder in should be all installing takes. What a theme does not need
@@ -216,7 +216,7 @@ serve whatever a theme may, which is `ThemeAssets::TYPES`, images and web fonts 
 
 Files are at **`/assets/plugin/<plugin>/<file>`**, beside the theme's, carrying the *plugin's*
 version as the cache buster — a plugin releasing a new stylesheet should expire that
-stylesheet, and upgrading dpress should not expire a font nothing touched. They were under
+stylesheet, and upgrading Dpress should not expire a font nothing touched. They were under
 `/admin/assets/plugin/` while the only thing a plugin could contribute was an admin widget's
 behaviour; a stylesheet a visitor loads should not have the word `admin` in its address.
 

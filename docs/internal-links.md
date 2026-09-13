@@ -1,6 +1,6 @@
 # Internal links
 
-**Status: built** (dpress 0.19.0).
+**Status: built** (Dpress 0.19.0).
 
 The goal, in one sentence: **a stored document says what it points at, never where that is
 today.**

@@ -107,7 +107,7 @@ class Feed {
             .$this->element('link', $this->router->url('/'))
             .$this->element('description', $this->siteDescription())
             .$this->element('language', (string)$this->config->get('translation.default', 'en'))
-            .$this->element('generator', 'dpress')
+            .$this->element('generator', 'Dpress')
             .'<atom:link href="'.htmlspecialchars($this->url(), ENT_QUOTES)
             .'" rel="self" type="application/rss+xml" />'."\n";
         $built = $this->builtAt($items);
@@ -168,7 +168,7 @@ class Feed {
     }
 
     protected function siteName(): string {
-        return (string)$this->settings->get(Setting::SITE_NAME, 'dpress');
+        return (string)$this->settings->get(Setting::SITE_NAME, 'Dpress');
     }
 
     protected function siteDescription(): string {

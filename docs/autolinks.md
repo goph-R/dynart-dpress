@@ -1,6 +1,6 @@
 # Bare URLs
 
-**Status: built** (dpress 0.48.0).
+**Status: built** (Dpress 0.48.0).
 
 A URL written in a sentence becomes a link:
 
@@ -65,7 +65,7 @@ changing it does nothing to what is already stored until:
 dpress content:rerender
 ```
 
-The same rule as the post URL shape, and for the same reason: dpress renders markdown once, at save
+The same rule as the post URL shape, and for the same reason: Dpress renders markdown once, at save
 time, and a page view is a read of the result.
 
 ## 4. Where it lives
