@@ -23,14 +23,14 @@ A fenced block is stored as:
 <pre class="language-php" data-enlighter-language="php">echo &quot;hello&quot;;</pre>
 ```
 
+and [EnlighterJS](https://enlighterjs.org) colours it in the browser.
+
 **No `<code>` inside a highlighted block**, which is not a stylistic choice. EnlighterJS reads the
 `innerHTML` of the element it matched and unescapes it, so a `<code>` wrapper is not ignored — it
 is *displayed as the first line of the code*, tag and all. Enlighter's documented markup is a
 `<pre>` with the code directly inside, and replacing the whole `<pre>` also keeps the theme's own
 `article pre` styling off a highlighted block. A fence with **no** language keeps `<pre><code>`,
 exactly as before.
-
-and [EnlighterJS](https://enlighterjs.org) colours it in the browser.
 
 A server-side highlighter would write a `<span>` per token into `body_html` — **markup about how a
 thing looks, living inside the content**. That is the mistake `media#12` exists to avoid, one
@@ -76,6 +76,7 @@ so a language EnlighterJS learns later works without a change here.
 | `html`, `htm` | `xml` |
 | `md` | `markdown` |
 | `golang` | `go` |
+| `objective-c` | `objc` |
 | `text`, `txt`, `plaintext` | `raw` |
 
 `c`, `cpp`, `csharp`, `java`, `python`, `php`, `go`, `rust`, `sql` and the rest need no alias.
@@ -100,8 +101,16 @@ out of whatever is in a row.
 sets `padding: 0` there, so the first line of code sits against the top edge of the colour. One
 rule corrects it, emitted straight after the theme's stylesheet — both selectors are a single
 class, so source order decides, and the theme link is added to the page after the layout's own
-`<style>`. It lives in `CodeAssets::PADDING` rather than in a layout so that a theme author does
-not have to know it is needed, and so the vendored file stays unmodified.
+`<style>`. It lives in `CodeAssets::STYLE` (`PADDING` until 0.65.1) rather than in a layout so
+that a theme author does not have to know it is needed, and so the vendored file stays unmodified.
+
+**A long line scrolls, it does not wrap** (0.65.1). EnlighterJS defaults `textOverflow` to
+`break`, and code is the one kind of text where a wrap changes what it says: the indent stops
+marking a nesting level, and a shell command comes apart mid-flag. `textOverflow: "scroll"` is the
+library's own mode, one word in the init options in `CodeAssets::tags()`. `STYLE` carries a second
+rule for it, `overscroll-behavior-x: contain`: a block that scrolls is a block a thumb swipes in,
+and without it the swipe chains to the page once the code runs out - which on a phone is the
+*back* gesture.
 
 Each theme file is self-contained — layout and colours, about 14 KB — so a page loads one
 stylesheet and no base underneath it.
@@ -119,8 +128,11 @@ touching a document.
 - **A light and a dark theme switched by `prefers-color-scheme`.** Enlighter's themes are each
   individually light or dark rather than designed to be stacked, so pairing them means scoping two
   stylesheets and checking they do not leak. One theme, chosen, until that is worth doing.
-- **Highlighting in the admin editor.** The markdown field is a textarea with a toolbar,
-  deliberately not an editor — see `docs/media-in-the-editor.md` §1.
+- **Highlighting by language in the admin editor.** The markdown field is still a textarea,
+  deliberately not an editor — see `docs/media-in-the-editor.md` §1. Since 0.67.0
+  `assets/markdown-highlight.js` paints the *markdown* in colour behind it, fences included, but
+  the code inside a fence is one colour there: it is this site's markdown grammar, not
+  EnlighterJS.
 
 ## 7. Licence
 

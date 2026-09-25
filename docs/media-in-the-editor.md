@@ -8,9 +8,9 @@ design withdrawn — §2 and §3, which were the same idea twice.
 - §2, the `hidden` flag itself, went in 0.24.0. Inserting a picture attaches nothing at all now,
   so there is no attachment that needs hiding.
 - The insert rule below is **superseded by 0.67.0**, which also removed `MARKDOWN_ACTIONS`: the
-  toolbar's formatting buttons are gone and this is the only button left on it, labelled *Insert
-  from library* rather than drawn as an icon. What it writes is now decided by the category -
-  an image is `![alt](media#12)` as before, a **video** is `{{ video('media#13') }}` and an
+  toolbar's formatting buttons are gone and this is the only one of them left, labelled *Insert
+  from library* rather than drawn as an icon (the emoji picker joined it in 0.68.0). What it
+  writes is now decided by the category - an image is `![alt](media#12)` as before, a **video** is `{{ video('media#13') }}` and an
   **audio** file is `{{ audio('media#5') }}`, and everything else is still a link. A video used
   to be written as `![alt](media#13)`, which renders an `<img>` pointing at an mp4: a broken
   picture with nothing on the page to say why. See `Dpress.mediaMarkdown()`.
@@ -43,8 +43,10 @@ side is configured in ways no client-side renderer will match:
 
 - `html_input => 'strip'` — the server removes raw HTML. A browser renderer shows it. Embed an
   iframe, watch it work in the preview, watch it vanish on publish.
-- Plain CommonMark, no GFM extension — **the server does not render tables.** Most browser
-  renderers default to GFM and do. Write a table, see a table, publish pipe characters.
+- Plain CommonMark, no GFM extension — **the server did not render tables.** Most browser
+  renderers default to GFM and do. Write a table, see a table, publish pipe characters. (Tables
+  arrived in 0.49.0 as the one extension added, so the rest of GFM — strikethrough, task lists,
+  `www.` autolinks — still differs.)
 - The `---` lead/body split is Dpress's own rule, and no third-party renderer knows it exists.
 - `MarkdownRenderer::setConverter()` lets a plugin swap the converter entirely, so on such a
   site a client-side preview is wrong by construction.
@@ -52,10 +54,10 @@ side is configured in ways no client-side renderer will match:
 A preview that lies costs somebody an afternoon. Not having one costs nothing, because the
 markdown *is* what they are editing.
 
-**If a preview is ever wanted, it comes from the server** — `POST /admin/content/preview`
-through the real `MarkdownRenderer`, returning the lead and body HTML the page will actually
-show. That is the only kind that can be trusted. Out of scope here; noted so the next person
-does not have to rediscover why.
+**When a preview was wanted, it came from the server** (0.44.0) — the editor's *Preview* button
+posts the boxes to `POST /admin/content/<type>/preview/<id>`, which renders them through the real
+`MarkdownRenderer` and the theme and saves nothing. That is the only kind that can be trusted.
+It was out of scope here; noted so the next person does not have to rediscover why.
 
 So the whole editor-side change is: **one more button on the existing toolbar.**
 
@@ -199,21 +201,21 @@ auto-drafts exist — see `CLAUDE.md`.
 
 | Row action | Does |
 |---|---|
-| **Insert** | writes `![alt](media#<id>)` into the textarea at the cursor. Client side only |
+| **Insert** | writes what `Dpress.mediaMarkdown()` makes of the file — `![alt](media#<id>)` for an image, a `video` / `audio` shortcode, a link for anything else — into the textarea at the cursor. Client side only |
 | **Detach** | removes the link. **Leaves the text alone**, and says so in the confirmation |
 
 Plus **Add attachment**, which picks a library item and attaches it. That is the only thing that
 attaches anything.
 
-The toolbar's image button is a **separate mechanism** that happens to open the same picker: it
-writes a reference into the text and touches no attachment, so it works on a post that has never
-been saved. A file can be attached, shown in the body, either, or both — **nothing decides any of
-that on the author's behalf, and nothing recalculates it afterwards.**
+The markdown field's *Insert from library* button is a **separate mechanism** that happens to open
+the same picker: it writes a reference into the text and touches no attachment, so it needs no
+post id of its own. A file can be attached, shown in the body, either, or both — **nothing
+decides any of that on the author's behalf, and nothing recalculates it afterwards.**
 
 **Everything writes at once, over `Dpress.send()`** — the same POST a row action makes, sent with
 `fetch` so the editor is never reloaded and nothing typed is lost. One write model, the same as
-the rest of the admin. It is also why the panel needs a saved post: there is no id to attach to
-before that, so it says so and the buttons are inactive rather than pretending.
+the rest of the admin. It is also why the panel needs a row to attach to — which is what the
+auto-draft gives it, so there is no inactive, not-saved-yet state any more.
 
 `Dpress.send()` also gave the list two new row action kinds next to `link` and `post`: **`ajax`**
 (post, then refresh the list) and **`insert`** (write into the field). Both are declared as data,
@@ -239,7 +241,7 @@ POST /admin/media/upload/json   ->  ['item' => <the same row shape the list retu
   It is already rendered inside `<main>` on every admin screen and already refreshed by partial
   navigation, so the dialog has one without a second mechanism.
 - The response row is `MediaAdminController::row()`, unchanged — it already carries `url`,
-  `thumbnail_url` and `alt`, which is everything the insert needs.
+  `thumbnail_url`, `alt` and `category`, which is everything the insert needs.
 - An upload that fails validation is a **200 with an `error`**, not a 500. The size limit and
   the type list are ordinary outcomes, and `MediaService::upload()` already throws
   `DpressException` with a sentence meant for a person.
@@ -263,9 +265,13 @@ What it grows:
 - **The alt text.** An image with no `alt` is invisible to somebody using a screen reader, and
   the moment of insertion is the only moment anybody knows what the picture is *for*. Offer the
   media item's stored `alt` as the default, editable in the dialog, and write a change back to
-  the item. Do not silently insert an empty one.
-- **`media.create` gates the upload pane**; `media.view` gates the dialog at all. The editor
-  screen already knows both — pass them into the view as it passes `can_publish`.
+  the item. Do not silently insert an empty one. **Not built as described:** the dialog offers no
+  alt field — the insert uses the item's stored `alt` (falling back to its title, then its file
+  name), and the alt text is edited on the item in the library.
+- **`media.create` gates the upload pane**; `media.view` gates the dialog at all. As built, the
+  first is `AbstractAdminController::admin()` putting the upload URL on `<body>` as
+  `data-media-upload` only for somebody holding `media.create` (empty means no pane), and the
+  second is the editor's `can_attach`, which is what grows the *Insert from library* button.
 
 The dialog is built and thrown away per use and lives outside `<main>`, so partial navigation
 needs nothing from it either way.
@@ -353,10 +359,11 @@ Each step leaves the admin working, and the first two are worth shipping even if
 2. ~~`ContentAttachment.hidden`, migration `0008`, the query filter, `syncInlineAttachments()`
    wired into save.~~ — **done**, Dpress 0.15.0. Pasting an image URL by hand now does the right
    thing, with no JavaScript involved at all.
-3. `POST /admin/media/upload/json`, and the upload pane in the existing picker dialog. The
+3. ~~`POST /admin/media/upload/json`, and the upload pane in the existing picker dialog. The
    picker is reachable from the media field today, so this is testable before touching the
-   editor at all.
-4. The image button on the markdown toolbar.
+   editor at all.~~ — **done**, Dpress 0.17.0.
+4. ~~The image button on the markdown toolbar.~~ — **done**, Dpress 0.16.0; since 0.67.0 it is
+   the *Insert from library* button, the only one left beside the emoji picker.
 
 Steps 1, 3 and 4 are small. Step 2 is the substantial one, and it is the one worth being
 careful with.

@@ -47,6 +47,7 @@ class ReadingTimePlugin extends AbstractPlugin {
     public function widgets(): array     { return ['reading_time' => 'reading_time:widget/minutes']; }
     public function blocks(): array      { return ['reading_time' => [...]]; }
     public function pageAssets(): array  { return ['reading-time.css' => 'reading-time']; }
+    public function shortcodes(): array  { return ['reading_time' => [...]]; }   // see shortcodes.md §5
     public function views(): array       { return ['reading_time' => dirname(__DIR__).'/views']; }
     public function assets(): array      { return ['reading-time.js']; }
     public function permissions(): array { return ['reading_time.override' => 'reading_time']; }
@@ -250,8 +251,9 @@ goes first when two plugins add a field to the same form.
   exist, and extracting one touches every constructor. Subclass-and-rebind works meanwhile.
 - **Named layout slots** for the front end. Superseded in 0.37.0 by *places*: a theme declares
   them, a menu is assigned to one and blocks are ordered in one. What is still missing is a place
-  *inside* a post, and a way for a block to know which page it is on — see
-  [comments.md](comments.md) §3, which is the first thing to want both.
+  *inside* a post. A block learns which page it is on through `PageContext`, and there is an
+  `after_content` place under a post and a page, both since 0.62.0 — see
+  [comments.md](comments.md) §3, which was the first thing to want them.
 - **Event priorities.** The plugin list's order is the ordering.
 - **Composer-installed plugins.** Already possible for anything needing only routes and services:
   name the namespace in `app.scan_namespaces` and the attribute processor finds it. Not worth a

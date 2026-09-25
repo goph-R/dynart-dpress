@@ -2,7 +2,9 @@
 
 **Status: built.** §3 landed in Dpress 0.62.0 and the plugin is
 [dynart-dpress-disqus](https://github.com/goph-R/dynart-dpress-disqus) 1.0.0. What is *not*
-built is §8, the counts - see the plugin README for why.
+built is §8, the counts - see the plugin README for why. And §6 step 4 changed shape on the way:
+there is no `disqus:map` command, the old identifier is pasted into a **Disqus identifier** box in
+the post editor.
 
 What follows is what it was all decided from, written down before anything was built so the
 decisions were made once, in the open, rather than halfway through an afternoon. It held up.
@@ -50,7 +52,8 @@ embed asks for the *right thread* is the entire job.
 ## 3. What core was missing (three small things)
 
 > **Built in 0.62.0**, all three. `PageContext`, the `after_content` place, and the settings
-> registry. What follows is what they were decided from, and it is still what they do.
+> registry (`SettingFields`). What follows is what they were decided from, and it is still what
+> they do - with the differences noted in each.
 
 
 The plugin has nowhere to render, and no way to be configured. All three gaps are the same shape —
@@ -62,7 +65,10 @@ merits.
 `views/content/single.phtml` has no hook. Blocks (0.37.0) gave the CMS *places*, so:
 
 - Declare **`after_content`** in `ThemeService::BUILT_IN_PLACES` and render it in `single.phtml`,
-  after the tags and attachments.
+  after the tags and attachments. As built it is rendered by `page.phtml` too, outside the
+  `</article>` in both: **one place and not two**, so "comments on pages as well" is a question
+  about where the block is put rather than a second place name. A theme that declares its own
+  `places[]` replaces the built-in list, so it has to name it: `places[] = after_content`.
 - A block in it is then anything the site wants under a post — comments, a newsletter box, a
   related-posts plugin later.
 
@@ -70,7 +76,9 @@ merits.
 
 A block renderer gets `(Block $block, array $settings)` and nothing else, so a comments block
 cannot tell which post it is under. Add a **`PageContext`**: a request-scoped service holding the
-content being viewed, set by `ContentController` and `PageController`, empty everywhere else.
+content being viewed, empty everywhere else. As built it is set in exactly one place,
+`AbstractController::renderContent()` - the one place a post or a page becomes HTML, so the
+preview goes through it too.
 
 Twenty lines, and it is the primitive several things want — a shortcode needs the same answer, and
 so would "related posts". Passing context down through `Places::render()` was the alternative; a
@@ -86,7 +94,9 @@ saved. That is the worst kind of extension point: one that appears to work.
 
 Turn `FIELDS` into a registry seeded with the core fields, exactly as `FormWidgets`, `Shortcodes`
 and `Blocks` are. Then a plugin adds `disqus_shortname` in one call, it appears on the Settings
-screen, and it is saved and audited like everything else.
+screen, and it is saved and audited like everything else. As built that is **`SettingFields`**, and
+`SettingFields::add($name, $type, $field)` takes the form field along with the type - which is what
+makes it one call.
 
 The alternative — the plugin ships its own admin screen — also needs core work, because
 `AbstractAdminController::navigation()` is a hardcoded array with no way for a plugin to add a
@@ -95,6 +105,13 @@ section. Worth doing eventually; not the cheaper path today.
 ---
 
 ## 4. The plugin
+
+> **As built** it is `plugins/disqus`, and most of the table below became declarations rather
+> than `register()` calls: the block type is `blocks()` and the loader script and stylesheet are
+> `pageAssets()` (both 0.59.0), needled on the `data-disqus` attribute the block writes.
+> `register()` is left with what a declaration cannot express - the settings, and the
+> **Disqus identifier** box on the post editor, written on `after_process`. There is no
+> `views/count.phtml`, because there are no counts (§8).
 
 ```
 plugins/disqus-comments/
@@ -177,10 +194,11 @@ The order matters, and the middle step is the one that goes wrong.
    old host. `"$id https://gopherlab.net/?p=$id"` would be right for most of the archive and
    silently wrong for the oldest posts, which are exactly the ones with the comments on them.
 3. **Import into Dpress**, so every post has its new id.
-4. **Fill `disqus_thread`** — old identifier against new content id. A CLI command,
-   `disqus:map -file map.csv`, taking `old_identifier,new_slug` and resolving slugs to ids, with a
-   dry run by default. This is the step that has to be re-runnable, because the first attempt will
-   have a few wrong.
+4. **Fill `disqus_thread`** — old identifier against new content id. Planned as a CLI command,
+   `disqus:map -file map.csv`; **as built it is a box**: *Disqus identifier* on the post editor,
+   where the exported identifier is pasted exactly, and empty means `dpress-<id>`. It still has to
+   be re-runnable, because the first attempt will have a few wrong - and a box is corrected by
+   editing the post.
 5. **Verify on a handful of posts** before announcing the move: a post with many comments, one
    with none, and one whose slug changed in the process.
 6. **Then, and only then**, use Disqus's URL Mapper for anything left over, so old URLs in Disqus
@@ -244,8 +262,9 @@ and "Show comments" is one they wonder about.
 - **Work offline, or without JavaScript.** Nothing can, with a hosted service.
 - **Survive Disqus.** Export regularly. The exports are the reason this is a reasonable choice and
   not a lock-in.
-- **Comment on pages**, initially. Posts only, until somebody wants otherwise; the block is in a
-  place, so allowing it is putting one there.
+- **Comment on pages**, initially. As built this is not a rule the plugin enforces: a block in
+  `after_content` renders under pages as well, because that place is drawn by `page.phtml` too.
+  Only the *Disqus identifier* box is posts-only, so a page is always keyed `dpress-<id>`.
 
 ---
 
@@ -256,7 +275,8 @@ Core first, because the plugin is unwritable without it, and each core piece sta
 1. `PageContext`, and `after_content` in the built-in places and in `single.phtml`. (small)
 2. Settings as a registry rather than a `const`, so a plugin can add one. (small)
 3. The plugin: block type, template, click-to-load, shortname setting. (half a day)
-4. `disqus_thread` + the `disqus:map` command + tests on `Identifiers`. (the actual work)
+4. `disqus_thread` + the `disqus:map` command + tests on `Identifiers`. (the actual work - built
+   as the editor box instead of the command, see §6)
 5. Counts, behind their own setting. (small)
 
 **Tests never touch the network.** What is worth testing is all local: the identifier for a post

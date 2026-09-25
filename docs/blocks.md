@@ -14,7 +14,9 @@ places[] = main
 places[] = sidebar
 ```
 
-The built-in templates declare `main` (the header) and `sidebar` (beside the content). Whatever is
+The built-in templates declare `main` (the header), `sidebar` (beside the content) and
+`after_content` (under a post and under a page, since 0.62.0). A theme that declares its own
+`places[]` replaces that list rather than adding to it, so it names every one it wants. Whatever is
 assigned to a place renders there — a menu, blocks, or both — so there is one vocabulary and one
 list, not `places` for menus and `regions` for blocks.
 
@@ -86,7 +88,10 @@ by declaring `blocks()` rather than by calling `add()` itself.
 - **`prepare`** is the save-time hook: turn what somebody typed into what should be stored. Use it
   for anything expensive, so a page view only prints. `dpress content:rerender` calls it again.
 - **`render`** gets the block and its settings and returns HTML. Fetch a template rather than
-  building markup in PHP, so a theme can override it.
+  building markup in PHP, so a theme can override it. That is **all** it is handed; a block that
+  has to know which post it is under — comments, related posts — asks `PageContext` (0.62.0), and
+  renders nothing on a page that is about no content at all, which the front page and an archive
+  are.
 
 Everything is a Micro callable resolved when it is needed, so an enabled type that is not on the
 page costs nothing.

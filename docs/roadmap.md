@@ -1,13 +1,13 @@
 # What is planned, and what each one has to decide first
 
 **Written against 0.38.0**, after a look at the blog that is moving here, so that the work would
-start with decisions rather than with guessing. Two of the four are built since.
+start with decisions rather than with guessing. Three of the four are built since.
 
 | | | Status |
 |---|---|---|
 | 1 | Where a post lives — the URL | **built in 0.47.0**, as the `post_path` setting |
 | 2 | A recent posts block | planned |
-| 3 | Featured posts, by tag | **built in 0.39.0**, as the listing rather than as a block |
+| 3 | Featured posts, by tag | **built in 0.40.0**, as the listing rather than as a block |
 | 4 | A weight, for ordering posts by hand | **built in 0.57.0** |
 
 ---
@@ -92,13 +92,24 @@ alongside the tag cloud and the category list.
   published, newest first, limited.
 - **"Not the one you are reading"** is the only interesting part: a recent-posts block in the
   sidebar of a post should not list that post. That needs to know which page it is on, which is
-  the same `PageContext` [comments.md](comments.md) §3b asks for. Build it once, and both want it.
+  the same `PageContext` [comments.md](comments.md) §3b asks for. **It exists since 0.62.0**, built
+  for the comments, so this block reads it rather than building it.
 
 Half a day, most of which is the template.
 
 ---
 
 ## 3. Featured posts
+
+> **Built in 0.40.0**, as the listing recommended below. A setting, `featured_tag`, defaulting to
+> `featured` — and empty means no strip at all. `HomeController` hands the template
+> `$featured_posts`, at most five, and leaves them out of the list below through `exclude_ids`
+> on `content_list`. No `featured_posts` query was needed: the strip is `content_by_tag` with a
+> `max`, so since 0.57.0 the weight orders it too. The section below is what it was decided from.
+>
+> One thing the sketch did not mention: the tag is machinery and not a subject, so since 0.66.0
+> it is **out of the tag cloud and the sitemap** — in a cloud it set the top of the scale by
+> itself and squashed every real tag into the bottom buckets.
 
 Five posts at the top of the front page, chosen by giving them a `featured` tag.
 
@@ -135,9 +146,10 @@ and the block version costs a new grammar to express one condition.
 ## 4. A weight, for ordering by hand
 
 > **Built in 0.57.0**, as the tiebreaker recommended below. An `int weight` on `Content`,
-> `weight desc` in front of the date in `contentList`, `contentByTag`, `contentByCategory`
-> and `contentChildren` — through one `orderContent()` helper, so the four cannot drift apart
-> and a post cannot float on the front page while sitting still in its category. A box in the
+> `weight desc` in front of the date in `contentList`, `contentByTag` and `contentByCategory`
+> — through one `orderContent()` helper, so the three cannot drift apart and a post cannot
+> float on the front page while sitting still in its category — and in front of the title in
+> `contentChildren`. A box in the
 > editor and a sortable column in the list. The section below is what it was decided from.
 >
 > Three things the sketch did not mention. The number is **signed**: "push this one down" is
@@ -179,11 +191,11 @@ argument for doing them first.
 
 | Core change | Wanted by |
 |---|---|
-| Post URL shape as a setting, `findByPath()` serving posts | §1 |
-| `PageContext` — which content is being viewed | §2, and comments |
-| `featured_posts` query, or block visibility rules | §3 |
-| `weight` column, and `contentList` ordering by it | §4, §3 |
-| A place before the content, if the featured strip becomes a block | §3 only |
+| Post URL shape as a setting, `findByPath()` serving posts — **built in 0.47.0** | §1 |
+| `PageContext` — which content is being viewed — **built in 0.62.0** | §2, and comments |
+| `featured_posts` query, or block visibility rules — **built in 0.40.0** as `content_by_tag` with a `max`, and `exclude_ids` on `content_list` | §3 |
+| `weight` column, and `contentList` ordering by it — **built in 0.57.0** | §4, §3 |
+| A place before the content, if the featured strip becomes a block — not needed, it is the listing | §3 only |
 
 ---
 
@@ -193,6 +205,7 @@ argument for doing them first.
   in force. gopherlab is on `/<slug>`.
 - Does the blog use anything but post-name permalinks? **Still worth checking** - date-based
   permalinks or `?p=123` would need a redirect table, which none of this provides.
-- **Featured**: the listing, or a block with visibility rules?
-- Is the tag name `featured`, or a setting?
-- **Weight**: a tiebreaker above the date, or the whole order?
+- ~~**Featured**~~ — answered: the listing.
+- ~~Is the tag name `featured`, or a setting?~~ — a setting, `featured_tag`, defaulting to
+  `featured`.
+- ~~**Weight**~~ — answered: a tiebreaker above the date.

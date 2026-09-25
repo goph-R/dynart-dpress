@@ -117,6 +117,10 @@ rearranges it rather than ignoring it. A block shortcode *among words* is render
 stands: that is an author asking for something that cannot be done, and tearing their paragraph in
 half is a worse answer.
 
+**The arguments are all a handler is handed.** One that has to know which post it is in — a
+`{{ comments }}` in the middle of one — asks `PageContext` (0.62.0), the same service a block
+asks, because a shortcode is not rendered through a place and wants the same answer.
+
 **A handler escapes its arguments.** The renderer strips raw HTML from documents on purpose; a
 shortcode is a deliberate hole in that, and the arguments came from an author.
 
@@ -144,7 +148,7 @@ One shortcode for every kind of video, dispatching on what it was handed:
 | given | rendered |
 |---|---|
 | `media#10` | a `<video>` with the file's URL and its alt text as the label |
-| a link to a video file (`.mp4`, `.webm`, `.ogv`, `.mov`, `.m4v`) | the same |
+| a link to a video file (`.mp4`, `.webm`, `.ogv`, `.ogg`, `.mov`, `.m4v`) | the same |
 | a YouTube link — `watch?v=`, `youtu.be/`, `/embed/`, `m.youtube.com` | the player, from **`youtube-nocookie.com`** |
 | a Vimeo link — `vimeo.com/<id>` or `player.vimeo.com/video/<id>` | the player |
 | anything else | a comment saying so |

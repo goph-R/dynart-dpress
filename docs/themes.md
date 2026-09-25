@@ -6,7 +6,7 @@ runtime action and an audited one.
 
 ```
 themes/gopherlab/
-  theme.ini                     title, version, author, and the places it renders
+  theme.ini                     title, description, version, author, and the places it renders
   assets/style.css              the design, served at /assets/theme/style.css
   assets/inter.woff2
   dpress/layout.phtml           the reading layout - overrides the CMS's
@@ -30,7 +30,7 @@ it.
 |---|---|---|
 | `home` | `HomeController::index()` | `dpress/layout-home.phtml` |
 | `archive` | a category or a tag listing | `dpress/layout-archive.phtml` |
-| `post` | `/post/<slug>` | `dpress/layout-post.phtml` |
+| `post` | a post, at `/post/<slug>` or `/<slug>` as `post_path` says | `dpress/layout-post.phtml` |
 | `page` | any page, at its own path | `dpress/layout-page.phtml` |
 | `auth` | log in, register, profile, a message | `dpress/layout-auth.phtml` |
 | *(none)* | anything else, a plugin's screens included | — |
@@ -77,6 +77,12 @@ A block put in `sidebar` shows beside a post and stays off the front page. A blo
 nothing to configure, and nothing for a block author to get wrong: the layout that does not ask
 for a place does not get it.
 
+**A theme that declares `places[]` replaces the built-in list rather than adding to it.** With no
+theme active the built-in templates declare `main` (the header), `sidebar` (beside the content)
+and `after_content` (under a post and under a page, outside the `</article>`, for whatever is
+*about* what was just read — comments above all). A theme wanting any of those has to name it,
+`places[] = after_content` included, and render it in its own templates.
+
 A featured strip, a welcome note, a front-page-only newsletter box are all this. What it will not
 express is a condition finer than "which layout" — *"this block, but only on posts in the Retro
 category"* still wants rules, and does not have them.
@@ -94,7 +100,14 @@ A theme keeps its stylesheet, fonts and pictures in its own `assets/`, and they 
 ```
 
 `$theme` is a `ThemeAssets`, set on every render like `$places` is, so a template looks nothing
-up itself.
+up itself. Two more things it answers:
+
+- **`$theme->url('inter.woff2', false)`** leaves the version off, for a file **named** after its
+  own contents — a font, above all. A `url()` inside the stylesheet carries no version, because a
+  stylesheet cannot know one, so a `<link rel="preload">` built with `?v=` is a different URL
+  from the one `@font-face` asks for and the browser downloads the font twice.
+- **`$theme->exists('icons.css')`**, for something **optional** — the same rule the route serves
+  by, so a template is never told yes about a file that would then 404.
 
 - **Cache-busted by the theme's own version** from `theme.ini`, not by the CMS's — a theme is
   released on its own schedule, and upgrading Dpress should not expire a font nothing touched.
@@ -102,8 +115,10 @@ up itself.
 - **The active theme's, and no other.** The theme name is not in the URL. There is one theme
   rendering and a name in the URL would be a way to read out of any folder under `themes/`
   whether the site uses it or not — the same rule a plugin's assets follow.
-- **Allowed**: `css js svg png jpg jpeg gif webp avif ico woff woff2 ttf otf`. Wider than a
-  plugin's three, because a plugin ships behaviour and a theme ships a design.
+- **Allowed**: `css js svg png jpg jpeg gif webp avif ico woff woff2 ttf otf` — a typeface and a
+  background are not extras for a design. It is `ThemeAssets::TYPES`, and since 0.59.0 a plugin
+  may serve exactly the same list: one answer to what a folder dropped into the site may put in
+  front of a browser, rather than two.
 
 ### Flat, on purpose
 
@@ -153,18 +168,19 @@ Set on every render, so a theme's templates never look anything up:
 |---|---|
 | `$layout`, `$layout_kind` | which layout, and what kind of page it is |
 | `$places` | `render($place)`, `menu($place)`, `blocks($place)` |
-| `$theme` | `url($file)` for this theme's assets |
+| `$theme` | `url($file)` and `exists($file)` for this theme's assets |
 | `$site_name`, `$site_description`, `$site_logo`, `$site_icon` | the branding, resolved and ready to print |
 | `$main_menu` | the `main` place's menu, already rendered |
 | `$current_user`, `$registration_open` | for the header |
 | `$title` | the page's own title, per render |
 | `$dates` | `format()`, `iso()` and `tag()` for a stored timestamp |
+| `$post_path` | `/post/` or `/`, as the `post_path` setting says — `route_url($post_path.$post['slug'])` |
 
 Content templates add their own: `$content`, `$posts`, `$tags`, `$categories`, `$attachments`,
 `$mediaView`, and the paging set (`$body_html`, `$page`, `$page_count`, `$show_lead`, `$prev_url`,
 `$next_url`, `$page_urls`).
 
-Two of those are what a card-shaped listing needs, and both cost one query for the whole page:
+Three of those are what a card-shaped listing needs, and both cost one query for the whole page:
 
 - **`$thumbnails`**, on every listing, keyed by **content** id — `$thumbnails[$post['id']]`, or
   nothing. A row carries `featured_media_id` and not the item, so without this a theme that wants
@@ -178,7 +194,7 @@ Two of those are what a card-shaped listing needs, and both cost one query for t
   newest first, at most five. They are **left out of `$posts`**, because pinned at the top and
   repeated four rows down reads as a bug rather than as emphasis. An empty setting, a tag nobody
   has used, or no tag of that name at all all mean the same thing - no strip - so a theme asks
-  `if ($featured !== [])` and nothing else.
+  `if ($featured_posts !== [])` and nothing else.
 
 It is `$featured_posts` and not `$featured` on purpose: a single post's template has had
 `$featured` for **its own picture** since there were templates, and one name meaning two things is

@@ -1,7 +1,7 @@
 # Long posts, in pages
 
 A post or a page whose body has more than one `---` in it is served **one page at a time**, with
-*Previous* and *Next* underneath.
+*Previous*, *Next* and the page numbers (0.40.0) underneath.
 
 ```markdown
 The lead. This is what listings show, and it is on page one only.
@@ -22,7 +22,8 @@ The third.
 **No new syntax.** The first `---` has always ended the lead; every one after it ends a page. The
 same character doing a second job, and it reads the way it behaves — `---` has always meant "and
 now something else". Nothing already written changes shape: a body with one separator, or none, is
-one page and renders exactly as it did.
+one page and renders exactly as it did. Two separators in a row make no empty page between them —
+the second is read as a typo and dropped.
 
 ## What the reader gets
 
@@ -82,4 +83,5 @@ these variables:
 | `$body_html` | this page of the body, not all of it |
 | `$page`, `$page_count` | where it is in the sequence |
 | `$prev_url`, `$next_url` | `''` at each end |
+| `$page_urls` | every page's address, in order, for a numbered pager (0.40.0) |
 | `$show_lead` | true on page one |

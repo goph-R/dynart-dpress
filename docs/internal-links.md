@@ -130,17 +130,23 @@ the only thing that knows where a document starts and ends.
 
 ## 5. In the editor
 
-The toolbar's 🖼 button and the attachment list's insert action both write the reference rather
-than the URL. There was a **Reference** column in the attachment panel too, showing `media#<id>`
-to be read off the row and typed by hand; it went in 0.25.3, once the attachment list had stopped
-being how a picture gets into an article. To write one by hand, the ids are in the media library
-at `/admin/media`, which has a `#` column like every other admin list.
+The markdown field's **Insert from library** button (a 🖼 until 0.67.0) and the attachment
+list's insert action both write the reference rather than the URL. Both go through
+`Dpress.mediaMarkdown()`, and **what they write is decided by the file's category** (0.67.0): an
+image is `![alt](media#12)`, a video is `{{ video('media#13') }}`, an audio file is
+`{{ audio('media#5') }}`, and anything else is a link, because a PDF is a download. The two
+shortcodes take the same `media#<id>` but look it up themselves when the page is served — they are
+not a link destination, so nothing on this page applies to them. There was a **Reference** column
+in the attachment panel too, showing `media#<id>` to be read off the row and typed by hand; it went
+in 0.25.3, once the attachment list had stopped being how a picture gets into an article. To write
+one by hand, the ids are in the media library at `/admin/media`, which has a `#` column like every
+other admin list.
 
-**The toolbar's button attaches nothing** (0.24.0). A reference is all it takes to put a picture
-in an article, so the file need not hang off the post as well, and the button therefore works
-before the post has ever been saved. Attaching stayed what it always was — files listed under the
-published page — and **the author owns that list**: removing an image from the text does not
-detach anything, and detaching does not touch the text.
+**The library button attaches nothing** (0.24.0). A reference is all it takes to put a picture
+in an article, so the file need not hang off the post as well, and the button needs no post id of
+its own. Attaching stayed what it always was — files listed under the published page — and **the
+author owns that list**: removing an image from the text does not detach anything, and detaching
+does not touch the text.
 
 ## 6. What was deliberately not done
 

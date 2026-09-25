@@ -176,8 +176,10 @@ Queries per page:
 
 **Check the status code of every URL you measure.** An earlier version of this table put a
 single post at 5 queries — it was measuring `/welcome-to-dpress`, which is a **404**. Posts live
-at `/post/<slug>`; the bare slug is the page catch-all correctly refusing a post. A 404 is cheap
-and looks like a wonderful result.
+at `/post/<slug>` under the default `post_path`; the bare slug is the page catch-all correctly
+refusing a post. (Since 0.47.0 a site can put its posts at `/<slug>`, and then it is
+`/post/<slug>` that answers something other than the post — a **301**.) A 404 is cheap and looks
+like a wonderful result.
 
 Two things fall out of that table, and both were surprises:
 
@@ -246,9 +248,10 @@ In the order they are worth fixing:
 3. **Loading a row takes two queries.** The pattern is "query for the id, then `findById()`" —
    `findByEmail`, the slug lookup, the menu place lookup all do it. Correct, and one round trip
    more than necessary each time.
-4. **Two wasted round trips per request**: `use <database>` and `set names 'utf8'` are sent on
-   every connect. Both vanish if the DSN carries them —
-   `mysql:host=localhost;dbname=dpress;charset=utf8mb4`.
+4. **Two wasted round trips per request**: `use <database>` and `set names 'utf8mb4'` are sent
+   on every connect. Both could vanish if the DSN carried them —
+   `mysql:host=localhost;dbname=dpress;charset=utf8mb4` — but `MariaDatabase::connect()` sends
+   them unconditionally, so that is a change to the connect and not only to `dpress.ini`.
 
 And two things that are already right, which is worth recording so nobody "optimises" them:
 
