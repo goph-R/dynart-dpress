@@ -5,6 +5,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.74.0] &ndash; 2026-09-25
+
+### Fixed
+- **Renaming a category or a tag re-renders what links to it.** A `category#3` or `tag#7` in a
+  post is resolved when the post is rendered, so the URL sat in that post's `body_html` from its
+  last save - and a new slug left the link pointing at the old address until something else
+  happened to save the post, or `dpress content:rerender` ran. A post's rename has chased its
+  referrers since 0.19.0; a category's and a tag's never did. Rare, but the one who finds out is a
+  visitor on a published page rather than whoever did the renaming.
+
+### Added
+- **`category:slug_changed` and `tag:slug_changed`**, emitted by `TaxonomyService` when an edit
+  gave the slug a new value - and only then, since the editor posts the slug field whether or not
+  anybody touched it. `ContentService` subscribes to both: it already depends on
+  `TaxonomyService`, so being called from there would be a constructor loop.
+
+---
+
 ## [0.73.0] &ndash; 2026-09-12
 
 ### Fixed

@@ -88,6 +88,12 @@ remember in a move, and it is in the deployment notes for that reason.
 re-renders every document whose markdown mentions that id. A page moves more than itself — its
 slug is a segment of every path beneath it — so its descendants count as moved too.
 
+A category or a tag does the same since 0.74.0. Its slug is the whole of its path, so a new slug
+is the one change that matters, and `TaxonomyService` announces it as `category:slug_changed` or
+`tag:slug_changed`. `ContentService` listens and re-renders whatever mentions `category#3` or
+`tag#7`. An event and not a call, because `ContentService` already depends on `TaxonomyService`
+and the other direction would be a constructor loop.
+
 The candidate query is `markdown like '%post#42%'`, which also matches `post#421`. That is
 deliberate: no amount of SQL is going to parse markdown, and re-rendering a document that did not
 need it produces the same bytes. The loose end is the cheap one to leave.

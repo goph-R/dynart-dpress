@@ -9,8 +9,10 @@ use Dynart\Micro\Entities\QueryExecutor;
 use Dynart\Dpress\Content\MarkdownRenderer;
 use Dynart\Dpress\Content\Slugger;
 use Dynart\Dpress\DpressException;
+use Dynart\Dpress\Entity\Category;
 use Dynart\Dpress\Entity\Content;
 use Dynart\Dpress\Entity\Setting;
+use Dynart\Dpress\Entity\Tag;
 use Dynart\Dpress\Query\QueryFactory;
 
 /**
@@ -379,9 +381,35 @@ class ContentService {
         if ($content->isPage()) {
             $moved = array_merge($moved, $this->descendantIds($content->id));
         }
-        foreach ($this->referrerIds($moved) as $id) {
-            if ($id === $content->id) {
-                continue; // it was rendered a moment ago, with its new slug already in place
+        // it was rendered a moment ago, with its new slug already in place
+        $this->rerenderAllOf($this->referrerIds($moved), $content->id);
+    }
+
+    /**
+     * The same, after a category's slug changed
+     *
+     * Subscribed to `category:slug_changed` rather than called by `TaxonomyService`, which this
+     * service already depends on - the other direction would be a constructor loop. Renaming a
+     * category is rare, but a link in a post that quietly stopped working is found by a visitor
+     * rather than by whoever renamed it, which is the wrong one of the two to find out.
+     */
+    public function rerenderCategoryReferrers(Category $category): void {
+        $this->rerenderAllOf($this->referrerIds([$category->id], ['category']));
+    }
+
+    /** @see rerenderCategoryReferrers() */
+    public function rerenderTagReferrers(Tag $tag): void {
+        $this->rerenderAllOf($this->referrerIds([$tag->id], ['tag']));
+    }
+
+    /**
+     * @param int[] $ids
+     * @param int $skipId one that needs no second render, 0 for none
+     */
+    protected function rerenderAllOf(array $ids, int $skipId = 0): void {
+        foreach ($ids as $id) {
+            if ($id === $skipId) {
+                continue;
             }
             $referrer = $this->findById($id);
             if ($referrer === null) {
@@ -399,13 +427,15 @@ class ContentService {
      * amount of SQL is going to parse markdown. Re-rendering something that did not need it
      * costs a render and produces the same bytes, so the loose end is the cheap one to leave.
      *
+     * @param string[] $kinds the reference prefixes that name these ids - the three content ones
+     *                        are one lookup, so a post is found whichever of them was written
      * @return int[]
      */
-    protected function referrerIds(array $ids): array {
+    protected function referrerIds(array $ids, array $kinds = ['content', 'post', 'page']): array {
         $conditions = [];
         $params = [];
         foreach ($ids as $index => $id) {
-            foreach (['content', 'post', 'page'] as $kind) {
+            foreach ($kinds as $kind) {
                 $name = ':ref'.$index.$kind;
                 $conditions[] = '`markdown` like '.$name;
                 $params[$name] = '%'.$kind.'#'.$id.'%';

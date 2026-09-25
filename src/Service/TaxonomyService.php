@@ -30,6 +30,13 @@ class TaxonomyService {
     const EVENT_TAG_CREATED = 'tag:created';
     const EVENT_TAG_UPDATED = 'tag:updated';
     const EVENT_TAG_DELETED = 'tag:deleted';
+    /**
+     * The address moved: the slug is the whole of a category's or a tag's path, so this is the
+     * one change that leaves a `category#3` somebody else rendered pointing at the old URL. Its
+     * own event rather than a look inside `:updated`, because by then the old slug is gone.
+     */
+    const EVENT_CATEGORY_SLUG_CHANGED = 'category:slug_changed';
+    const EVENT_TAG_SLUG_CHANGED = 'tag:slug_changed';
     const EVENT_CONTENT_CATEGORISED = 'content:categorised';
     const EVENT_CONTENT_UNCATEGORISED = 'content:uncategorised';
     const EVENT_CONTENT_TAGGED = 'content:tagged';
@@ -99,6 +106,7 @@ class TaxonomyService {
     }
 
     public function updateCategory(Category $category, array $data): void {
+        $wasSlug = $category->slug;
         if (array_key_exists('name', $data)) {
             $category->name = trim($data['name']);
         }
@@ -112,6 +120,9 @@ class TaxonomyService {
         }
         $this->assertNoCategoryCycle($category);
         $this->em->save($category);
+        if ($category->slug !== $wasSlug) {
+            $this->events->emit(self::EVENT_CATEGORY_SLUG_CHANGED, [$category]);
+        }
         $this->events->emit(self::EVENT_CATEGORY_UPDATED, [$category]);
     }
 
@@ -226,6 +237,7 @@ class TaxonomyService {
     }
 
     public function updateTag(Tag $tag, array $data): void {
+        $wasSlug = $tag->slug;
         if (array_key_exists('name', $data)) {
             $tag->name = trim($data['name']);
         }
@@ -233,6 +245,9 @@ class TaxonomyService {
             $tag->slug = $this->uniqueSlug(Tag::class, $data['slug'], $tag->id);
         }
         $this->em->save($tag);
+        if ($tag->slug !== $wasSlug) {
+            $this->events->emit(self::EVENT_TAG_SLUG_CHANGED, [$tag]);
+        }
         $this->events->emit(self::EVENT_TAG_UPDATED, [$tag]);
     }
 

@@ -286,6 +286,9 @@ class DpressServices {
         $events->subscribe(MarkdownRenderer::EVENT_ENVIRONMENT, [CodeBlockRenderer::class, 'onEnvironment']);
         $events->subscribe(MarkdownRenderer::EVENT_ENVIRONMENT, [Callouts::class, 'onEnvironment']);
         $events->subscribe(MarkdownRenderer::EVENT_ENVIRONMENT, [Autolinks::class, 'onEnvironment']);
+        // a renamed category or tag moves the URL every `category#3` and `tag#7` resolved to
+        $events->subscribe(TaxonomyService::EVENT_CATEGORY_SLUG_CHANGED, [ContentService::class, 'rerenderCategoryReferrers']);
+        $events->subscribe(TaxonomyService::EVENT_TAG_SLUG_CHANGED, [ContentService::class, 'rerenderTagReferrers']);
     }
 
     /**
