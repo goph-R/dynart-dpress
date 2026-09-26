@@ -323,6 +323,9 @@ class AdminForms {
             'site_icon'         => ['type' => 'media', 'label' => 'Icon', 'required' => false,
                                     'preview' => (string)($context['site_icon_preview'] ?? ''),
                                     'description' => 'The icon in the browser tab. Same again.'],
+            'front_page'        => ['type' => 'text', 'label' => 'Front page', 'required' => false,
+                                    'description' => 'Empty shows the latest posts. An address on this site - `/docs`, '
+                                        .'`/about` - sends a visitor from the front page there instead.'],
             'registration_open' => ['type' => 'checkbox', 'label' => 'Registration', 'required' => false,
                                     'text' => 'Anybody may create an account'],
             'autolink'          => ['type' => 'checkbox', 'label' => 'Bare URLs', 'required' => false, 'section' => self::SECTION_POST,

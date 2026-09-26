@@ -122,6 +122,16 @@ class Setting extends Entity {
     const DEFAULT_FEATURED_TAG = 'featured';
 
     /**
+     * Where `/` sends a visitor, as an address on this site - or empty for the latest posts
+     *
+     * For a site whose front is not a blog: a documentation site's `/docs`, one page, a plugin's
+     * screen. **A redirect, and a temporary one** - the address is somewhere else and says so,
+     * so one page has one URL, and a 302 is not remembered by browsers the way a 301 is, so the
+     * setting can be changed back without every returning visitor stuck on the old answer.
+     */
+    const FRONT_PAGE = 'front_page';
+
+    /**
      * How a date is written on a page, and which clock it is written against
      *
      * The two belong together. Every timestamp is stored UTC, so a format on its own prints UTC -

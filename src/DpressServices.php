@@ -362,6 +362,7 @@ class DpressServices {
         Setting::FEED_ITEMS => 'int',
         Setting::POST_PATH => 'string',
         Setting::FEATURED_TAG => 'string',
+        Setting::FRONT_PAGE => 'string',
         Setting::DATE_FORMAT => 'string',
         Setting::TIMEZONE => 'string',
         Setting::CODE_THEME => 'string',

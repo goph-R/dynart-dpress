@@ -45,6 +45,10 @@ class HomeController extends AbstractController {
 
     #[Route('GET', '/')]
     public function index(): string {
+        $front = self::frontPage((string)$this->settings->get(Setting::FRONT_PAGE, ''));
+        if ($front !== '') {
+            $this->app()->redirect($front, [], 302);
+        }
         $featured = $this->featured();
         $posts = $this->content->findAll([
             'type' => Content::TYPE_POST,
@@ -64,6 +68,26 @@ class HomeController extends AbstractController {
             'authors'         => $this->authors(array_merge($posts, $featured)),
             'mediaView'       => $this->mediaView,
         ], 'home');
+    }
+
+    /**
+     * The address a Front page setting names, or '' for the latest posts
+     *
+     * **Only an address on this site.** A redirect from the front page to wherever a setting says
+     * is an open redirect waiting for the setting to hold `//elsewhere.example` - so anything
+     * with a scheme, anything starting `//`, a backslash anywhere and whitespace is the latest posts
+     * rather than a guess. `/` is too: sending the front page to itself is a loop.
+     */
+    public static function frontPage(string $setting): string {
+        $path = trim($setting);
+        if ($path === '' || $path === '/') {
+            return '';
+        }
+        if ($path[0] !== '/' || str_starts_with($path, '//') || str_contains($path, '\\')
+            || preg_match('/[\x00-\x20]/', $path) === 1) {
+            return '';
+        }
+        return rtrim($path, '/');
     }
 
     /**

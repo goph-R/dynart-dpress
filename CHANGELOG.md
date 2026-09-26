@@ -5,6 +5,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.81.0] &ndash; 2026-09-26
+
+The front page can be somewhere else.
+
+### Added
+- **A Front page setting**, on the Site tab. Empty is what it has always been, the latest posts;
+  an address on this site - `/docs`, `/about` - sends a visitor from `/` there instead. For a
+  site whose front is not a blog: the Docs plugin's documentation, one page, a plugin's screen.
+
+  A **302**, not a 301 and not the page drawn at `/`. Drawn at `/`, one page would have two
+  addresses; a 301 is remembered by browsers, and a site that changes the setting back would
+  keep sending its returning visitors to the old answer.
+
+  **Only an address on this site.** A redirect a setting can aim is an open redirect waiting
+  for `//elsewhere.example`, so anything with a scheme, anything starting `//`, a backslash and
+  whitespace all mean the latest posts. So does `/`, which would be a loop.
+
+---
+
 ## [0.80.0] &ndash; 2026-09-26
 
 Pascal is highlighted.
