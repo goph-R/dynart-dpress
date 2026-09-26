@@ -124,6 +124,16 @@ interface PluginInterface {
     public function adminSections(): array;
 
     /**
+     * `dpress` commands, as `name => ['callable' => [Class::class, 'method'], 'description' => ...,
+     * 'params' => [...], 'flags' => [...]]` - the shape of `DpressCliApp::COMMANDS`
+     *
+     * For work that belongs in a deploy or a cron job. A name the core already has is left out,
+     * with a warning in the log. The callable is resolved through the container when the command
+     * runs, and answers with an exit code, as the core's do.
+     */
+    public function commands(): array;
+
+    /**
      * Everything that is not a list
      *
      * Subscribe to events, register form and query builders, whatever else. Called last, after

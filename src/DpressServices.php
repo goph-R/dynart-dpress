@@ -86,6 +86,7 @@ use Dynart\Dpress\Mail\MailerInterface;
 use Dynart\Dpress\Mail\NativeMailer;
 use Dynart\Dpress\Migration\CreateSchema;
 use Dynart\Dpress\Plugin\PluginService;
+use Dynart\Dpress\Plugin\PluginCliCommands;
 use Dynart\Dpress\Query\CoreQueries;
 use Dynart\Dpress\Query\ListRequest;
 use Dynart\Dpress\Query\QueryFactory;
@@ -250,6 +251,7 @@ class DpressServices {
         Micro::add(Sitemap::class);
         Micro::add(PageContext::class);
         Micro::add(PluginService::class);
+        Micro::add(PluginCliCommands::class);
         Micro::add(MenuService::class);
         Micro::add(Blocks::class);
         Micro::add(BlockService::class);

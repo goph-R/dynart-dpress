@@ -13,6 +13,7 @@ use Dynart\Micro\Entities\Migrations;
 use Dynart\Dpress\Block\Blocks;
 use Dynart\Dpress\Content\Shortcodes;
 use Dynart\Dpress\Controller\Admin\AssetController;
+use Dynart\Dpress\DpressCliApp;
 use Dynart\Dpress\DpressException;
 use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Security\Permissions;
@@ -325,6 +326,12 @@ class PluginService {
             $permissions->add($permission, $group);
         }
         $this->contributeAdminSections($record, $plugin);
+        $commands = Micro::get(PluginCliCommands::class);
+        foreach ($plugin->commands() as $name => $command) {
+            if (is_array($command)) {
+                $commands->add((string)$name, $command, $record->name, array_keys(DpressCliApp::COMMANDS));
+            }
+        }
     }
 
     /**

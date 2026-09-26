@@ -29,6 +29,7 @@ use Dynart\Dpress\Cli\SchemaCommands;
 use Dynart\Dpress\Cli\SystemCommands;
 use Dynart\Dpress\Cli\UserCommands;
 use Dynart\Dpress\Plugin\PluginService;
+use Dynart\Dpress\Plugin\PluginCliCommands;
 use Dynart\Dpress\Query\CoreQueries;
 use Dynart\Dpress\Query\QueryFactory;
 use Dynart\Dpress\Service\SettingFields;
@@ -333,8 +334,26 @@ class DpressCliApp extends CliApp {
         // `db_table_prefix_missingsetting`.
         if ($this->hasConfig) {
             Micro::get(PluginService::class)->load();
+            $this->addPluginCommands();
         }
         $this->initServices();
+    }
+
+    /**
+     * The commands the enabled plugins offered while they loaded
+     *
+     * After the core's and in addition to them: `PluginCliCommands` has already refused a name the
+     * core has, so nothing here can replace `upgrade` with somebody else's code.
+     */
+    protected function addPluginCommands(): void {
+        foreach (Micro::get(PluginCliCommands::class)->all() as $name => $command) {
+            $this->commands->add(
+                $name,
+                $command['callable'],
+                array_merge($command['params'], self::COMMON_PARAMS),
+                $command['flags']
+            );
+        }
     }
 
     protected function addCommands(): void {

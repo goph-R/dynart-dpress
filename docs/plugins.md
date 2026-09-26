@@ -52,6 +52,7 @@ class ReadingTimePlugin extends AbstractPlugin {
     public function assets(): array      { return ['reading-time.js']; }
     public function permissions(): array { return ['reading_time.override' => 'reading_time']; }
     public function adminSections(): array { return ['reading_time' => [...]]; }   // see §5c
+    public function commands(): array    { return ['reading-time:recount' => [...]]; }   // see §5d
 
     public function register(): void { /* events, form and query builders */ }
 }
@@ -266,6 +267,33 @@ public function adminSections(): array {
 The core's own sections are in the same registry, `AdminSections`, added through the call a
 plugin's end in (`DpressServices::ADMIN_SECTIONS`), so there is one list and not a constant with
 additions.
+
+## 5d. A `dpress` command
+
+**Built in 0.78.0.** For work that belongs in a deploy or a cron job and not only behind a button:
+
+```php
+public function commands(): array {
+    return [
+        'docs:build' => [
+            'callable'    => [DocsCommands::class, 'build'],
+            'description' => 'Build the documentation from its source folder',
+            'params'      => ['source'],
+            'flags'       => ['quiet'],
+        ],
+    ];
+}
+```
+
+The shape of the core's own table, `DpressCliApp::COMMANDS`: the callable is resolved through the
+container when the command runs, is handed the parameters, and answers with an exit code. `-config`
+is accepted by every command, a plugin's too. `dpress help` lists it under *Plugin commands*.
+
+- **A name the core has is left out**, with a warning in the log, and so is one another plugin
+  took first - a plugin cannot answer `dpress upgrade` with its own code. A `plugin:` prefix of
+  the plugin's own (`docs:build`) keeps clear of both.
+- **Only inside a site.** Plugins load when there is a database to read the enabled list from, so a
+  plugin's command run outside one is an unknown command, answered with the help.
 
 ## 6. Turning one on
 

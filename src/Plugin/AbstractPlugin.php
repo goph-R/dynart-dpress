@@ -55,5 +55,9 @@ abstract class AbstractPlugin implements PluginInterface {
         return [];
     }
 
+    public function commands(): array {
+        return [];
+    }
+
     public function register(): void {}
 }

@@ -1,7 +1,7 @@
 # Extensibility: what plugins still cannot do, and what comes next
 
-**Status: planning** (after Dpress 0.76.1). **§1 is built in 0.77.0** - see
-[plugins.md §5c](plugins.md); the rest is the order after it.
+**Status: planning** (after Dpress 0.76.1). **§1 is built in 0.77.0** and **plugin commands (4
+below) in 0.78.0** - see [plugins.md §5c and §5d](plugins.md); the rest is the order after them.
 
 The admin is close to a production release, and what stands between Dpress and "flexible" is
 mostly on the plugin side. This page is the list, in the order it is worth doing, with the design
@@ -28,8 +28,8 @@ What it cannot do:
    Posts, Pages or Media list.
 4. **Add a `dpress` command.** `DpressCliApp::COMMANDS` is a constant, so a plugin whose work
    belongs in a deploy or a cron job - the Docs plugin's `docs:build` - has no way to offer it.
-   A `commands()` on the plugin interface, the same shape of change as `adminSections()`, is
-   next after §1.
+   A `commands()` on the plugin interface, the same shape of change as `adminSections()` -
+   **built in 0.78.0**.
 
 ## 1. Admin menu sections from plugins
 

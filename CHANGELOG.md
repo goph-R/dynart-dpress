@@ -5,6 +5,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.78.0] &ndash; 2026-09-26
+
+A plugin can add a `dpress` command.
+
+### Added
+- **`PluginInterface::commands()`** - `dpress` commands, in the shape of `DpressCliApp::COMMANDS`
+  (`callable`, `description`, `params`, `flags`). For work that belongs in a deploy or a cron job
+  and not only behind a button; the Docs plugin's `docs:build` is the first. `AbstractPlugin`
+  answers `[]`.
+- **`PluginCliCommands`**, where they are collected while the plugins load, and added to the
+  command line after the core's. **A name the core has, or another plugin already took, is left
+  out and logged** - a plugin cannot answer `dpress upgrade` with its own code.
+- **`dpress help`** lists them under *Plugin commands*, each with the plugin it comes from.
+
+### Notes
+Plugins load only inside a site - there has to be a database to read which are enabled - so a
+plugin's command run outside one is an unknown command, answered with the help.
+
+---
+
 ## [0.77.0] &ndash; 2026-09-26
 
 A plugin's screen can be in the admin's navigation. The first step of
