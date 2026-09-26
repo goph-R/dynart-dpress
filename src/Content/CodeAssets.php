@@ -48,6 +48,13 @@ class CodeAssets {
     const DEFAULT_THEME = 'dracula';
 
     /**
+     * The script: EnlighterJS as released, with the languages it lacks put in by
+     * `assets/enlighter/build.js` - Pascal, so far. The released file stays beside it,
+     * unmodified, because it is what the copy is made from.
+     */
+    const SCRIPT = 'enlighterjs.dpress.min.js';
+
+    /**
      * Highlighting switched off, spelled as a value rather than as an empty one
      *
      * `SettingService::get()` treats `''` as *absent* and answers with the default, so an empty
@@ -131,7 +138,7 @@ class CodeAssets {
         }
         return '<link rel="stylesheet" href="'.htmlspecialchars($this->url('enlighterjs.'.$theme.'.min.css')).'">'
             ."\n".self::STYLE
-            ."\n".'<script src="'.htmlspecialchars($this->url('enlighterjs.min.js')).'" defer></script>'
+            ."\n".'<script src="'.htmlspecialchars($this->url(self::SCRIPT)).'" defer></script>'
             ."\n".'<script defer>document.addEventListener("DOMContentLoaded",function(){'
             // `init(blocks, inline, options)` - the second selector is for **inline** snippets and
             // has to match nothing. Given `code` it rebuilds every backtick span in somebody's

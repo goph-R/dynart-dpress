@@ -81,6 +81,18 @@ so a language EnlighterJS learns later works without a change here.
 
 `c`, `cpp`, `csharp`, `java`, `python`, `php`, `go`, `rust`, `sql` and the rest need no alias.
 
+**`pascal` is dpress's own** (0.80.0) - EnlighterJS has no Pascal, and this site's first manual is
+written in it. Turbo Pascal, Free Pascal and Delphi: keywords in any case, the three comments, `{$I+}`
+directives set apart from them, `'it''s'` strings, `#13#10` characters, `$FF` and `%1010`
+numbers. `pas`, `delphi`, `objectpascal`, `freepascal`, `fpc` and `turbopascal` are the same
+language.
+
+EnlighterJS keeps its languages where nothing outside the bundle can add to them, so the language
+goes in: `assets/enlighter/pascal.js` is the source, and `node assets/enlighter/build.js` writes
+`enlighterjs.dpress.min.js` - the released bundle with it entered in the table - which is what a
+page loads. Run it after changing `pascal.js`; `node assets/enlighter-pascal.test.js` fails while
+the built copy is stale.
+
 **An unknown language is passed through, not refused.** ` ```pseudocode ` is somebody's own
 convention and renders as an ordinary block.
 
@@ -136,4 +148,6 @@ touching a document.
 
 ## 7. Licence
 
-EnlighterJS 3.4.0 is MPL-2.0, vendored unmodified in `assets/enlighter/`.
+EnlighterJS 3.4.0 is MPL-2.0, vendored unmodified in `assets/enlighter/` as `enlighterjs.min.js`.
+`enlighterjs.dpress.min.js` is that file with `pascal.js` added by `build.js`, all three beside it -
+a modified copy under the same licence, with its source in the same folder.

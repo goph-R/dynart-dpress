@@ -5,6 +5,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.80.0] &ndash; 2026-09-26
+
+Pascal is highlighted.
+
+### Added
+- **A Pascal language for the code highlighter** - Turbo Pascal, Free Pascal and Delphi.
+  EnlighterJS has none, so a ` ```pascal ` block was coloured by the generic rules, which know
+  neither `begin` nor `{ comments }`. Keywords in any case, the three kinds of comment, `{$I+}`
+  directives set apart from them, `'it''s'` strings, `#13#10` characters, `$FF` and `%1010`
+  numbers. `pas`, `delphi`, `objectpascal`, `freepascal`, `fpc` and `turbopascal` name it too.
+
+  EnlighterJS 3.4 has no way to add a language from outside - its table is sealed inside the
+  bundle - so `assets/enlighter/build.js` writes `enlighterjs.dpress.min.js`: the released file,
+  which stays beside it unmodified, with `pascal.js` entered in the table. Pages load that copy.
+  `node assets/enlighter-pascal.test.js` runs the built bundle, and fails while it is older than
+  `pascal.js`.
+
+  Nothing to re-render: the blocks already say `pascal`. The next page load colours them.
+
+---
+
 ## [0.79.0] &ndash; 2026-09-26
 
 A plugin can decide which blocks a page shows.
