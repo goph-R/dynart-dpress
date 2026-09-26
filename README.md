@@ -8,7 +8,7 @@ are rendered when they are saved, and a page view is a handful of queries and no
 front end ships **no JavaScript** — a page loads a script only if there is something on it that
 needs one, a code block or a plugin's widget.
 
-Status: **0.78.0**, feature complete and pre-1.0. Everything below is built. What 1.0 is waiting
+Status: **0.78.1**, feature complete and pre-1.0. Everything below is built. What 1.0 is waiting
 on is the schema settling down — until then a schema change means dropping and recreating the
 database, and there are no rename migrations.
 
@@ -54,7 +54,9 @@ rather than a URL so a rename moves them.
 
 **Who may do what.** Users, roles and plain-string permissions, JWT in cookies with rotating
 refresh tokens, rate limiting on every way in, and a site that refuses to let you remove its last
-administrator. Deleting a user never deletes what they wrote.
+administrator. The **admin** role holds every permission, including ones a plugin adds later, so
+it has nothing to tick in the role editor and cannot be removed. Deleting a user never deletes
+what they wrote.
 
 **Extending it.** [Plugins](docs/plugins.md) are a folder under `plugins/` with a `plugin.ini`,
 enabled through a setting. Every form and every query is built by a factory that emits an event,

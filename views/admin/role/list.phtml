@@ -8,10 +8,5 @@
         <?php endif ?>
     </div>
 
-    <p class="form-description">
-        The <strong>admin</strong> role holds every permission, including ones a plugin invents
-        later, so it has nothing to tick and cannot be removed.
-    </p>
-
     <?= $this->fetch('dpress_admin:list', ['list_id' => $list_id, 'list_config' => $list_config]) ?>
 <?php $this->endBlock() ?>

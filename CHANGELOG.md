@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.78.1] &ndash; 2026-09-26
+
+### Changed
+- **Settings has a gear in the navigation**, the mark everybody reads as settings, in place of
+  the sliders it had. `settings.svg` is the gear now.
+- **The Roles screen has no note above the list.** That the admin role holds every permission,
+  including a plugin's, is the README's to say, not a screen's every time it is opened.
+
+### Fixed (in dynart-micro 0.20.3)
+- **A plugin's catch-all route is reached.** The router tried catch-alls in the order they were
+  added, and the core's `/*` is added before any plugin's - so a plugin's `/docs/*` never
+  answered. A longer catch-all is tried first now. `composer update` brings it in.
+
+---
+
 ## [0.78.0] &ndash; 2026-09-26
 
 A plugin can add a `dpress` command.
