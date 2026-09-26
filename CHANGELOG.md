@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.78.2] &ndash; 2026-09-26
+
+### Changed
+- **The `#` of a reference is white in the dark editor.** In `post#12`, `media#5` and the rest,
+  the `#` is its own `md-ref-hash` span, so the kind and the number read as two things. Only the
+  first one - `content#5#top` is a reference and then an ordinary fragment. The light theme leaves
+  it the reference's colour: `--md-ref-hash` is set only in the dark tokens.
+
+---
+
 ## [0.78.1] &ndash; 2026-09-26
 
 ### Changed

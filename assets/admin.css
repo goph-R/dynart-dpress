@@ -72,6 +72,7 @@
         --md-list: #ff79c6;
         --md-link: #8be9fd;
         --md-url: #ff79c6;
+        --md-ref-hash: #ffffff;
         --md-shortcode: #bd93f9;
         --md-separator: #ff5555;
     }
@@ -425,6 +426,8 @@ textarea.is-highlighted::selection { background: var(--md-selection); }
    colour - and it is weighted, because "did that resolve to something dpress knows" is the one
    question an author asks about a link they typed by hand. */
 .markdown-highlight .md-ref { color: var(--md-url); font-weight: 700; }
+/* its `#`, which only the dark theme sets apart - `--md-ref-hash` is not set in the light one */
+.markdown-highlight .md-ref-hash { color: var(--md-ref-hash, inherit); }
 
 /* The only line in a document that changes what a *reader* gets: the first one cuts the lead off
    the body, and every one after it is a page break. Nothing else in the field is red. */

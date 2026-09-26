@@ -343,7 +343,13 @@
                 if (span.start > at) {
                     out += escapeHtml(text.slice(at, span.start));
                 }
-                out += '<span class="' + grammar.prefix + span.type + '">' + escapeHtml(text.slice(span.start, span.end)) + '</span>';
+                var inner = escapeHtml(text.slice(span.start, span.end));
+                if (span.type === 'ref') {
+                    // the `#` of `post#12` on its own, so a theme can set it apart - only the
+                    // first: `content#5#top` is a reference and then an ordinary fragment
+                    inner = inner.replace('#', '<span class="' + grammar.prefix + 'ref-hash">#</span>');
+                }
+                out += '<span class="' + grammar.prefix + span.type + '">' + inner + '</span>';
                 at = span.end;
             });
             out += escapeHtml(text.slice(at));

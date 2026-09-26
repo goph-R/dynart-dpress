@@ -208,6 +208,14 @@ const tests = {
         assert.strictEqual(painted.replace(/ $/, ''), text);
     },
 
+    'the # of a reference is painted on its own, and only the first one'() {
+        const painted = markdown.render('[x](content#5#top)');
+        assert.ok(painted.indexOf('<span class="md-ref">content<span class="md-ref-hash">#</span>5#top</span>') !== -1, painted);
+        const text = '[x](post#12) and [y](https://a.b/#c)';
+        assert.strictEqual(markdown.render(text).replace(/<\/?span[^>]*>/g, ''), text);
+        assert.strictEqual(markdown.render(text).split('md-ref-hash').length - 1, 1);
+    },
+
     /**
      * The field holds a post, which is somebody else's text going into `innerHTML`
      */
