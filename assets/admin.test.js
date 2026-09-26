@@ -462,6 +462,112 @@ const tests = {
     'nothing typed and nothing selected is the first line'() {
         assert.strictEqual(window.Dpress.lineOfCursor('', 0), 0);
         assert.strictEqual(window.Dpress.lineOfCursor(null, null), 0);
+    },
+
+    // --- Enter in a code field ---
+
+    'Enter keeps the indent of the line it is on'() {
+        const answer = window.Dpress.codeNewline('a {\n    color: red;', '\n}');
+        assert.strictEqual(answer.text, '\n    ');
+        assert.strictEqual(answer.caret, 5);
+    },
+
+    'Enter after an opening brace goes one step in'() {
+        assert.strictEqual(window.Dpress.codeNewline('  a {', '').text, '\n      ');
+    },
+
+    /**
+     * `{|}` - the closing brace to a line of its own at the outer indent, and the caret on the
+     * line between, one step in
+     */
+    'Enter between braces opens the block'() {
+        const answer = window.Dpress.codeNewline('a {', '}');
+        assert.strictEqual(answer.text, '\n    \n');
+        assert.strictEqual(answer.caret, 5);
+    },
+
+    'Enter on an unindented line adds no indent'() {
+        assert.strictEqual(window.Dpress.codeNewline('a { color: red }', '').text, '\n');
+        assert.strictEqual(window.Dpress.codeNewline('', '').text, '\n');
+    },
+
+    // --- Tab, Shift+Tab and Home in a code field ---
+
+    /** What the whole value becomes, and what is selected in it afterwards */
+    ...(function () {
+        function apply(value, start, end, outdent) {
+            const change = window.Dpress.codeIndent(value, start, end, outdent);
+            const after = value.slice(0, change.from) + change.text + value.slice(change.to);
+            return {value: after, selected: after.slice(change.start, change.end), change};
+        }
+        return {
+            'Tab over two lines indents both and keeps them selected'() {
+                const value = 'a {\ncolor: red;\nmargin: 0;\n}';
+                const start = value.indexOf('color');
+                const end = value.indexOf(';\n}') + 1;
+                const result = apply(value, start, end, false);
+                assert.strictEqual(result.value, 'a {\n    color: red;\n    margin: 0;\n}');
+                // it began at the start of its line, so the whole line stays in it, indent and all
+                assert.strictEqual(result.selected, '    color: red;\n    margin: 0;');
+            },
+
+            'a selection from the middle of a line moves with its text'() {
+                const value = 'ab\ncd';
+                const result = apply(value, 1, 4, false);   // "b\nc"
+                assert.strictEqual(result.value, '    ab\n    cd');
+                assert.strictEqual(result.selected, 'b\n    c');
+            },
+
+            'a selection ending at the start of a line leaves that line alone'() {
+                const value = 'x\ny\nz';
+                const result = apply(value, 0, 4, false);   // "x\ny\n" - dragged to the start of z
+                assert.strictEqual(result.value, '    x\n    y\nz');
+            },
+
+            'an empty line is not given spaces'() {
+                assert.strictEqual(apply('a\n\nb', 0, 4, false).value, '    a\n\n    b');
+            },
+
+            'Shift+Tab takes one step off each line, and no more than a line has'() {
+                const value = '        a\n  b\nc\n\td';
+                const result = apply(value, 0, value.length, true);
+                assert.strictEqual(result.value, '    a\nb\nc\nd');
+            },
+
+            'Shift+Tab with no selection outdents the line and moves the caret with it'() {
+                const value = 'a {\n        color: red;\n}';
+                const caret = value.indexOf('red');
+                const result = apply(value, caret, caret, true);
+                assert.strictEqual(result.value, 'a {\n    color: red;\n}');
+                assert.strictEqual(result.change.start, caret - 4);
+                assert.strictEqual(result.change.end, caret - 4);
+            },
+
+            'Shift+Tab never puts the caret before its line'() {
+                const value = 'x\n    y';
+                const result = apply(value, 3, 3, true);   // inside the indent
+                assert.strictEqual(result.change.start, 2);
+            }
+        };
+    })(),
+
+    'Home goes to the first character after the indent'() {
+        const value = 'a {\n    color: red;\n}';
+        assert.strictEqual(window.Dpress.codeHome(value, value.indexOf('red')), value.indexOf('color'));
+    },
+
+    'Home on that character goes to the start of the line, and back again'() {
+        const value = 'a {\n    color: red;\n}';
+        const text = value.indexOf('color');
+        assert.strictEqual(window.Dpress.codeHome(value, text), 4);
+        assert.strictEqual(window.Dpress.codeHome(value, 4), text);
+    },
+
+    'Home from inside the indent goes to the text, and on a line with none it is the start'() {
+        const value = 'a {\n    color: red;\n}';
+        assert.strictEqual(window.Dpress.codeHome(value, 6), value.indexOf('color'));
+        assert.strictEqual(window.Dpress.codeHome('abc', 2), 0);
+        assert.strictEqual(window.Dpress.codeHome('', 0), 0);
     }
 };
 

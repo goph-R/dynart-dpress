@@ -232,12 +232,15 @@
         if (declared.ajax) {
             // the same change without leaving the page, for a list that lives inside an editor.
             // `params` is whatever the endpoint needs beyond the row - which of the two states a
-            // hide/show pair is asking for, say. The row's own id always goes as `media_id`.
+            // hide/show pair is asking for, say. The row's own id goes as `idParam`, which is
+            // `media_id` unless the action says otherwise - the attachment list came first.
             action.action = function (id) {
                 if (declared.confirm && !global.confirm(declared.confirm)) {
                     return;
                 }
-                Dpress.send(declared.ajax, Object.assign({media_id: id}, declared.params || {}))
+                var sent = {};
+                sent[declared.idParam || 'media_id'] = id;
+                Dpress.send(declared.ajax, Object.assign(sent, declared.params || {}))
                     .then(function () {
                         var list = listOf ? listOf() : null;
                         if (list) {
@@ -596,6 +599,173 @@
         if (global.Event && typeof element.dispatchEvent === 'function') {
             element.dispatchEvent(new global.Event('input', {bubbles: true}));
         }
+    }
+
+    // --- a code field: a post's Additional CSS ---
+
+    /**
+     * What Enter should type in a code field, and where the caret goes after it
+     *
+     * The indent of the line the caret is on, so the next line starts under this one; one step
+     * more after an opening brace; and between a pair of braces - `{|}` - the closing one goes to
+     * a line of its own at the outer indent, the caret on the line between. Pure, so it is the
+     * part a test can ask about.
+     *
+     * @return {{text: string, caret: number}} the caret as an offset into `text`
+     */
+    var CODE_INDENT = '    ';
+
+    Dpress.codeNewline = function (before, after) {
+        var line = before.slice(before.lastIndexOf('\n') + 1);
+        var indent = /^[ \t]*/.exec(line)[0];
+        var opens = /\{\s*$/.test(line);
+        var inner = opens ? indent + CODE_INDENT : indent;
+        var text = '\n' + inner;
+        if (opens && /^[ \t]*\}/.test(after)) {
+            return {text: text + '\n' + indent, caret: text.length};
+        }
+        return {text: text, caret: text.length};
+    };
+
+    /**
+     * Tab and Shift+Tab over whole lines: what the lines become, and where the selection goes
+     *
+     * The lines are every one the selection touches - except the line a selection merely *ends*
+     * at the start of, which is what dragging to the left edge of the next line gives and never
+     * what somebody meant to indent. An empty line is left empty rather than given four spaces
+     * of nothing. Outdenting takes up to one step of spaces, or one tab, and never more than a
+     * line has.
+     *
+     * Answers the range to replace and the text to put there, so the caller can do it in one
+     * `insertText` - one step of undo - and the selection afterwards, which still covers the same
+     * text it did.
+     *
+     * @return {{from: number, to: number, text: string, start: number, end: number}}
+     */
+    Dpress.codeIndent = function (value, start, end, outdent) {
+        var from = value.lastIndexOf('\n', start - 1) + 1;
+        var last = end > start && value[end - 1] === '\n' ? end - 1 : end;
+        var to = value.indexOf('\n', last);
+        if (to < 0) {
+            to = value.length;
+        }
+        var firstDelta = 0;
+        var total = 0;
+        var lines = value.slice(from, to).split('\n').map(function (line, index) {
+            var delta;
+            var changed;
+            if (outdent) {
+                var removed = /^(?: {1,4}|\t)/.exec(line);
+                delta = removed ? -removed[0].length : 0;
+                changed = line.slice(-delta);
+            } else {
+                delta = line === '' ? 0 : CODE_INDENT.length;
+                changed = line === '' ? line : CODE_INDENT + line;
+            }
+            if (index === 0) {
+                firstDelta = delta;
+            }
+            total += delta;
+            return changed;
+        });
+        return {
+            from: from, to: to, text: lines.join('\n'),
+            // a selection that began at the start of its line keeps the whole line in it
+            start: start === from ? from : Math.max(from, start + firstDelta),
+            end: Math.max(from, end + total)
+        };
+    };
+
+    /**
+     * Where Home goes: the first character of the line that is not indent - and when the caret
+     * is already on it, the very start of the line, so a second press gets there
+     */
+    Dpress.codeHome = function (value, position) {
+        var from = value.lastIndexOf('\n', position - 1) + 1;
+        var indent = /^[ \t]*/.exec(value.slice(from))[0].length;
+        var text = from + indent;
+        return position === text ? from : text;
+    };
+
+    /**
+     * Types into a textarea the way a keystroke would
+     *
+     * `insertText` rather than writing `value`, because it is what keeps the browser's undo
+     * stack - Ctrl+Z after Enter takes the newline back rather than the whole field. The value
+     * write is for a browser that no longer has the command.
+     */
+    function typeInto(textarea, text) {
+        textarea.focus();
+        var done = false;
+        try {
+            done = document.execCommand && document.execCommand('insertText', false, text);
+        } catch (error) {
+            done = false;
+        }
+        if (!done) {
+            replaceSelection(textarea, text, '', false);
+        }
+    }
+
+    function initCodeFields(root) {
+        root.querySelectorAll('textarea[data-code="css"]').forEach(function (textarea) {
+            if (textarea.dataset.codeBound) {
+                return;
+            }
+            textarea.dataset.codeBound = '1';
+            // the markdown field's backdrop, with the CSS tokenizer instead of the markdown one
+            if (Dpress.markdown && Dpress.css) {
+                Dpress.markdown.attach(textarea, Dpress.css.grammar);
+            }
+            textarea.addEventListener('keydown', function (event) {
+                if (event.ctrlKey || event.altKey || event.metaKey || event.isComposing) {
+                    return;
+                }
+                if (event.key === 'Tab') {
+                    event.preventDefault();
+                    var from = textarea.selectionStart;
+                    var to = textarea.selectionEnd;
+                    // four spaces at the caret, unless the selection spans lines or it is an
+                    // outdent - then it is the lines themselves that move
+                    if (!event.shiftKey && textarea.value.slice(from, to).indexOf('\n') < 0) {
+                        typeInto(textarea, CODE_INDENT);
+                        return;
+                    }
+                    var change = Dpress.codeIndent(textarea.value, from, to, event.shiftKey);
+                    if (change.text !== textarea.value.slice(change.from, change.to)) {
+                        textarea.setSelectionRange(change.from, change.to);
+                        typeInto(textarea, change.text);
+                    }
+                    textarea.setSelectionRange(change.start, change.end);
+                    return;
+                }
+                if (event.key === 'Home') {
+                    event.preventDefault();
+                    // the end that moves: the caret, which is the start of a backwards selection
+                    var backwards = textarea.selectionDirection === 'backward';
+                    var moving = backwards ? textarea.selectionStart : textarea.selectionEnd;
+                    var anchor = backwards ? textarea.selectionEnd : textarea.selectionStart;
+                    var target = Dpress.codeHome(textarea.value, moving);
+                    if (!event.shiftKey) {
+                        textarea.setSelectionRange(target, target);
+                    } else if (target < anchor) {
+                        textarea.setSelectionRange(target, anchor, 'backward');
+                    } else {
+                        textarea.setSelectionRange(anchor, target, 'forward');
+                    }
+                    return;
+                }
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    var start = textarea.selectionStart;
+                    var newline = Dpress.codeNewline(
+                        textarea.value.slice(0, start), textarea.value.slice(textarea.selectionEnd)
+                    );
+                    typeInto(textarea, newline.text);
+                    textarea.selectionStart = textarea.selectionEnd = start + newline.caret;
+                }
+            });
+        });
     }
 
     // --- attachments, in the content editor ---
@@ -1380,6 +1550,7 @@
         root = root || document;
         initConfirms(root);
         initMarkdown(root);
+        initCodeFields(root);
         initMediaFields(root);
         initTargetFields(root);
         initPreviewCursor(root);

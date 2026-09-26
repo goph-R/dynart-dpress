@@ -1,0 +1,20 @@
+<?php
+/**
+ * One expandable section of a form - see `DpressForm::fetch()`
+ *
+ * `<details>`, so it opens and closes with no script, from the keyboard as well as the mouse,
+ * and a screen reader announces it as the expandable thing it is. The caret is drawn by the
+ * stylesheet from the `open` state, so there is nothing here to keep in step with it.
+ *
+ * @var string $label  what the section is called
+ * @var string $id     unique within the page, for a stylesheet or a test to find it by
+ * @var bool   $open   true when a field inside has an error, so the message is not hidden
+ * @var string $fields the fields' markup
+ */
+?>
+<details class="form-section" id="<?= esc_attr($id) ?>"<?= $open ? ' open' : '' ?>>
+    <summary><?= esc_html($label) ?></summary>
+    <div class="form-section-body">
+        <?= $fields ?>
+    </div>
+</details>

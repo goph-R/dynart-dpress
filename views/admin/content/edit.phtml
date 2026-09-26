@@ -22,29 +22,37 @@
     <div class="panel">
         <form method="post" id="content-form">
             <?= $form->fetch() ?>
-            <div class="form-actions">
-                <button type="submit" class="primary">Save</button>
-                <a class="button" href="<?= esc_attr($back_url) ?>">Cancel</a>
-            </div>
         </form>
-    </div>
 
-    <?php // Outside the form on purpose. Attaching and detaching are immediate writes, and the
-          // things in here are buttons rather than fields - nested inside the form they would
-          // submit it, and their state would look like something Save is responsible for.
-          //
-          // There is always an id to attach to: "New" writes the row before this screen renders,
-          // so this panel has no empty case and no "save the post first" to apologise with. ?>
-    <?php if (!empty($can_attach)): ?>
-        <div class="panel attachments">
-            <div class="page-head">
-                <h2>Attachments</h2>
-                <span class="spacer"></span>
-                <button type="button" class="button"
-                        data-attach="<?= esc_attr($attachments['attach_url']) ?>">Add attachment</button>
-            </div>
-            <div id="<?= esc_attr($attachments['list_id']) ?>" data-attachment-list
-                 data-list="<?= esc_attr(json_encode($attachments['config'], JSON_UNESCAPED_SLASHES)) ?>"></div>
+        <?php // An expandable section like the form's own, and drawn by the same template - but
+              // outside the form on purpose. Attaching and detaching are immediate writes, and the
+              // things in here are buttons rather than fields: nested inside the form they would
+              // submit it, and their state would look like something Save is responsible for.
+              //
+              // There is always an id to attach to: "New" writes the row before this screen
+              // renders, so this has no empty case and no "save the post first" to apologise with. ?>
+        <?php if (!empty($can_attach)): ?>
+            <?php ob_start() ?>
+                <div class="attachments-actions">
+                    <button type="button" class="button"
+                            data-attach="<?= esc_attr($attachments['attach_url']) ?>">Add attachment</button>
+                </div>
+                <div id="<?= esc_attr($attachments['list_id']) ?>" data-attachment-list
+                     data-list="<?= esc_attr(json_encode($attachments['config'], JSON_UNESCAPED_SLASHES)) ?>"></div>
+            <?php $attachmentsBody = ob_get_clean() ?>
+            <?= $this->fetch('dpress:form-section', [
+                'label'  => 'Attachments',
+                'id'     => 'attachments-section',
+                'open'   => false,
+                'fields' => $attachmentsBody,
+            ]) ?>
+        <?php endif ?>
+
+        <?php // below the attachments, so Save is the last thing on the screen - and outside the
+              // form with it, so `form` says which form it saves ?>
+        <div class="form-actions">
+            <button type="submit" class="primary" form="content-form">Save</button>
+            <a class="button" href="<?= esc_attr($back_url) ?>">Cancel</a>
         </div>
-    <?php endif ?>
+    </div>
 <?php $this->endBlock() ?>

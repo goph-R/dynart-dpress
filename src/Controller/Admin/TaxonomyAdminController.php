@@ -26,6 +26,17 @@ class TaxonomyAdminController extends AbstractAdminController {
 
     const TAG_SORTABLE = ['id', 'name', 'slug'];
 
+    /**
+     * Categories and tags as the two tabs of one section - the shape the settings screen has too,
+     * rather than two screens that each carried a button to the other
+     */
+    protected function taxonomyTabs(string $current): array {
+        return $this->tabs([
+            'categories' => ['label' => 'Categories', 'route' => '/admin/categories', 'permission' => Permissions::CATEGORY_VIEW],
+            'tags'       => ['label' => 'Tags', 'route' => '/admin/tags', 'permission' => Permissions::TAG_VIEW],
+        ], $current);
+    }
+
     public function __construct(
         ViewInterface $view,
         RouterInterface $router,
@@ -82,7 +93,7 @@ class TaxonomyAdminController extends AbstractAdminController {
             'row_actions' => $rowActions,
             'can_create' => $this->can(Permissions::CATEGORY_CREATE),
             'new_url'    => $this->router->url('/admin/categories/new'),
-            'tags_url'   => $this->router->url('/admin/tags'),
+            'tabs'       => $this->taxonomyTabs('categories'),
             // no drag for somebody who may not change one; the endpoint checks the same thing
             'move_url'   => $canEdit ? $this->router->url('/admin/categories/move/') : '',
             'drag_icon'  => $this->icon('drag'),
@@ -242,7 +253,7 @@ class TaxonomyAdminController extends AbstractAdminController {
             'title'      => 'Tags',
             'can_create' => $this->can(Permissions::TAG_CREATE),
             'new_url'    => $this->router->url('/admin/tags/new'),
-            'categories_url' => $this->router->url('/admin/categories'),
+            'tabs'       => $this->taxonomyTabs('tags'),
             'list_id'    => 'tag-list',
             'list_config' => $config,
         ]);

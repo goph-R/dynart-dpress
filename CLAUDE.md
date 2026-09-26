@@ -35,10 +35,11 @@ php vendor/bin/phpunit --stderr
 node assets/dynamic-list.test.js
 node assets/admin.test.js
 node assets/markdown-highlight.test.js
+node assets/css-highlight.test.js
 node assets/emoji.test.js
 ```
 
-The PHP suite covers what the server sends; the four JS suites cover what the browser does
+The PHP suite covers what the server sends; the five JS suites cover what the browser does
 with it. Run them all when touching the admin — a list whose constructor could not run was
 released once because only the first existed.
 

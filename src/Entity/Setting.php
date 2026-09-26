@@ -163,6 +163,18 @@ class Setting extends Entity {
      */
     const AUTOLINK = 'autolink';
 
+    /**
+     * Whether the Pages list in the admin carries the featured picture column, as Posts does
+     *
+     * **Off unless a site says otherwise.** A page is found by its title and its place in the tree,
+     * and most pages have no picture, so on most sites the column would be a strip of empty cells.
+     * A site whose pages do carry pictures - a portfolio, a set of landing pages - turns it on.
+     *
+     * An admin setting rather than a site one: it changes nothing a visitor sees, which is why it
+     * sits on the Admin tab of the settings screen and not beside the site name.
+     */
+    const ADMIN_PAGES_THUMBNAIL = 'admin_pages_thumbnail';
+
     const DATE_FORMAT = 'date_format';
     const TIMEZONE = 'timezone';
 

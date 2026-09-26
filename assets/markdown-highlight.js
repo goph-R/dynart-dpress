@@ -330,7 +330,8 @@
      * A `<pre>` swallows a final newline, so a text ending in one gets a space after it or the
      * last line of the field sits a row above the caret.
      */
-    function render(text) {
+    function render(text, grammar) {
+        grammar = grammar || MARKDOWN;
         text = text === null || text === undefined ? '' : String(text);
         var out;
         if (text.length > LIMIT) {
@@ -338,17 +339,26 @@
         } else {
             out = '';
             var at = 0;
-            tokenize(text).forEach(function (span) {
+            grammar.tokenize(text).forEach(function (span) {
                 if (span.start > at) {
                     out += escapeHtml(text.slice(at, span.start));
                 }
-                out += '<span class="md-' + span.type + '">' + escapeHtml(text.slice(span.start, span.end)) + '</span>';
+                out += '<span class="' + grammar.prefix + span.type + '">' + escapeHtml(text.slice(span.start, span.end)) + '</span>';
                 at = span.end;
             });
             out += escapeHtml(text.slice(at));
         }
         return /\n$/.test(text) ? out + ' ' : out;
     }
+
+    /**
+     * What a field is coloured as: a tokenizer, and the prefix its token classes carry
+     *
+     * The backdrop below is the same for any language - it copies the metrics, follows the scroll
+     * and repaints - so a second grammar is a tokenizer and a set of classes, not a second
+     * painter. `css-highlight.js` is the other one.
+     */
+    var MARKDOWN = {tokenize: tokenize, prefix: 'md-'};
 
     // --- the backdrop ---
 
@@ -373,7 +383,8 @@
      * Answers the field's API, which is also left on the element as `dpressHighlight` - the same
      * place a list leaves itself, so anything that changed the value by hand can repaint.
      */
-    function attach(textarea) {
+    function attach(textarea, grammar) {
+        grammar = grammar || MARKDOWN;
         if (!textarea || textarea.dataset.markdownHighlighted || !global.getComputedStyle) {
             return textarea ? textarea.dpressHighlight || null : null;
         }
@@ -399,7 +410,7 @@
 
         function repaint() {
             frame = null;
-            pre.innerHTML = render(textarea.value);
+            pre.innerHTML = render(textarea.value, grammar);
             syncScroll();
         }
 
@@ -450,6 +461,7 @@
         tokenize: tokenize,
         render: render,
         attach: attach,
+        grammar: MARKDOWN,
         LIMIT: LIMIT
     };
 

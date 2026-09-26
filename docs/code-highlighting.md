@@ -9,7 +9,7 @@ echo "hello";
 ````
 
 The word after the backticks names the language. Thirteen themes ship; one is chosen in
-**Settings → Code theme**, and *No highlighting* is one of the choices.
+**Settings → Theme → Code theme**, and *No highlighting* is one of the choices.
 
 ---
 

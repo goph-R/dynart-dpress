@@ -27,6 +27,24 @@ class AdminForms {
     const USER = 'admin_user';
     const ROLE = 'admin_role';
     const SETTINGS = 'admin_settings';
+    /**
+     * The Admin tab of the settings screen: how the admin itself behaves, nothing a visitor sees.
+     * Its own form rather than a fieldset of the other, so each tab saves only its own fields -
+     * a checkbox that is not on the screen is not a checkbox somebody unticked.
+     */
+    const ADMIN_SETTINGS = 'admin_admin_settings';
+    /**
+     * The expandable sections the core's own forms use - see `DpressForm::fetch()`
+     *
+     * Constants so a plugin can put its field beside the core's by name rather than by a string
+     * that has to match: `'section' => AdminForms::SECTION_ADVANCED`.
+     */
+    const SECTION_ADVANCED = 'Advanced';
+    const SECTION_POST = 'Post';
+    const SECTION_COMMENTS = 'Comments';
+
+    /** The Theme tab: the active theme and the code block colours - see `ADMIN_SETTINGS` for why a form of its own */
+    const THEME_SETTINGS = 'admin_theme_settings';
     const MENU = 'admin_menu';
     const MENU_ITEM = 'admin_menu_item';
     const BLOCK = 'admin_block';
@@ -49,6 +67,8 @@ class AdminForms {
         $factory->add(self::USER, [self::class, 'user']);
         $factory->add(self::ROLE, [self::class, 'role']);
         $factory->add(self::SETTINGS, [self::class, 'settings']);
+        $factory->add(self::THEME_SETTINGS, [self::class, 'themeSettings']);
+        $factory->add(self::ADMIN_SETTINGS, [self::class, 'adminSettings']);
         $factory->add(self::MENU, [self::class, 'menu']);
         $factory->add(self::MENU_ITEM, [self::class, 'menuItem']);
         $factory->add(self::BLOCK, [self::class, 'block']);
@@ -76,7 +96,9 @@ class AdminForms {
             'markdown' => $markdown,
         ]);
         $form->addFields([
+            // in Advanced: made from the title, and changed by hand far less often than it is left
             'slug'   => ['type' => 'text', 'label' => 'Slug', 'required' => false,
+                         'section' => self::SECTION_ADVANCED,
                          'description' => 'Left empty it is made from the title.'],
             // Where the cursor was when Preview was pressed, written by `initPreviewCursor()`
             // and read by nothing else - Save ignores it. A **line** and not a character
@@ -94,7 +116,9 @@ class AdminForms {
         // of the three options: the screen says "Saved." and the status did not move.
         if ($context['can_publish'] ?? true) {
             $form->addFields([
-                'status' => ['type' => 'select', 'label' => 'Status', 'required' => false, 'options' => [
+                // one row on a wide screen: the two halves of the same decision, see below
+                'status' => ['type' => 'select', 'label' => 'Status', 'required' => false,
+                             'row' => 'publication', 'options' => [
                     Content::STATUS_DRAFT     => 'Draft',
                     Content::STATUS_PUBLISHED => 'Published',
                 ]],
@@ -102,6 +126,7 @@ class AdminForms {
                 // decision: the public queries ask for `published_at <= now`, so a date is
                 // as much a say in whether this is visible as the select above it.
                 'published_at' => ['type' => 'text', 'label' => 'Published', 'required' => false,
+                                   'row' => 'publication',
                                    'description' => 'Like 1999-01-02, or 1999-01-02 14:30 when'
                                        .' the time matters. Empty means the moment it is published.'],
             ], false);
@@ -114,6 +139,7 @@ class AdminForms {
         if (!empty($context['authors'])) {
             $form->addFields([
                 'author_id' => ['type' => 'select', 'label' => 'Author', 'required' => false,
+                                'section' => self::SECTION_ADVANCED,
                                 'options' => $context['authors']],
             ], false);
         }
@@ -124,9 +150,17 @@ class AdminForms {
             // A plain box, because a whole number is a thing people can type. Validated rather
             // than cast, so `1o` is a message on the field and not a silent 0.
             'weight' => ['type' => 'text', 'label' => 'Weight', 'required' => false,
+                        'section' => self::SECTION_ADVANCED,
                         'attributes' => ['inputmode' => 'numeric'],
                         'description' => 'Where this one goes in a listing, above the date.'
                             .' 0 is normal and orders by date as usual; a higher number floats up, a negative one sinks. Any whole number.'],
+            'css'    => ['type' => 'textarea', 'label' => 'Additional CSS', 'required' => false,
+                        'section' => self::SECTION_ADVANCED,
+                        // `data-code` is what `admin.js` colours and indents; the class is the font
+                        'attributes' => ['rows' => '6', 'spellcheck' => 'false', 'class' => 'code',
+                                         'data-code' => 'css'],
+                        'description' => 'Added to the head of this '.($isPage ? 'page' : 'post').' only, after the theme\'s stylesheet.'
+                            .' For the one table or picture that needs it - anything the whole site wants belongs in the theme.'],
         ], false);
         $form->addValidator('weight', new IntegerValidator());
 
@@ -157,6 +191,7 @@ class AdminForms {
                 'published_at' => $context['published_input'] ?? '',
                 'featured_media_id' => (string)($content->featured_media_id ?? ''),
                 'weight'   => (string)$content->weight,
+                'css'      => (string)($content->css ?? ''),
                 'author_id' => (string)$content->author_id,
                 'parent_id' => (string)($content->parent_id ?? ''),
                 'tags'      => $context['tags'] ?? '',
@@ -236,9 +271,12 @@ class AdminForms {
             ]],
             'roles'    => ['type' => 'checkboxes', 'label' => 'Roles', 'required' => false,
                            'options' => $context['roles'] ?? []],
+            // one row on a wide screen: the second box is the first one again, and belongs beside it
             'password' => ['type' => 'password', 'label' => 'Password', 'required' => $user === null,
+                           'row' => 'password',
                            'description' => $user !== null ? 'Leave empty to keep the current one.' : ''],
-            'password_confirm' => ['type' => 'password', 'label' => 'Password again', 'required' => $user === null],
+            'password_confirm' => ['type' => 'password', 'label' => 'Password again', 'required' => $user === null,
+                                   'row' => 'password'],
         ], false);
         $form->addValidator('email', new EmailValidator());
         $form->addValidator('password', new MinLengthValidator(PasswordHasher::MIN_LENGTH));
@@ -287,13 +325,13 @@ class AdminForms {
                                     'description' => 'The icon in the browser tab. Same again.'],
             'registration_open' => ['type' => 'checkbox', 'label' => 'Registration', 'required' => false,
                                     'text' => 'Anybody may create an account'],
-            'autolink'          => ['type' => 'checkbox', 'label' => 'Bare URLs', 'required' => false,
+            'autolink'          => ['type' => 'checkbox', 'label' => 'Bare URLs', 'required' => false, 'section' => self::SECTION_POST,
                                     'text' => 'Turn http:// and https:// in the text into links',
                                     'description' => 'Never inside code. Applied when a post is rendered, so run `dpress content:rerender` after changing it to bring the posts that are already saved into line.'],
-            'posts_per_page'    => ['type' => 'text', 'label' => 'Posts per page', 'required' => false],
-            'feed_items'        => ['type' => 'text', 'label' => 'Posts in the feed', 'required' => false,
+            'posts_per_page'    => ['type' => 'text', 'label' => 'Posts per page', 'required' => false, 'section' => self::SECTION_POST],
+            'feed_items'        => ['type' => 'text', 'label' => 'Posts in the feed', 'required' => false, 'section' => self::SECTION_POST,
                                     'description' => 'How many posts `/feed` carries. A feed is not paginated, so this is also how far back somebody who was away can still catch up. 20 by default, 100 at most.'],
-            'post_path'         => ['type' => 'select', 'label' => 'Post addresses', 'required' => false,
+            'post_path'         => ['type' => 'select', 'label' => 'Post addresses', 'required' => false, 'section' => self::SECTION_POST,
                                     'options' => $context['post_paths'] ?? [],
                                     'description' => 'Where a post lives. The other shape keeps answering either way, with a redirect, so changing this breaks no link anybody has written down. Run `dpress content:rerender` afterwards: a link written inside a post was resolved when it was saved, so it holds the old shape until it is rendered again.'],
             'date_format'       => ['type' => 'text', 'label' => 'Date format', 'required' => false,
@@ -303,17 +341,12 @@ class AdminForms {
                                     'options' => $context['timezones'] ?? [],
                                     'description' => 'Times are stored in UTC. This is the clock '
                                         .'they are written against on a page.'],
-            'featured_tag'      => ['type' => 'text', 'label' => 'Featured tag', 'required' => false,
+            'featured_tag'      => ['type' => 'text', 'label' => 'Featured tag', 'required' => false, 'section' => self::SECTION_POST,
                                     'description' => 'Posts with this tag go to the top of the front page, '
                                         .'and are left out of the list below it. Empty for none.'],
-            'code_theme'        => ['type' => 'select', 'label' => 'Code theme', 'required' => false,
-                                    'options' => $context['code_themes'] ?? [],
-                                    'description' => 'Colours the fenced code blocks. Off loads no script at all.'],
-            'theme'             => ['type' => 'select', 'label' => 'Theme', 'required' => false,
-                                    'options' => $context['themes'] ?? []],
         ], false);
         // Whatever a plugin registered with a field definition, after the ones above. Its own
-        // call could not have gone here - the twelve above need lists only the controller can
+        // call could not have gone here - the ones above need lists only the controller can
         // fetch - so `SettingFields::add()` takes both halves, and the controller hands the
         // second one over here with everything else it had to look up. Optional, always: a
         // required settings field added by a plugin would stop anybody saving the screen
@@ -322,6 +355,32 @@ class AdminForms {
         if ($registered !== []) {
             $form->addFields($registered, false);
         }
+        $form->addValues($context['values'] ?? []);
+    }
+
+    /**
+     * The Theme tab: which theme draws the site, and the colours of its code blocks
+     *
+     * The theme select is shown to anybody who may read settings, and only written for somebody
+     * who may also switch themes - the controller's `save()` checks that, not the form.
+     */
+    public function themeSettings(DpressForm $form, array $context): void {
+        $form->addFields([
+            'theme'      => ['type' => 'select', 'label' => 'Theme', 'required' => false,
+                             'options' => $context['themes'] ?? []],
+            'code_theme' => ['type' => 'select', 'label' => 'Code theme', 'required' => false,
+                             'options' => $context['code_themes'] ?? [],
+                             'description' => 'Colours the fenced code blocks. Off loads no script at all.'],
+        ], false);
+        $form->addValues($context['values'] ?? []);
+    }
+
+    public function adminSettings(DpressForm $form, array $context): void {
+        $form->addFields([
+            'admin_pages_thumbnail' => ['type' => 'checkbox', 'label' => 'Pages list', 'required' => false,
+                                        'text' => 'Show the featured picture on the Pages list',
+                                        'description' => 'The Posts list always shows it. Most pages have none, so it is off unless yours do.'],
+        ], false);
         $form->addValues($context['values'] ?? []);
     }
 

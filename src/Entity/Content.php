@@ -111,6 +111,32 @@ class Content extends Entity {
     #[Column(type: Column::TYPE_INT, notNull: true, default: 0)]
     public int $weight = 0;
 
+    /**
+     * Where this one goes among the others of the same weight - what the admin's up and down set
+     *
+     * **Beside the weight rather than instead of it.** The weight stays the coarse "pin this to
+     * the top", typed in the editor; this is the arrangement inside one weight, and it is only
+     * ever written by `ContentService::move()`. Listings ask for `weight desc, position asc`
+     * and then what they asked for before, so while everything is 0 nothing moves at all.
+     *
+     * A move renumbers the group from 1, which is what keeps a new post - arriving at 0 - on top
+     * of its weight, and the blog a blog. A new page is the other way round: it goes after its
+     * siblings, which is where somebody building a section expects the next page to appear.
+     */
+    #[Column(type: Column::TYPE_INT, notNull: true, default: 0)]
+    public int $position = 0;
+
+    /**
+     * Styles for this one post or page, put in its head after the theme's stylesheet
+     *
+     * For the one table or picture that needs it; anything the whole site wants belongs in the
+     * theme. Null or empty adds nothing to the page at all. Written as typed and made safe only
+     * where it is printed - see `AbstractController::contentStyle()` - so the editor shows back
+     * exactly what somebody wrote.
+     */
+    #[Column(type: Column::TYPE_STRING)]
+    public ?string $css = null;
+
     #[Column(type: Column::TYPE_DATETIME, notNull: true)]
     public ?string $created_at = null;
 

@@ -13,6 +13,7 @@ use Dynart\Dpress\Content\Dates;
 use Dynart\Dpress\Content\Slugger;
 use Dynart\Dpress\Content\MarkdownRenderer;
 use Dynart\Dpress\Entity\Content;
+use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Form\AdminForms;
 use Dynart\Dpress\Form\FormFactory;
 use Dynart\Dpress\Media\MediaView;
@@ -21,6 +22,7 @@ use Dynart\Dpress\Security\Permissions;
 use Dynart\Dpress\Service\ContentHistoryService;
 use Dynart\Dpress\Service\ContentService;
 use Dynart\Dpress\Service\MediaService;
+use Dynart\Dpress\Service\SettingService;
 use Dynart\Dpress\Service\TaxonomyService;
 use Dynart\Dpress\Service\UserService;
 
@@ -62,6 +64,7 @@ class ContentAdminController extends AbstractAdminController {
         protected Slugger $slugger,
         protected SessionInterface $session,
         protected MarkdownRenderer $markdown,
+        protected SettingService $settings,
     ) {
         parent::__construct($view, $router, $request, $config, $jwtAuth, $forms, $list);
     }
@@ -134,7 +137,23 @@ class ContentAdminController extends AbstractAdminController {
      */
     protected function page(array $context): array {
         $rows = $this->content->findAll($context);
-        return $this->rows(array_map([$this, 'row'], $rows), $this->content->countAll($context));
+        // the pictures of the whole page in one query rather than one per row; a file in the
+        // bin comes back as nothing, the same answer the site gives. A list without the column
+        // asks for no pictures at all.
+        $withPictures = $this->showsPictures((string)($context['type'] ?? ''));
+        $pictures = $withPictures ? $this->media->findByIds(array_column($rows, 'featured_media_id')) : [];
+        $rows = array_map(fn(array $row) => $this->row($row, $withPictures ? $pictures : null), $rows);
+        return $this->rows($rows, $this->content->countAll($context));
+    }
+
+    /**
+     * Whether this type's list carries the featured picture column
+     *
+     * Posts always. Pages when the Admin settings tab says so, off by default: a page is found by
+     * its title and its place in the tree, and most have no picture to show.
+     */
+    protected function showsPictures(string $type): bool {
+        return $type !== Content::TYPE_PAGE || $this->settings->getBool(Setting::ADMIN_PAGES_THUMBNAIL, false);
     }
 
     /**
@@ -143,12 +162,14 @@ class ContentAdminController extends AbstractAdminController {
      * Built by hand rather than handing the entity over: the row is a public API of the admin and
      * `markdown` / `body_html` have no business travelling to the browser on every list request.
      */
-    protected function row(array $content): array {
+    /**
+     * @param ?array $pictures [media id => Media] for a list with the picture column, null without
+     */
+    protected function row(array $content, ?array $pictures = null): array {
         $type = $content['type'];
-        return [
+        $row = [
             'id'           => (int)$content['id'],
             'title'        => $content['title'],
-
             'status'       => $content['status'],
             'weight'       => (int)$content['weight'],
             'published_at' => $content['published_at'],
@@ -160,6 +181,11 @@ class ContentAdminController extends AbstractAdminController {
             'edit_url'     => $this->can(Permissions::forContent($type, 'update'))
                 ? $this->router->url('/admin/content/'.$type.'/edit/'.$content['id']) : '',
         ];
+        if ($pictures !== null) {
+            $picture = $pictures[(int)($content['featured_media_id'] ?? 0)] ?? null;
+            $row['thumbnail_html'] = $picture === null ? '' : $this->mediaView->tag($picture, 'thumb');
+        }
+        return $row;
     }
 
     /**
@@ -167,6 +193,17 @@ class ContentAdminController extends AbstractAdminController {
      */
     protected function listConfig(string $type): array {
         $rowActions = [];
+        if ($this->can(Permissions::forContent($type, 'update'))) {
+            // in place, and then the list again: a move is one step, and a page reload for each
+            // would lose the scroll every time somebody walks a post up five places
+            foreach ([ContentService::MOVE_UP => 'Move up', ContentService::MOVE_DOWN => 'Move down'] as $direction => $title) {
+                $rowActions[] = [
+                    'type' => 'move-'.$direction, 'title' => $title, 'icon' => $this->icon($direction),
+                    'ajax' => $this->router->url('/admin/content/'.$type.'/move'),
+                    'idParam' => 'id', 'params' => ['direction' => $direction],
+                ];
+            }
+        }
         if ($this->can(Permissions::CONTENT_HISTORY)) {
             $rowActions[] = [
                 'type' => 'history', 'title' => 'History', 'icon' => $this->icon('history'),
@@ -178,14 +215,22 @@ class ContentAdminController extends AbstractAdminController {
             Permissions::forContent($type, 'delete'),
             'Delete this permanently? Its history is kept.'
         ));
-        return [
+        $config = [
             'endpoint' => $this->router->url('/admin/content/'.$type.'/list'),
-            'orderBy'  => $type === Content::TYPE_PAGE ? 'title' : 'published_at',
-            'orderDir' => $type === Content::TYPE_PAGE ? 'asc' : 'desc',
+            // No column: the order the site uses - weight, then what up and down arranged, then
+            // the date - so the list shows what a visitor sees and a move is one row on screen.
+            // Any column header still sorts by that column alone.
+            'orderBy'  => '',
+            'orderDir' => 'asc',
             'columns'  => [
                 // the id, because it is what a reference in somebody's markdown is made of:
                 // `post#42` is written by hand as often as it is inserted by a button
                 'id'     => ['label' => '#', 'align' => 'right', 'width' => '1%'],
+                // the featured picture, which is how a post is recognised at a glance more often
+                // than by its title - and a way into the editor like the title is. On the Pages
+                // list only when the Admin settings tab turns it on; see `showsPictures()`.
+                'thumbnail_html' => ['label' => '', 'view' => 'htmlLink', 'sortable' => false, 'width' => '54px',
+                                     'options' => ['hrefProperty' => 'edit_url']],
                 // No slug column. It is in the editor, where it is edited, and on a list it was a
                 // second copy of the title in a different shape - taking the width the dates and
                 // the weight now want.
@@ -202,6 +247,10 @@ class ContentAdminController extends AbstractAdminController {
             'rowActions'   => $rowActions,
             'groupActions' => [],
         ];
+        if (!$this->showsPictures($type)) {
+            unset($config['columns']['thumbnail_html']);
+        }
+        return $config;
     }
 
     // --- the editor ---
@@ -318,6 +367,7 @@ class ContentAdminController extends AbstractAdminController {
                  'label' => 'Back to the editor']);
         }
         $content = $this->previewOf($stored, $values);
+        $this->addContentStyle($content);
         $route = '/admin/content/'.$type.'/preview/'.$stored->id;
         // the token travels with every page number, so a body written in `---` parts pages
         // through exactly as it will once it is saved
@@ -418,6 +468,10 @@ class ContentAdminController extends AbstractAdminController {
         }
         if (array_key_exists('featured_media_id', $data)) {
             $content->featured_media_id = $data['featured_media_id'];
+        }
+        // the styles as typed, so trying a rule out is a preview and not a save
+        if (array_key_exists('css', $data)) {
+            $content->css = $data['css'];
         }
         $this->content->renderInto($content);
         return $content;
@@ -755,6 +809,9 @@ class ContentAdminController extends AbstractAdminController {
         if (array_key_exists('weight', $values)) {
             $data['weight'] = (int)$values['weight'];
         }
+        if (array_key_exists('css', $values)) {
+            $data['css'] = (string)$values['css'];
+        }
         return $data;
     }
 
@@ -844,6 +901,26 @@ class ContentAdminController extends AbstractAdminController {
     }
 
     // --- the list actions ---
+
+    /**
+     * Up or down one place, from the list
+     *
+     * Answers in JSON rather than redirecting: the list sends it with `fetch` and refreshes
+     * itself. At the end of its group it simply does not move - the top of a weight is as far as
+     * up goes, because past it is the weight's to decide and not this button's.
+     */
+    #[Route('POST', '/admin/content/?/move')]
+    public function move(string $type): array {
+        $this->enter($type, 'update');
+        $this->requireAction();
+        $content = $this->found($this->content->findById((int)$this->request->get('id', 0)));
+        $this->assertType($content, $type);
+        $direction = (string)$this->request->get('direction', '');
+        if ($direction !== ContentService::MOVE_UP && $direction !== ContentService::MOVE_DOWN) {
+            $this->app()->sendError(400);
+        }
+        return $this->answer(['moved' => $this->content->move($content, $direction)]);
+    }
 
     #[Route('POST', '/admin/content/?/publish/?')]
     public function publish(string $type, string $id): string {

@@ -256,8 +256,9 @@ class CoreQueries {
             $this->onlyPublished($query);
         }
         // a weight first here too, so "In this section" and the page tree in the admin can be
-        // put in an order somebody chose rather than in the one the alphabet chose
-        $this->applyListOptions($query, $context, ['weight' => 'desc', 'title' => 'asc']);
+        // put in an order somebody chose rather than in the one the alphabet chose - and the
+        // position under it, which is what up and down among the siblings arrange
+        $this->applyListOptions($query, $context, ['weight' => 'desc', 'position' => 'asc', 'title' => 'asc']);
         return $query;
     }
 
@@ -434,11 +435,14 @@ class CoreQueries {
      * floats on one page and sits still on another.
      *
      * `weight desc` before the date, so a higher number floats up and 0 - which is every post
-     * until somebody says otherwise - leaves the date deciding, exactly as it did before.
+     * until somebody says otherwise - leaves the date deciding, exactly as it did before. Then
+     * `position asc`, the order up and down arranged inside one weight, and 0 there too until
+     * somebody presses one of them. `ContentService::move()` reads its groups in this same order,
+     * so a move is one step in what a visitor sees.
      */
     protected function orderContent(Query $query, array $context): void {
         $this->applyListOptions($query, $context, [
-            'weight' => 'desc', 'published_at' => 'desc', 'created_at' => 'desc',
+            'weight' => 'desc', 'position' => 'asc', 'published_at' => 'desc', 'created_at' => 'desc',
         ]);
     }
 

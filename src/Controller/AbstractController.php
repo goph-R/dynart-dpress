@@ -313,6 +313,41 @@ abstract class AbstractController {
      * `</head>` is where it goes; a page whose layout has none gets nothing, and gets it silently,
      * because a front end without a `<head>` is somebody rendering a fragment on purpose.
      */
+    /** The `PageAssets` name of a post's or a page's own styles */
+    const CONTENT_STYLE = 'content:css';
+
+    /**
+     * A post's additional CSS as the `<style>` element that carries it, or '' for none
+     *
+     * The one thing to take care of is the end of the element. A `<style>` ends at the first
+     * `</style` whatever surrounds it, so a stylesheet containing one - in a comment, in a string
+     * - would close the element there and the rest would be read as markup: a way to put a
+     * `<script>` on a page through a box that was only ever meant to hold CSS. `<\/` is the same
+     * two characters to a CSS parser inside a string or a comment, and nothing at all outside
+     * one, so the escape changes no rule anybody meant to write.
+     */
+    public static function contentStyle(?string $css): string {
+        $css = trim((string)$css);
+        if ($css === '') {
+            return '';
+        }
+        return '<style data-content-css>'.str_ireplace('</', '<\/', $css).'</style>';
+    }
+
+    /**
+     * Puts a post's or a page's own styles in the head of the page being rendered
+     *
+     * Through `PageAssets`, the way a plugin's stylesheet gets there, so it lands after the
+     * theme's and no theme has to print a variable for it. Called by the two places a post is
+     * turned into a page: `renderContent()`, and the editor's preview.
+     */
+    protected function addContentStyle(Content $content): void {
+        $style = self::contentStyle($content->css);
+        if ($style !== '') {
+            Micro::get(PageAssets::class)->add(self::CONTENT_STYLE, $style);
+        }
+    }
+
     protected function withPageAssets(string $html): string {
         $tags = Micro::get(PageAssets::class)->tags($html);
         if ($tags === '') {
@@ -365,6 +400,7 @@ abstract class AbstractController {
         // is the one place a post or a page is turned into HTML and the preview goes through
         // it too.
         Micro::get(PageContext::class)->set($content);
+        $this->addContentStyle($content);
         $contents = Micro::get(ContentService::class);
         $media = Micro::get(MediaService::class);
         $common = $this->pagedBody($content, $contents->publicPath($content)) + [

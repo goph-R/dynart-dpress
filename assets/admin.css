@@ -173,6 +173,22 @@ body.admin {
 .page-head h1 { font-size: 20px; margin: 0; }
 .page-head .spacer { flex: 1; }
 
+/* The tab row under a heading - Settings' Site and Admin, Taxonomy's Categories and Tags.
+   Tabs in the old sense: the current one is the panel's own colour and sits on it, so the two
+   read as one sheet with a label on top; the others are the page's colour, drawn with a line,
+   behind it. Rounded at the top only, and the panel gives up its top left corner to the first
+   tab - a rounded corner there would be a notch between the tab and what it belongs to.
+   Links rather than buttons, since each tab is a page of its own. */
+.tabs { display: flex; gap: 4px; align-items: flex-end; margin: 0; overflow-x: auto; }
+.tabs a {
+    background: var(--bg); border: 1px solid var(--line); border-bottom: 0;
+    border-radius: var(--radius) var(--radius) 0 0; padding: 7px 16px;
+    font-size: 14px; color: var(--muted); text-decoration: none; white-space: nowrap;
+}
+.tabs a:hover { color: var(--ink); }
+.tabs a.current { background: var(--panel); border-color: var(--panel); color: var(--ink); font-weight: 600; }
+.tabs + * { border-top-left-radius: 0; }
+
 .panel { background: var(--panel); border-radius: var(--radius); padding: 22px; }
 .panel + .panel { margin-top: 18px; }
 /* the name of a place, over the table of what is in it */
@@ -214,6 +230,28 @@ input[type=email], select, textarea {
     border-radius: var(--radius); font: inherit; background: var(--panel); color: inherit;
 }
 textarea { line-height: 1.5; resize: vertical; }
+/* Four lines rather than the browser's two, for a box that says nothing about its own size - a
+   description is rarely one line, and a box that shows two looks like it wants one. Lines of the
+   line height above, plus the padding and the border. A box with `rows`, and the markdown field's
+   own height below, are left to what they asked for; a drag still resizes it either way. */
+textarea:not([rows]) { height: calc(4 * 1.5em + 18px); }
+/* The browser's own arrow sits hard against the edge and cannot be moved, so it is taken off and
+   drawn again: two triangles of the muted colour meeting in a chevron, 12px in from the right,
+   with room left for it so a long option never runs under it. Gradients rather than an SVG file,
+   because a data URI cannot take a colour variable and this has to follow the dark scheme. A
+   list box (`multiple`) has no arrow and is left as it is. */
+select:not([multiple]) {
+    appearance: none; -webkit-appearance: none;
+    padding-right: 34px;
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+        linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: calc(100% - 17px) 50%, calc(100% - 12px) 50%;
+    background-size: 5px 5px;
+    background-repeat: no-repeat;
+}
+/* a box somebody types code into rather than prose - the Additional CSS of a post */
+textarea.code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13px; tab-size: 4; }
 /* The one place the field's metrics are decided - `markdown-highlight.js` reads them off here
    and copies them onto the backdrop, so anything added to this rule reaches both layers. The
    height is a starting size and not a cap: `resize: vertical` above still applies, and a drag
@@ -227,6 +265,40 @@ textarea.markdown-editor {
 }
 
 .form-actions { margin-top: 22px; display: flex; gap: 10px; align-items: center; }
+
+/* Fields that share a `row` - `DpressForm::fetchFields()` - side by side, in equal columns
+   however many there are. One under the other below the admin's own narrow breakpoint, where
+   two selects beside each other would each be too narrow to read an option in. */
+.form-row { display: grid; column-gap: 16px; }
+@media (min-width: 1001px) {
+    .form-row { grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+}
+
+/* An expandable section of a form - `DpressForm::fetch()`. A `<details>`, so it needs no script.
+   The caret is two borders of a square, turned: pointing left while closed, down while open, so
+   it says which way the section will go. The browser's own marker is taken off, since it points
+   the other way and differs between engines. */
+/* a shade lighter than the panel it sits on, so it reads as a thing of its own - which on the
+   light scheme's white panel is white again, where the border is doing that job already */
+.form-section {
+    border: 1px solid var(--line); border-radius: var(--radius); margin: 0 0 16px;
+    background: color-mix(in srgb, var(--panel) 95%, #fff);
+}
+.form-section > summary {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 10px 14px; font-weight: 600; font-size: 14px; cursor: pointer; list-style: none;
+}
+.form-section > summary::-webkit-details-marker { display: none; }
+.form-section > summary::after {
+    content: ''; flex: none; width: 7px; height: 7px;
+    border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+    transform: rotate(135deg); transition: transform .15s;
+}
+.form-section[open] > summary::after { transform: translateY(-2px) rotate(45deg); }
+.form-section[open] > summary { border-bottom: 1px solid var(--line); }
+.form-section > summary:hover { color: var(--ink); background: rgba(127, 127, 127, .05); }
+.form-section-body { padding: 14px 14px 0; }
+@media (prefers-reduced-motion: reduce) { .form-section > summary::after { transition: none; } }
 
 button.primary, .button.primary {
     background: var(--accent); color: var(--bg); border: 0; border-radius: var(--radius);
@@ -299,7 +371,7 @@ button.link { background: none; border: 0; color: var(--muted); cursor: pointer;
     background: var(--md-bg); color: var(--md-ink);
 }
 
-textarea.markdown-editor.is-highlighted {
+textarea.is-highlighted {
     position: relative; z-index: 1;
     /* A textarea is `inline-block` on a baseline, so the wrapper keeps a line's worth of
        descender room under it - 6.25px at this font - and an `inset: 0` backdrop stretches into
@@ -314,7 +386,7 @@ textarea.markdown-editor.is-highlighted {
 
 /* The browser's selection is opaque, and an opaque band over transparent text would hide the
    colours underneath it rather than highlight them. */
-textarea.markdown-editor.is-highlighted::selection { background: var(--md-selection); }
+textarea.is-highlighted::selection { background: var(--md-selection); }
 
 .markdown-highlight .md-marker      { color: var(--md-marker); }
 .markdown-highlight .md-heading     { color: var(--md-heading); font-weight: 700; }
@@ -338,6 +410,19 @@ textarea.markdown-editor.is-highlighted::selection { background: var(--md-select
 /* The only line in a document that changes what a *reader* gets: the first one cuts the lead off
    the body, and every one after it is a page break. Nothing else in the field is red. */
 .markdown-highlight .md-separator { color: var(--md-separator); font-weight: 700; }
+
+/* The same backdrop colouring a CSS field - `css-highlight.js` - in the same palette, so the two
+   fields of one editor read as one tool: the markdown heading's purple for what a rule is
+   about, the link's cyan for a property, the marker's grey for what only structures it. */
+.markdown-highlight .css-comment   { color: var(--md-marker); font-style: italic; }
+.markdown-highlight .css-punct     { color: var(--md-marker); }
+.markdown-highlight .css-selector  { color: var(--md-heading); }
+.markdown-highlight .css-at        { color: var(--md-list); font-weight: 700; }
+.markdown-highlight .css-property  { color: var(--md-link); }
+.markdown-highlight .css-string    { color: var(--md-code); }
+.markdown-highlight .css-number,
+.markdown-highlight .css-color     { color: var(--md-strong); }
+.markdown-highlight .css-important { color: var(--md-separator); font-weight: 700; }
 
 .filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
 /* the minimum is for the things somebody types or picks in, which is what a filter usually is.
@@ -408,12 +493,13 @@ td[data-property="id"] { white-space: nowrap; color: var(--muted); font-variant-
 .media-picker .picker-upload progress { width: 100%; margin-top: 10px; }
 .media-picker .picker-upload .form-error { margin-top: 10px; }
 
-/* the attachments panel under the editor. Its own panel rather than part of the form: what it
-   does happens at once, and Save has nothing to do with it */
-.panel.attachments { margin-top: 20px; }
-.panel.attachments .page-head { margin-bottom: 12px; }
-.panel.attachments h2 { font-size: 16px; margin: 0; }
-.panel.attachments .form-description { margin: 0 0 14px; }
+/* The attachments section of the editor - a form section to look at, outside the form in fact,
+   since what it does happens at once and Save has nothing to do with it. The list takes the
+   section's colour rather than laying the panel's darker one inside it, and the section keeps
+   a bottom inset of its own, since a list is not a field and brings no margin. */
+.attachments-actions { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+#attachments-section .form-section-body { padding-bottom: 14px; }
+.form-section .dynamic-list { background: transparent; }
 /* the toolbar's odd one out: it attaches a file rather than marking up text, so it sits apart */
 .markdown-toolbar .markdown-insert[disabled] { opacity: .45; cursor: not-allowed; }
 

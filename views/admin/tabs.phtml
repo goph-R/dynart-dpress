@@ -1,0 +1,20 @@
+<?php
+/**
+ * The tab row under a page heading, for a section that is more than one screen
+ *
+ * Each tab is a link to a page of its own - see `AbstractAdminController::tabs()` - so this is
+ * navigation and is marked up as navigation: `aria-current` says which page this is, rather
+ * than `role="tab"`, which would promise a panel switched in place by a script.
+ *
+ * One tab is not a row of tabs. A user who may open only one of them gets no row at all.
+ *
+ * @var array $tabs [['label' => ..., 'url' => ..., 'current' => bool]]
+ */
+?>
+<?php if (count($tabs ?? []) > 1): ?>
+    <nav class="tabs" aria-label="<?= esc_attr($label ?? 'Sections') ?>">
+        <?php foreach ($tabs as $tab): ?>
+            <a href="<?= esc_attr($tab['url']) ?>"<?php if ($tab['current']): ?> class="current" aria-current="page"<?php endif ?>><?= esc_html($tab['label']) ?></a>
+        <?php endforeach ?>
+    </nav>
+<?php endif ?>

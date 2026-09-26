@@ -1,17 +1,21 @@
 <?php $this->useLayout($admin_layout) ?>
 <?php $this->startBlock('content') ?>
     <div class="page-head">
-        <h1>Tags</h1>
+        <h1>Taxonomy</h1>
         <span class="spacer"></span>
-        <a class="button" href="<?= esc_attr($categories_url) ?>">Categories</a>
         <?php if (!empty($can_create)): ?>
-            <a class="button primary" href="<?= esc_attr($new_url) ?>">New</a>
+            <a class="button primary" href="<?= esc_attr($new_url) ?>">New tag</a>
         <?php endif ?>
     </div>
+    <?= $this->fetch('dpress_admin:tabs', ['tabs' => $tabs ?? [], 'label' => 'Taxonomy']) ?>
 
-    <?= $this->fetch('dpress_admin:list', [
-        'list_id' => $list_id,
-        'list_config' => $list_config,
-        'filters' => '<input type="search" name="search" placeholder="Search...">',
-    ]) ?>
+    <?php // one sheet under the tab, the search box and the list together - the search on the
+          // page's own colour would be a gap between the tab and the list it belongs to ?>
+    <div class="panel">
+        <?= $this->fetch('dpress_admin:list', [
+            'list_id' => $list_id,
+            'list_config' => $list_config,
+            'filters' => '<input type="search" name="search" placeholder="Search...">',
+        ]) ?>
+    </div>
 <?php $this->endBlock() ?>

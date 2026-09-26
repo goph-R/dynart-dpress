@@ -42,6 +42,15 @@ class ContentService {
      */
     const EVENT_RESCHEDULED = 'content:rescheduled';
 
+    /**
+     * Up or down among the others of its weight - an arrangement, not an edit, so not `updated`:
+     * a listener that re-publishes or re-pings on a changed post has nothing to do here
+     */
+    const EVENT_MOVED = 'content:moved';
+
+    const MOVE_UP = 'up';
+    const MOVE_DOWN = 'down';
+
 
     public function __construct(
         protected EntityManager $em,
@@ -291,6 +300,10 @@ class ContentService {
         $content->parent_id = $this->nullableId($data['parent_id'] ?? null);
         $content->featured_media_id = $this->nullableId($data['featured_media_id'] ?? null);
         $content->weight = (int)($data['weight'] ?? 0);
+        $content->css = $this->nullableText($data['css'] ?? null);
+        if ($content->isPage()) {
+            $content->position = $this->nextPosition($content);
+        }
         $content->slug = $this->resolveSlug($data['slug'] ?? '', $content->title);
         $content->created_at = $this->now();
         $content->updated_at = $content->created_at;
@@ -346,6 +359,9 @@ class ContentService {
         if (array_key_exists('weight', $data)) {
             $content->weight = (int)$data['weight'];
         }
+        if (array_key_exists('css', $data)) {
+            $content->css = $this->nullableText($data['css']);
+        }
         // Whose name goes on it. Checked by the caller against the people it actually
         // offered, because this is a foreign key: an id that is not a user is a database
         // error on save rather than a message on a field.
@@ -355,6 +371,11 @@ class ContentService {
         if (array_key_exists('parent_id', $data)) {
             $this->assertNoCycle($content);
         }
+        // a page that has just become one, or has just changed parent, joins its new siblings at
+        // the end rather than keeping a place that belonged to another row of them
+        if ($content->isPage() && ($wasAutoDraft || $content->parent_id !== $wasAt[1])) {
+            $content->position = $this->nextPosition($content);
+        }
         $content->updated_at = $this->now();
         $this->emitBoth($content, self::EVENT_BEFORE_UPDATE, 'before_update');
         $this->em->save($content);
@@ -363,6 +384,95 @@ class ContentService {
         }
         $this->emitBoth($content, self::EVENT_UPDATED, 'updated');
         return $content;
+    }
+
+    /**
+     * One step up or down among the content it is arranged with
+     *
+     * The group is what `CoreQueries::orderContent()` would put next to each other: the same type
+     * and the same weight, and for a page the same parent too, drafts included so that one keeps
+     * its place when it is published. It is read in the order a visitor sees, so a step is one
+     * row on the site - never past a heavier or a lighter one, which is the weight's to decide.
+     *
+     * **Renumbered, not nudged**, the rule `TreeOrder` follows for the same reason: a group that
+     * is all 0 - every group, until the first press - has no neighbour to swap numbers with. So the
+     * group becomes 1, 2, 3 in its new order, and only the rows whose number changed are written.
+     *
+     * **Only the one that was moved gets a revision.** It is what somebody chose to do, and its
+     * history should say so. The rest are renumbered with a plain update: they did not change,
+     * their neighbour did, and the first press in a group of three hundred posts would otherwise
+     * put three hundred rows of arrangement into three hundred histories.
+     *
+     * @param string $direction `up` or `down`
+     * @return bool false when there is nowhere further to go
+     */
+    public function move(Content $content, string $direction): bool {
+        if ($direction !== self::MOVE_UP && $direction !== self::MOVE_DOWN) {
+            throw new DpressException('A move is up or down.');
+        }
+        $ids = $this->arrangedIds($content);
+        $index = array_search($content->id, array_keys($ids), true);
+        $target = $direction === self::MOVE_UP ? $index - 1 : $index + 1;
+        if ($index === false || $target < 0 || $target >= count($ids)) {
+            return false;
+        }
+        $order = array_keys($ids);
+        [$order[$index], $order[$target]] = [$order[$target], $order[$index]];
+        $table = $this->em->safeTableName(Content::class);
+        foreach ($order as $offset => $id) {
+            $position = $offset + 1;
+            if ($id === $content->id) {
+                $content->position = $position;
+            } else if ($ids[$id] !== $position) {
+                $this->db->query(
+                    'update '.$table.' set `position` = :position where `id` = :id',
+                    [':position' => $position, ':id' => $id],
+                    true
+                );
+            }
+        }
+        $this->em->save($content);
+        $this->emitBoth($content, self::EVENT_MOVED, 'moved');
+        return true;
+    }
+
+    /**
+     * The group a move happens in, as `id => position`, in the order a visitor sees it
+     *
+     * @return array<int, int>
+     */
+    protected function arrangedIds(Content $content): array {
+        $conditions = ['`type` = :type', '`weight` = :weight', '`status` <> :autoDraft'];
+        $params = [':type' => $content->type, ':weight' => $content->weight, ':autoDraft' => Content::STATUS_AUTO_DRAFT];
+        if ($content->isPage()) {
+            // null-safe, because the top level of the tree is the pages whose parent is null
+            $conditions[] = '`parent_id` <=> :parentId';
+            $params[':parentId'] = $content->parent_id;
+        }
+        // the tiebreakers `orderContent()` and `contentChildren()` use for each type
+        $then = $content->isPage() ? '`title` asc' : '`published_at` desc, `created_at` desc';
+        $rows = $this->db->fetchAll(
+            'select `id`, `position` from '.$this->em->safeTableName(Content::class)
+                .' where '.join(' and ', $conditions).' order by `position` asc, '.$then.', `id` asc',
+            $params
+        );
+        $ids = [];
+        foreach ($rows as $row) {
+            $ids[(int)$row['id']] = (int)$row['position'];
+        }
+        return $ids;
+    }
+
+    /**
+     * After the last of a page's siblings - where a new page, or one that changed parent, goes
+     */
+    protected function nextPosition(Content $content): int {
+        return (int)$this->db->fetchOne(
+            'select coalesce(max(`position`), 0) + 1 from '.$this->em->safeTableName(Content::class)
+                .' where `type` = :type and `parent_id` <=> :parentId and `id` <> :id and `status` <> :autoDraft',
+            [':type' => $content->type, ':parentId' => $content->parent_id, ':id' => $content->id,
+             ':autoDraft' => Content::STATUS_AUTO_DRAFT]
+        );
     }
 
     /**
@@ -571,6 +681,15 @@ class ContentService {
         }
         $id = (int)$value;
         return $id > 0 ? $id : null;
+    }
+
+    /**
+     * Free text that may be absent - the additional CSS - with blank stored as nothing, so "has
+     * this post any" is a question about null and not about whitespace
+     */
+    protected function nullableText(mixed $value): ?string {
+        $text = trim((string)($value ?? ''));
+        return $text === '' ? null : $text;
     }
 
     /**

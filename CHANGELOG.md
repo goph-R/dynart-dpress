@@ -5,6 +5,124 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.75.0] &ndash; 2026-09-26
+
+Posts and pages can be moved up and down in the admin list, the Posts list shows their pictures,
+Settings and Taxonomy are sections of tabs, forms can fold fields into expandable sections, and a
+post or a page can carry CSS of its own.
+
+### Added
+- **Move up and Move down on every row of the Posts and Pages lists**, for anybody who may edit
+  that type. One step in the order a visitor sees, sent in place and followed by a refresh of the
+  list, so walking a post up five places does not reload the page five times.
+- **`Content::$position`**, the arrangement **inside one weight**. Listings now order by
+  `weight desc, position asc` and then what they used before - the date, or the title for the
+  pages under a page - so the weight stays the coarse "pin this to the top" and up and down
+  arrange everything of the same weight. Every row starts at 0, so nothing moves until somebody
+  presses a button.
+- **`ContentService::move($content, 'up'|'down')`.** The group is the same type and weight - and
+  for a page the same parent - drafts included, read in the site's own order. **Renumbered, not
+  nudged**: a group that is all 0 has no neighbour to swap numbers with, so a move writes 1, 2, 3
+  in the new order, and only the rows whose number changed. The top of a weight is as far as up
+  goes; past it is the weight's to decide.
+- **Only the moved post gets a revision.** It is saved through the entity manager like any
+  change somebody chose to make; the neighbours are renumbered with a plain update. The first
+  press in a group of three hundred posts would otherwise put a row of arrangement into three
+  hundred histories.
+- **`content:moved`** (and `post:moved` / `page:moved`), rather than `content:updated`: a move is
+  an arrangement, and a listener that re-publishes or re-pings a changed post has nothing to do.
+- **The featured picture as the first column of the Posts list**, linking to the editor like the
+  title. One `MediaService::findByIds()` for the whole page; a picture in the bin shows nothing, as
+  it does on the site. On the Pages list only when a site turns it on - see below.
+- **The settings screen is three tabs: Site, Theme and Admin.** Each has its own address
+  (`/admin/settings`, `/admin/settings/theme`, `/admin/settings/admin`) and its own form
+  (`AdminForms::SETTINGS`, `THEME_SETTINGS`, `ADMIN_SETTINGS`), so saving one tab writes only
+  what is on it - a checkbox that is not on the screen is not a checkbox somebody unticked.
+  - **Theme** took the theme select, the code theme and the list of installed themes from Site.
+    Switching the theme still needs its own permission on top of saving settings.
+  - **Admin** is new: how the admin itself behaves, as opposed to anything a visitor sees.
+  - A plugin's settings fields still land on **Site**.
+- **`Setting::ADMIN_PAGES_THUMBNAIL`**, the Admin tab's first setting: the featured picture column
+  on the Pages list. **Off by default** - a page is found by its title and its place in the tree,
+  and most pages have no picture, so the column would be a strip of empty cells. With it off the
+  list asks for no pictures at all.
+- **`AbstractAdminController::tabs()` and `dpress_admin:tabs`**, for any section that is more
+  than one screen. Each tab is a link to a page of its own, marked with `aria-current` - navigation
+  rather than a panel a script switches. A tab the user may not open is left out, and a row that
+  would hold one tab is not drawn.
+- **Expandable form sections.** A field joins one by naming it - `'section' => 'Advanced'` in its
+  own data - and that is the whole API: nothing is registered first, so a plugin puts a field in
+  an existing section or starts a new one with one key. `DpressForm::fetch()` renders the loose
+  fields first, then each section in the order its first field was added, as a `<details>` with
+  the caret drawn in CSS - pointing left while closed, down while open. **A section with an error
+  inside opens by itself**, so a message is never folded away. `AdminForms::SECTION_ADVANCED`,
+  `SECTION_POST` and `SECTION_COMMENTS` are the core's names, for a plugin to land beside them.
+- **Rows of fields.** The same idea as a section: `'row' => 'publication'` in a field's data, and
+  the fields **next to each other** that name the same row sit side by side in equal columns
+  (`DpressForm::fetchFields()`, `.form-row`) - on a screen over 1000px wide, one under the other
+  below it. Next to each other, because a row is something seen; a row of one field is just the
+  field. The editor's Status and Published are the first.
+- **An Advanced section in the post and page editor**, holding the slug, the author, the weight
+  and the new **Additional CSS** - and, with the Disqus plugin 1.1.0, its identifier box.
+- **The Additional CSS box is coloured and indents like a code editor.** The markdown field's
+  backdrop painter takes a grammar now, and `css-highlight.js` is the second one: selectors,
+  properties, values, numbers, colours, strings, comments and at-rules, in the markdown field's
+  palette. **Enter keeps the line's indent**, goes one step in after `{`, and between `{}` puts the
+  closing brace on a line of its own. **Tab and Shift+Tab indent and outdent** every line a
+  selection touches (Tab with no multi-line selection types four spaces), and **Home** goes to the
+  first character after the indent, then to the start of the line; Shift+Home selects the same
+  way. Through `insertText`, so Ctrl+Z takes back one step and not the field. Not a code editor:
+  the textarea is still the element, and `Dpress.codeNewline()`, `codeIndent()` and `codeHome()`
+  are the pure functions behind the keys.
+- **Attachments are a section of the editor too**, below Advanced, drawn by the same template.
+  Still outside the form - attaching is an immediate write - so Save moved below it and names
+  its form with `form="content-form"`, the way Preview already did.
+- **`Content::$css`**: styles for one post or page, put in its head after the theme's stylesheet
+  through `PageAssets`, so no theme has to print anything for it. The preview shows it as typed.
+  Blank is stored as null and adds nothing. **A `<style>` ends at the first `</style` wherever it
+  stands**, so `AbstractController::contentStyle()` writes every `</` as `<\/` - the same to CSS
+  inside a string or a comment, and it keeps a string in the CSS from closing the element and
+  putting markup on the page.
+- **A Post section on the Site tab** of the settings: post addresses, posts per page, posts in the
+  feed, the featured tag and bare URLs. A **Comments** section appears beside it when a plugin
+  puts a field in one - the Disqus plugin 1.1.0 does.
+- **`up.svg` and `down.svg`** among the admin icons.
+
+### Changed
+- **The admin list opens in the site's order** - weight, position, date - rather than by
+  publication date (posts) or title (pages), so a move is one row on screen. A column header
+  still sorts by that column alone.
+- **A new page goes after its siblings**, and so does a page moved under another parent: it is
+  given the position after the last of them. A new post stays at 0, which keeps it on top of its
+  weight once the group has been arranged - the blog stays a blog.
+- **Taxonomy is one section with two tabs**, Categories and Tags, under one heading, instead of two
+  screens that each carried a button to the other. The New button says which it makes.
+- **An admin asset's URL carries the file's own time** after the version -
+  `admin.css?v=0.75.0.<mtime>` - so an edit between two releases is not a stylesheet the browser
+  goes on not asking for, `immutable` for a year.
+- **The admin's selects draw their own arrow**, 12px in from the edge instead of hard against it.
+  The browser's cannot be moved, so it is taken off (`appearance: none`) and drawn again in the
+  muted colour, following the dark scheme. A list box (`multiple`) is left alone.
+- **An `ajax` row action can name its id parameter** with `idParam`. It was always `media_id`,
+  because the attachment list was the only one; that is still the default.
+
+### Notes
+A schema change, so before 1.0 that is `database/reset.sh` - or, keeping the data, before the
+new code is served (the listings order by the column, so a site without it answers 500):
+
+```sql
+alter table dp_content     add column position int not null default 0 after weight;
+alter table dp_content_aud add column position int not null default 0 after weight;
+alter table dp_content     add column css longtext null after position;
+alter table dp_content_aud add column css longtext null after position;
+```
+
+**Anybody who may edit a post can now put CSS on its page.** The markdown strips raw HTML, and
+CSS cannot run a script, but it can restyle or hide anything on that one page. For a site whose
+editors should not have that, a permission of its own for the field is the next step.
+
+---
+
 ## [0.74.0] &ndash; 2026-09-25
 
 ### Fixed

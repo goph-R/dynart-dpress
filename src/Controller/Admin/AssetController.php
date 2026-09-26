@@ -28,6 +28,7 @@ class AssetController extends AbstractController {
     const ASSETS = [
         'dynamic-list.js'       => 'application/javascript; charset=utf-8',
         'markdown-highlight.js' => 'application/javascript; charset=utf-8',
+        'css-highlight.js'      => 'application/javascript; charset=utf-8',
         'emoji-words.js'        => 'application/javascript; charset=utf-8',
         'emoji.js'              => 'application/javascript; charset=utf-8',
         'admin.js'              => 'application/javascript; charset=utf-8',
@@ -36,11 +37,23 @@ class AssetController extends AbstractController {
     ];
 
     /**
-     * The URL of an asset, with the version as a cache buster
+     * The URL of an asset, with the version and the file's own time as the cache buster
+     *
+     * The version alone was right for a release and wrong for everything between two: the file is
+     * served `immutable` for a year, so an edit to `admin.css` under an unchanged version was a
+     * stylesheet the browser went on not asking for. The time the file was last written changes
+     * with every edit and every deploy, and costs one `stat` of a file this package ships.
      */
     public static function url(string $name): string {
         $router = Micro::get(\Dynart\Micro\RouterInterface::class);
-        return $router->url('/admin/assets/'.$name, ['v' => \Dynart\Dpress\Dpress::VERSION]);
+        $modified = @filemtime(self::path($name));
+        $version = \Dynart\Dpress\Dpress::VERSION.($modified ? '.'.$modified : '');
+        return $router->url('/admin/assets/'.$name, ['v' => $version]);
+    }
+
+    /** Where a shipped asset is on disk - the one place that says so, for `url()` and `asset()` */
+    protected static function path(string $name): string {
+        return dirname(__DIR__, 3).'/assets/'.$name;
     }
 
     /**
@@ -53,7 +66,7 @@ class AssetController extends AbstractController {
         if (!isset(self::ASSETS[$name])) {
             $this->app()->sendError(404);
         }
-        $path = dirname(__DIR__, 3).'/assets/'.$name;
+        $path = self::path($name);
         if (!is_file($path)) {
             $this->app()->sendError(404);
         }

@@ -152,6 +152,11 @@ and the block version costs a new grammar to express one condition.
 > `contentChildren`. A box in the
 > editor and a sortable column in the list. The section below is what it was decided from.
 >
+> **0.75.0 put up and down beside it.** An `int position` under the weight — `weight desc,
+> position asc`, then the date or the title — set only by the admin list's two buttons, within
+> one weight: the weight still pins, the position arranges. A move renumbers its group from 1
+> and gives a revision to the moved post alone; the rest are renumbered with a plain update.
+>
 > Three things the sketch did not mention. The number is **signed**: "push this one down" is
 > as real a wish as pushing one up, and `-1` says it without renumbering everything else.
 > It is **validated rather than cast**, because `(int)` never fails — `1o` would have been 1

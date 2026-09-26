@@ -316,6 +316,33 @@ abstract class AbstractAdminController extends AbstractController {
     }
 
     /**
+     * The tab row of a section that is more than one screen - Settings, Taxonomy
+     *
+     * Links, not a script that shows and hides: each tab is a page of its own with its own
+     * address, so a tab can be bookmarked, reloaded and opened in a new window, and a form on one
+     * of them saves only what is on it. A tab this user may not open is left out rather than
+     * shown and refused, the same rule the navigation follows.
+     *
+     * @param array $tabs [key => ['label' => ..., 'route' => ..., 'permission' => ...]]
+     * @param string $current the key of the tab this page is
+     * @return array [['label' => ..., 'url' => ..., 'current' => bool]], for `dpress_admin:tabs`
+     */
+    protected function tabs(array $tabs, string $current): array {
+        $found = [];
+        foreach ($tabs as $key => $tab) {
+            if (($tab['permission'] ?? '') !== '' && !$this->can($tab['permission'])) {
+                continue;
+            }
+            $found[] = [
+                'label'   => $tab['label'],
+                'url'     => $this->router->url($tab['route']),
+                'current' => $key === $current,
+            ];
+        }
+        return $found;
+    }
+
+    /**
      * The admin sections this user may open
      *
      * `icon` is its own key rather than the section's, so a section a plugin adds can point at an

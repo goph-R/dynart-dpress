@@ -32,6 +32,15 @@ use Dynart\Dpress\Theme\ThemeService;
  */
 class SettingsAdminController extends AbstractAdminController {
 
+    /** The Site tab: everything a visitor would notice changing */
+    const TAB_SITE = 'site';
+
+    /** The Theme tab: which theme draws the site, and the colours of its code blocks */
+    const TAB_THEME = 'theme';
+
+    /** The Admin tab: how the admin itself behaves, which no visitor ever sees */
+    const TAB_ADMIN = 'admin';
+
     /**
      * The settings this screen writes, and how each is read back
      *
@@ -84,10 +93,6 @@ class SettingsAdminController extends AbstractAdminController {
         $this->requirePermission(Permissions::SETTING_VIEW);
         $values = $this->currentValues();
         $form = $this->forms->create(AdminForms::SETTINGS, [
-            'themes' => $this->themeOptions(),
-            // `none` rather than '': an empty setting is read as absent and answers with the
-            // default, so "off" has to be a word
-            'code_themes' => [CodeAssets::NONE => 'No highlighting'] + CodeAssets::THEMES,
             'timezones' => $this->timezoneOptions(),
             // spelled out rather than left as `post`/`root`: what somebody is choosing is an
             // address, so the address is what the select should say
@@ -114,12 +119,78 @@ class SettingsAdminController extends AbstractAdminController {
         }
         return $this->admin('dpress_admin:settings', [
             'title'     => 'Settings',
+            'tabs'      => $this->settingsTabs(self::TAB_SITE),
+            'form'      => $form,
+            'can_save'  => $this->can(Permissions::SETTING_UPDATE),
+        ]);
+    }
+
+    /**
+     * The Theme tab: the active theme, the code block colours, and what is installed
+     */
+    #[Route('GET', '/admin/settings/theme')]
+    #[Route('POST', '/admin/settings/theme')]
+    public function themeTab(): string {
+        $this->requirePermission(Permissions::SETTING_VIEW);
+        $form = $this->forms->create(AdminForms::THEME_SETTINGS, [
+            'themes' => $this->themeOptions(),
+            // `none` rather than '': an empty setting is read as absent and answers with the
+            // default, so "off" has to be a word
+            'code_themes' => [CodeAssets::NONE => 'No highlighting'] + CodeAssets::THEMES,
+            'values' => $this->currentValues(),
+        ]);
+        if ($form->process()) {
+            $this->requirePermission(Permissions::SETTING_UPDATE);
+            try {
+                $form->handle(fn($form) => $this->save($form->values()));
+                $this->done('/admin/settings/theme', 'Saved.');
+            } catch (DpressException $e) {
+                // activating validates the name, and a theme that went missing says so here
+                $form->addError($e->getMessage());
+            }
+        }
+        return $this->admin('dpress_admin:settings', [
+            'title'     => 'Settings',
+            'tabs'      => $this->settingsTabs(self::TAB_THEME),
             'form'      => $form,
             'can_save'  => $this->can(Permissions::SETTING_UPDATE),
             'can_theme' => $this->can(Permissions::THEME_SWITCH),
             'themes'    => $this->themes->all(),
             'active_theme' => $this->themes->active(),
         ]);
+    }
+
+    /**
+     * The Admin tab
+     *
+     * Its own form and its own address, so saving it writes only what is on it: `save()` skips a
+     * name the form did not carry, which is what keeps the Site tab's checkboxes from being read
+     * as unticked by a form that never showed them - and the other way round.
+     */
+    #[Route('GET', '/admin/settings/admin')]
+    #[Route('POST', '/admin/settings/admin')]
+    public function adminTab(): string {
+        $this->requirePermission(Permissions::SETTING_VIEW);
+        $form = $this->forms->create(AdminForms::ADMIN_SETTINGS, ['values' => $this->currentValues()]);
+        if ($form->process()) {
+            $this->requirePermission(Permissions::SETTING_UPDATE);
+            $form->handle(fn($form) => $this->save($form->values()));
+            $this->done('/admin/settings/admin', 'Saved.');
+        }
+        return $this->admin('dpress_admin:settings', [
+            'title'    => 'Settings',
+            'tabs'     => $this->settingsTabs(self::TAB_ADMIN),
+            'form'     => $form,
+            'can_save' => $this->can(Permissions::SETTING_UPDATE),
+        ]);
+    }
+
+    protected function settingsTabs(string $current): array {
+        return $this->tabs([
+            self::TAB_SITE  => ['label' => 'Site', 'route' => '/admin/settings', 'permission' => Permissions::SETTING_VIEW],
+            self::TAB_THEME => ['label' => 'Theme', 'route' => '/admin/settings/theme', 'permission' => Permissions::SETTING_VIEW],
+            self::TAB_ADMIN => ['label' => 'Admin', 'route' => '/admin/settings/admin', 'permission' => Permissions::SETTING_VIEW],
+        ], $current);
     }
 
     /**
