@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.79.0] &ndash; 2026-09-26
+
+A plugin can decide which blocks a page shows.
+
+### Changed
+- **`block:before_render` hands its listeners the blocks by reference.** It was told the place
+  and the blocks and could only look at them; now it may take blocks out, or put them in another
+  order, for the page being drawn - the way `markdown:before_render` has always been able to
+  change the markdown. The first user is the Docs plugin, whose tree stands alone in the sidebar
+  of a documentation page. A listener that only reads is unaffected.
+
+---
+
 ## [0.78.2] &ndash; 2026-09-26
 
 ### Changed

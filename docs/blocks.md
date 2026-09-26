@@ -112,5 +112,5 @@ the layout asks the place, the place answers `''`, and no query is made.
 |---|---|
 | `block:saved` | after a block is created or changed |
 | `block:deleted` | after one is removed |
-| `block:before_render` | with the place and its blocks, before any of them draw |
+| `block:before_render` | with the place and its blocks **by reference**, before any of them draw - a listener may take some out for this page |
 | `query.block_list:created` | the read path — a plugin can narrow what a place shows, never widen it |

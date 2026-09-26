@@ -64,7 +64,10 @@ class Places {
     public function blocks(string $place): string {
         return $this->cached('blocks:'.$place, function () use ($place): string {
             $blocks = $this->service->inPlace($place);
-            $this->events->emit(BlockService::EVENT_BEFORE_RENDER, [$place, $blocks]);
+            // by reference, so a listener may take blocks out or put them in order for this
+            // one page - the documentation's tree alone in the sidebar of a documentation page
+            $this->events->emit(BlockService::EVENT_BEFORE_RENDER, [$place, &$blocks]);
+            $blocks = array_values($blocks);
             $items = [];
             foreach ($blocks as $block) {
                 $html = $this->blocks->render($block);
