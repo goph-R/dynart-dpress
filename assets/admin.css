@@ -182,14 +182,18 @@ body.admin {
 .tabs { display: flex; gap: 4px; align-items: flex-end; margin: 0; overflow-x: auto; }
 .tabs a {
     background: var(--bg); border: 1px solid var(--line); border-bottom: 0;
-    border-radius: var(--radius) var(--radius) 0 0; padding: 7px 16px;
-    font-size: 14px; color: var(--muted); text-decoration: none; white-space: nowrap;
+    border-radius: var(--radius) var(--radius) 0 0; padding: 10px 22px;
+    font-size: 15px; color: var(--muted); text-decoration: none; white-space: nowrap;
 }
 .tabs a:hover { color: var(--ink); }
 .tabs a.current { background: var(--panel); border-color: var(--panel); color: var(--ink); font-weight: 600; }
 .tabs + * { border-top-left-radius: 0; }
 
 .panel { background: var(--panel); border-radius: var(--radius); padding: 22px; }
+/* A panel that is only the surface, for a list under a tab: the table inside runs edge to edge
+   like any other list's, and the search box above it keeps a margin of its own to stand in. */
+.panel.flush { padding: 0; overflow: hidden; }
+.panel.flush > .filters { padding: 14px 14px 0; }
 .panel + .panel { margin-top: 18px; }
 /* the name of a place, over the table of what is in it */
 .panel-title { font-size: 15px; margin: 0 0 12px; color: var(--muted); }
@@ -267,7 +271,10 @@ textarea.markdown-editor {
    scrolling box behaves; PageUp and PageDown are the field's either way (`Dpress.pageField()`). */
 body.editor-contain-scroll textarea.markdown-editor { overscroll-behavior: contain; }
 
-.form-actions { margin-top: 22px; display: flex; gap: 10px; align-items: center; }
+/* A form's buttons at the right of the container, Cancel first and Save last - the step back on
+   the left of the step forward, and the one that finishes the form where the eye finishes the
+   row. In that order in the markup too, so the Tab key reaches them the way they are seen. */
+.form-actions { margin-top: 22px; display: flex; gap: 10px; align-items: center; justify-content: flex-end; }
 
 /* Fields that share a `row` - `DpressForm::fetchFields()` - side by side, in equal columns
    however many there are. One under the other below the admin's own narrow breakpoint, where
@@ -652,10 +659,43 @@ dialog.media-picker .action.choose { color: var(--ink); text-decoration: underli
 
 /* --- the dashboard --- */
 
-.count-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 18px; }
-.count-card { text-decoration: none; color: inherit; display: block; }
+.count-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 18px; }
+.count-card {
+    text-decoration: none; color: inherit; display: flex; align-items: center; gap: 14px;
+    background: var(--card-bg, var(--panel)); padding: 18px;
+    transition: transform .15s, box-shadow .15s;
+}
+.count-card:hover { transform: translateY(-1px); box-shadow: 0 2px 10px rgba(0, 0, 0, .12); }
+@media (prefers-reduced-motion: reduce) { .count-card { transition: none; } .count-card:hover { transform: none; } }
+.count-icon {
+    display: flex; align-items: center; justify-content: center; flex: none;
+    width: 42px; height: 42px; border-radius: 10px;
+    color: var(--card-ink, var(--muted));
+    background: color-mix(in srgb, var(--card-ink, var(--muted)) 16%, transparent);
+}
+.count-icon svg { width: 22px; height: 22px; display: block; }
+.count-text { min-width: 0; }
 .count-card strong { display: block; font-size: 26px; line-height: 1.2; }
-.count-card span { color: var(--muted); font-size: 13px; }
+.count-text > span { color: var(--muted); font-size: 13px; }
+
+/* A pastel for each of the five, as a ground and an ink: the light scheme's is the soft tint with
+   a deep ink for the icon, the dark one's a quiet wash of the same hue with the pastel itself as
+   the ink. Two values per card per scheme, like every other colour here. */
+.count-posts  { --card-bg: #e0f2fe; --card-ink: #0369a1; }
+.count-drafts { --card-bg: #fef3c7; --card-ink: #b45309; }
+.count-pages  { --card-bg: #ede9fe; --card-ink: #6d28d9; }
+.count-media  { --card-bg: #dcfce7; --card-ink: #15803d; }
+.count-users  { --card-bg: #fce7f3; --card-ink: #be185d; }
+@media (prefers-color-scheme: dark) {
+    .count-posts  { --card-ink: #7dd3fc; }
+    .count-drafts { --card-ink: #fcd34d; }
+    .count-pages  { --card-ink: #c4b5fd; }
+    .count-media  { --card-ink: #86efac; }
+    .count-users  { --card-ink: #f9a8d4; }
+    .count-posts, .count-drafts, .count-pages, .count-media, .count-users {
+        --card-bg: color-mix(in srgb, var(--card-ink) 11%, var(--panel));
+    }
+}
 
 /* --- plain tables, for the screens that are not a dynamic list --- */
 
@@ -681,8 +721,13 @@ table.tree-table .form-error { display: block; }
 /* --- dragging a tree into order --- */
 
 .drag-column { width: 1%; padding-right: 0 !important; }
-.action.drag { cursor: grab; color: var(--muted); }
-.action.drag:active { cursor: grabbing; }
+/* The open hand over the handle, the closed one while carrying. Said as `table.plain .action.drag`
+   too, because `table.plain .action`'s pointing hand is the more specific rule and won. */
+.action.drag, table.plain .action.drag { cursor: grab; color: var(--muted); }
+.action.drag:active, table.plain .action.drag:active { cursor: grabbing; }
+/* and for the whole drag, not only while the pointer is still on the handle it started from */
+table[data-sortable-tree]:has(tr.dragging),
+table[data-sortable-tree]:has(tr.dragging) * { cursor: grabbing; }
 /* the row follows the pointer by being re-inserted, not by moving, so this is the only sign that
    a row is the one being carried */
 tr.dragging td { opacity: .45; }

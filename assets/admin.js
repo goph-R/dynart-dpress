@@ -1452,10 +1452,90 @@
             history.pushState({dpress: true}, '', target);
         }
         global.scrollTo(0, 0);
+        // before the binders run, so this screen's Back buttons see the trail that led here
+        rememberScreen(target);
         Dpress.init(main);
         // the page changed under somebody who may not be able to see that it did: without this
         // the focus stays on a link that no longer exists, and the next Tab starts from the top
         main.focus({preventScroll: true});
+    }
+
+    // --- where Back goes ---
+
+    /**
+     * The trail of admin screens this tab has shown, newest last
+     *
+     * What makes Back mean "back": History reached from the list goes back to the list, and
+     * reached from the editor goes back to the editor - which one fixed address on the button
+     * could never say. Kept per tab in `sessionStorage`, so two tabs keep two trails and a closed
+     * tab forgets its own.
+     *
+     * A visit to the screen already on top changes nothing - a save or a restore that lands back
+     * where it was is not a step - and a visit to the one under it is a step back, so it is taken
+     * off rather than piled on. Which is also what a Back button's own click does to it.
+     */
+    var TRAIL_KEY = 'dpress-trail';
+    var TRAIL_MAX = 30;
+
+    Dpress.trailVisit = function (trail, url) {
+        trail = (trail || []).slice();
+        if (trail[trail.length - 1] === url) {
+            return trail;
+        }
+        if (trail[trail.length - 2] === url) {
+            trail.pop();
+            return trail;
+        }
+        trail.push(url);
+        return trail.slice(-TRAIL_MAX);
+    };
+
+    /** The screen before the current one, or null when this tab has not been anywhere before it */
+    Dpress.trailBack = function (trail) {
+        return trail && trail.length > 1 ? trail[trail.length - 2] : null;
+    };
+
+    function readTrail() {
+        try {
+            var stored = JSON.parse(global.sessionStorage.getItem(TRAIL_KEY) || '[]');
+            return Array.isArray(stored) ? stored : [];
+        } catch (error) {
+            return []; // storage off or full: Back is its own link, as it was before this existed
+        }
+    }
+
+    function rememberScreen(url) {
+        try {
+            global.sessionStorage.setItem(TRAIL_KEY, JSON.stringify(Dpress.trailVisit(readTrail(), withoutPartial(url))));
+        } catch (error) {
+            // nothing to do: without a trail every Back button keeps the address it was given
+        }
+    }
+
+    /**
+     * Points each Back button at the screen before this one
+     *
+     * The link keeps its own address in the markup, which is where it goes with the scripts off
+     * or in a fresh tab. Only an admin screen on this site replaces it - a trail somebody's
+     * storage was tampered with does not get to send a click anywhere else.
+     */
+    function initBackLinks(root) {
+        var previous = Dpress.trailBack(readTrail());
+        if (!previous) {
+            return;
+        }
+        var url;
+        try {
+            url = new URL(previous, global.location.href);
+        } catch (error) {
+            return;
+        }
+        if (url.origin !== global.location.origin || !isAdminUrl(url) || url.href === withoutPartial(global.location.href)) {
+            return;
+        }
+        root.querySelectorAll('a[data-back]').forEach(function (link) {
+            link.setAttribute('href', url.href);
+        });
     }
 
     function markSection(key) {
@@ -1573,6 +1653,7 @@
         initSortableTrees(root);
         initLists(root);
         initAttachments(root);
+        initBackLinks(root);
         extraInits.forEach(function (fn) {
             // one plugin throwing must not stop the next one binding, nor the admin working
             try {
@@ -1586,6 +1667,10 @@
     document.addEventListener('DOMContentLoaded', function () {
         if (global.DynamicListColumnView) {
             global.DynamicListColumnView.locale = document.documentElement.lang || 'en';
+        }
+        // a full load is a screen too - after a save's redirect, most often
+        if (document.querySelector('.admin-main')) {
+            rememberScreen(global.location.href);
         }
         Dpress.init(document);
         initNavigation();

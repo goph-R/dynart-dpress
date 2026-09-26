@@ -3,8 +3,12 @@
     <div class="page-head">
         <h1><?= esc_html($title) ?></h1>
         <span class="spacer"></span>
-        <?php // No View: Preview shows the same page, and shows what is in the boxes rather than
-              // what was last saved - which is the one of the two somebody in an editor wants. ?>
+        <?php // View is the page as the site serves it now, one click away - no icon, because
+              // Preview has the eye and is the one somebody in an editor usually wants: it shows
+              // what is in the boxes rather than what was last saved. ?>
+        <?php if (!empty($view_url)): ?>
+            <a class="button" href="<?= esc_attr($view_url) ?>" target="_blank" rel="noopener">View</a>
+        <?php endif ?>
         <?php // A submit button for the editor form, standing outside it: `form` names the form
               // it belongs to, `formaction` sends it somewhere else and `formtarget` opens that
               // in a new tab. So the boxes travel exactly as Save would send them, with no
@@ -16,7 +20,7 @@
         <?php if (!empty($history_url)): ?>
             <a class="button with-icon" href="<?= esc_attr($history_url) ?>"><?= \Dynart\Dpress\Dpress::icon('scroll') ?> History</a>
         <?php endif ?>
-        <a class="button with-icon" href="<?= esc_attr($back_url) ?>"><?= \Dynart\Dpress\Dpress::icon('back') ?> Back</a>
+        <a class="button with-icon" href="<?= esc_attr($back_url) ?>" data-back><?= \Dynart\Dpress\Dpress::icon('back') ?> Back</a>
     </div>
     <div class="panel">
         <form method="post" id="content-form">
@@ -50,8 +54,8 @@
         <?php // below the attachments, so Save is the last thing on the screen - and outside the
               // form with it, so `form` says which form it saves ?>
         <div class="form-actions">
-            <button type="submit" class="primary with-icon" form="content-form"><?= \Dynart\Dpress\Dpress::icon('save') ?> Save</button>
             <a class="button" href="<?= esc_attr($back_url) ?>">Cancel</a>
+            <button type="submit" class="primary with-icon" form="content-form"><?= \Dynart\Dpress\Dpress::icon('save') ?> Save</button>
         </div>
     </div>
 <?php $this->endBlock() ?>

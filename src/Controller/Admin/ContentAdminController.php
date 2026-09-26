@@ -14,6 +14,7 @@ use Dynart\Dpress\Content\Dates;
 use Dynart\Dpress\Content\Slugger;
 use Dynart\Dpress\Content\MarkdownRenderer;
 use Dynart\Dpress\Entity\Content;
+use Dynart\Dpress\Entity\Role;
 use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Form\AdminForms;
 use Dynart\Dpress\Form\FormFactory;
@@ -411,7 +412,7 @@ class ContentAdminController extends AbstractAdminController {
                 // put two rows in the history for one press of the button
                 $this->content->update(
                     $content,
-                    $this->contentData($values) + $this->authorData($type, $values)
+                    $this->contentData($values) + $this->authorData($type, $values, $content)
                 );
                 $this->applyTaxonomy($content, $values);
                 return $content;
@@ -694,6 +695,10 @@ class ContentAdminController extends AbstractAdminController {
             'form'    => $form,
             'content' => $content,
             'back_url' => $this->router->url('/admin/content/'.$type),
+            // A saved post, draft or published alike: the front end already serves an unpublished
+            // one to anybody who may edit posts. An auto-draft holds nothing yet, so there is
+            // nothing to look at - that is what Preview is for.
+            'view_url' => $isNew ? '' : $this->router->url($this->content->publicPath($content)),
             'preview_url' => $this->router->url('/admin/content/'.$type.'/preview/'.$content->id),
 
             // one revision saying an empty row was made is not a history worth offering
@@ -782,7 +787,7 @@ class ContentAdminController extends AbstractAdminController {
             'content' => $content,
             // empty for anybody who may not reassign, and the form offers no box for it -
             // `AdminForms::content()` asks this and nothing else
-            'authors' => $this->canAssignAuthor($type) ? $this->authorOptions() : [],
+            'authors' => $this->canAssignAuthor($type) ? $this->authorOptions($content) : [],
             // a select that cannot do anything is worse than no select: the page says "Saved."
             // and nothing moved, which is exactly the bug this whole method exists to fix
             'can_publish' => $this->can(Permissions::forContent($type, 'publish')),
@@ -819,22 +824,35 @@ class ContentAdminController extends AbstractAdminController {
         return $this->can(Permissions::forContent($type, 'assign_author'));
     }
 
+    /** The roles whose holders can be named as a post's author: the people who write here */
+    const AUTHOR_ROLES = [Role::NAME_ADMIN, Role::NAME_EDITOR];
+
     /**
      * Everybody who could be named as the author, by id
      *
-     * Every account and not only the active ones: somebody who has left still wrote what they
-     * wrote, and a name that vanishes from the select the day an account is blocked would make
-     * the next save quietly reassign the post to whoever is at the top of the list.
+     * **The admins and the editors**, not every account: a site with registration open has
+     * readers with accounts, and a select full of them is a list to scroll past to find the four
+     * people who write. Blocked ones stay: somebody who has left still wrote what they wrote.
+     *
+     * **And the post's own author, whoever that is.** Somebody who has since lost the role still
+     * wrote it, and a name missing from the select would make the next save quietly hand the post
+     * to whoever is at the top of the list.
      *
      * A select, like the parent page one, which is the same bet: a site with thousands of
-     * accounts wants a search box here instead, and this CMS does not have one anywhere yet.
+     * writers wants a search box here instead, and this CMS does not have one anywhere yet.
      *
      * @return array [id => name]
      */
-    protected function authorOptions(): array {
+    protected function authorOptions(?Content $content): array {
         $options = [];
-        foreach ($this->users->findAll(['order_by' => 'name', 'order_dir' => 'asc']) as $user) {
+        $rows = $this->users->findAll(['role_names' => self::AUTHOR_ROLES, 'order_by' => 'name', 'order_dir' => 'asc']);
+        foreach ($rows as $user) {
             $options[(int)$user['id']] = $user['name'];
+        }
+        $current = $content !== null ? (int)$content->author_id : 0;
+        if ($current > 0 && !isset($options[$current]) && ($author = $this->users->findById($current)) !== null) {
+            $options[$current] = $author->name;
+            asort($options, SORT_NATURAL | SORT_FLAG_CASE);
         }
         return $options;
     }
@@ -842,9 +860,9 @@ class ContentAdminController extends AbstractAdminController {
     /**
      * The chosen author as an update, if this person may choose one and chose a real one
      *
-     * Checked against the accounts that exist rather than trusted, because `author_id` is a
-     * foreign key: an id that is not a user is an exception on save, from the database, with
-     * the editor gone and nothing on the screen to say what happened.
+     * Checked against what the select offered rather than trusted: `author_id` is a foreign key,
+     * so an id that is not a user is an exception on save, and one that is a reader's account is
+     * a post handed to somebody the select never showed.
      *
      * **Separate from `contentData()`, and merged in at the call site.** That method maps
      * boxes to columns and asks nothing about who is asking - which is what lets the preview
@@ -852,12 +870,12 @@ class ContentAdminController extends AbstractAdminController {
      * turned every preview into a fatal, and the preview is the one screen where a fatal is a
      * blank page in a new tab with the editor still open behind it.
      */
-    protected function authorData(string $type, array $values): array {
+    protected function authorData(string $type, array $values, ?Content $content = null): array {
         if (!$this->canAssignAuthor($type) || !array_key_exists('author_id', $values)) {
             return [];
         }
         $id = (int)$values['author_id'];
-        return $id > 0 && $this->users->findById($id) !== null ? ['author_id' => $id] : [];
+        return $id > 0 && isset($this->authorOptions($content)[$id]) ? ['author_id' => $id] : [];
     }
 
     /**

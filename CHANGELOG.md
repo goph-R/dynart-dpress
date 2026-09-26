@@ -5,6 +5,49 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.76.1] &ndash; 2026-09-26
+
+### Changed
+- **Back goes back.** A Back button returns to the screen this tab came from - History opened
+  from the list goes back to the list, and opened from the editor goes back to the editor - where
+  it used to go to one fixed address whatever led there. Each tab keeps a short trail of the admin
+  screens it has shown, in `sessionStorage`, recorded on a full load and after every in-place
+  navigation. **Landing on the screen already on top is not a step**, so a save or a restore that
+  comes back where it was leaves Back where it pointed; **landing on the one under it is a step
+  back**, so Back pressed twice does not bounce between two screens. The link keeps its own
+  address in the markup, which is where it goes with the scripts off, in a fresh tab, or when the
+  trail names anything but an admin screen of this site. `data-back` marks a link as one;
+  `Dpress.trailVisit()` and `trailBack()` are the pure part.
+- **The Author select lists the admins and the editors**, not every account - a site with
+  registration open has readers with accounts, and the four people who write were somewhere in
+  that list. The post's own author is always offered too, so somebody who has since lost the role
+  is not quietly replaced by whoever is first on the next save. What is saved is checked against
+  the same list. `role_names` on the user query is how it is asked, with an `exists` so somebody
+  holding both roles is one row.
+- **A form's buttons sit at the right of the container, Cancel first and Save last** - in the
+  markup too, so the Tab key reaches them the way they are seen.
+- **The tabs are larger**: more padding, and a pixel more type.
+- **The dashboard's five cards have an icon and a colour each** - Posts, Drafts, Pages, Media
+  and Users, with the icon their section has in the navigation (the pencil for Drafts) and a
+  pastel of their own: a soft tint and a deep ink in the light scheme, a quiet wash and the pastel
+  as the ink in the dark one. A card a plugin adds, with no colour of its own, is the plain panel.
+- **The Tags list runs edge to edge** under its tab, like every other list (`.panel.flush`).
+- **The dashboard's Recent changes have an eye and a pen at the end of each row**: the eye opens
+  the page as the site serves it, what the editor's View opens, and the pen opens the editor.
+  Only where there is still something there: `ContentHistoryService::recent()` joins the content
+  as it is now (`live_type`, `live_status`, `live_slug`), so a deleted post, or one in the trash,
+  has neither. The eye is for anybody where the post is published and for whoever may edit it
+  where it is a draft - who the site shows a draft to. A post's address comes from the slug the
+  query brought along; a page's is its ancestors' too, so a page is looked up once.
+- **View is back in the editor**, the one click to the page as the site serves it - without an
+  icon, since Preview has the eye and is the one somebody in an editor usually wants. 0.76.0
+  took it out on the reasoning that Preview covered it; it covers what is in the boxes, not the
+  page a visitor gets.
+- **A drag handle shows the grab hand**, and the closed hand for the whole of a drag. The row
+  actions' pointing hand was the more specific rule and had been winning.
+
+---
+
 ## [0.76.0] &ndash; 2026-09-26
 
 A trash, for posts and pages and for media; Preview and Restore in a post's history; and a

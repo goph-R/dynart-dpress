@@ -390,6 +390,23 @@ class CoreQueries {
                 [':search' => '%'.$context['search'].'%']
             );
         }
+        // `role_names`: only users who hold at least one of these roles - the editor's Author
+        // select. `exists` rather than a join, so somebody who is both admin and editor is one row.
+        if (!empty($context['role_names'])) {
+            $names = [];
+            $params = [];
+            foreach (array_values(array_unique((array)$context['role_names'])) as $index => $name) {
+                $names[] = ':roleName'.$index;
+                $params[':roleName'.$index] = (string)$name;
+            }
+            $query->addCondition(
+                'exists (select 1 from '.$this->safeTable(UserRole::class).' `ur`'
+                    .' join '.$this->safeTable(Role::class).' `r` on `r`.`id` = `ur`.`role_id`'
+                    .' where `ur`.`user_id` = '.$this->safeTable(User::class).'.`id`'
+                    .' and `r`.`name` in ('.implode(', ', $names).'))',
+                $params
+            );
+        }
         $this->applyListOptions($query, $context, ['name' => 'asc']);
         return $query;
     }

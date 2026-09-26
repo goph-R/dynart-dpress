@@ -4,10 +4,19 @@
 
     <?php if (!empty($counts)): ?>
         <div class="count-cards">
+            <?php // Each card in its own pastel, chosen by its `key` in the stylesheet, and with the
+                  // icon its section has in the navigation. A card whose key the stylesheet does
+                  // not know - a plugin's - is the plain panel it always was. ?>
             <?php foreach ($counts as $count): ?>
-                <a class="panel count-card" href="<?= esc_attr($count['url']) ?>">
-                    <strong><?= esc_html((string)$count['total']) ?></strong>
-                    <span><?= esc_html($count['label']) ?></span>
+                <a class="panel count-card<?= !empty($count['key']) ? ' count-'.esc_attr($count['key']) : '' ?>"
+                   href="<?= esc_attr($count['url']) ?>">
+                    <?php if (!empty($count['icon'])): ?>
+                        <span class="count-icon"><?= $count['icon'] ?></span>
+                    <?php endif ?>
+                    <span class="count-text">
+                        <strong><?= esc_html((string)$count['total']) ?></strong>
+                        <span><?= esc_html($count['label']) ?></span>
+                    </span>
                 </a>
             <?php endforeach ?>
         </div>
@@ -25,6 +34,19 @@
                         <td><?= esc_html(substr((string)($revision['rev_at'] ?? ''), 0, 16)) ?></td>
                         <td><?= esc_html((string)($revision['title'] ?? '')) ?></td>
                         <td><?= esc_html((string)($revision['rev_type'] ?? '')) ?></td>
+                        <?php // the eye onto the page and the pen into the editor, at the end of the
+                              // row the way a list's row actions are - and nothing where the post is
+                              // gone or in the trash ?>
+                        <td class="actions-column">
+                            <?php if (!empty($revision['view_url'])): ?>
+                                <a class="action view" href="<?= esc_attr($revision['view_url']) ?>" target="_blank" rel="noopener"
+                                   title="View" aria-label="View <?= esc_attr((string)($revision['title'] ?? '')) ?>"><?= $view_icon ?? '' ?></a>
+                            <?php endif ?>
+                            <?php if (!empty($revision['edit_url'])): ?>
+                                <a class="action edit" href="<?= esc_attr($revision['edit_url']) ?>"
+                                   title="Edit" aria-label="Edit <?= esc_attr((string)($revision['title'] ?? '')) ?>"><?= $edit_icon ?? '' ?></a>
+                            <?php endif ?>
+                        </td>
                     </tr>
                 <?php endforeach ?>
             </table>

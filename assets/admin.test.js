@@ -568,7 +568,67 @@ const tests = {
         assert.strictEqual(window.Dpress.codeHome(value, 6), value.indexOf('color'));
         assert.strictEqual(window.Dpress.codeHome('abc', 2), 0);
         assert.strictEqual(window.Dpress.codeHome('', 0), 0);
-    }
+    },
+
+    // --- where Back goes ---
+
+    /** A walk through the admin, as the trail sees it: the screens visited, in order */
+    ...(function () {
+        function walk(urls) {
+            return urls.reduce((trail, url) => window.Dpress.trailVisit(trail, url), []);
+        }
+        return {
+            'Back from History goes to the list when History was opened from the list'() {
+                assert.strictEqual(window.Dpress.trailBack(walk(['/posts', '/posts/history/7'])), '/posts');
+            },
+
+            'and to the editor when it was opened from the editor'() {
+                const trail = walk(['/posts', '/posts/edit/7', '/posts/history/7']);
+                assert.strictEqual(window.Dpress.trailBack(trail), '/posts/edit/7');
+            },
+
+            /**
+             * A restore, or a save that lands where it was, is not a step - so Back from History
+             * after a restore still goes where it went before it
+             */
+            'landing on the same screen again is not a step'() {
+                const trail = walk(['/posts/edit/7', '/posts/history/7', '/posts/history/7']);
+                assert.deepStrictEqual(trail, ['/posts/edit/7', '/posts/history/7']);
+                assert.strictEqual(window.Dpress.trailBack(trail), '/posts/edit/7');
+            },
+
+            /**
+             * Going to the screen under the top is going back, so it is taken off rather than
+             * piled on - or Back pressed twice would bounce between the same two screens
+             */
+            'going to the previous screen is a step back, not a step forward'() {
+                const trail = walk(['/posts', '/posts/edit/7', '/posts/history/7', '/posts/edit/7']);
+                assert.deepStrictEqual(trail, ['/posts', '/posts/edit/7']);
+                assert.strictEqual(window.Dpress.trailBack(trail), '/posts');
+            },
+
+            /** Save sends the editor to the list, which is where it came from: back to one step */
+            'a save that returns to the list folds the trail back up'() {
+                assert.deepStrictEqual(walk(['/posts', '/posts/edit/7', '/posts']), ['/posts']);
+            },
+
+            'a tab that has been nowhere else has nothing to go back to'() {
+                assert.strictEqual(window.Dpress.trailBack(walk(['/posts/history/7'])), null);
+                assert.strictEqual(window.Dpress.trailBack([]), null);
+                assert.strictEqual(window.Dpress.trailBack(null), null);
+            },
+
+            'the trail is capped'() {
+                const urls = [];
+                for (let i = 0; i < 100; i++) {
+                    urls.push('/screen/' + i);
+                }
+                const trail = walk(urls);
+                assert.strictEqual(trail.length, 30);
+                assert.strictEqual(trail[trail.length - 1], '/screen/99');
+            }
+        };
+    })()
 };
 
 // --- runner ---

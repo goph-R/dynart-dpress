@@ -108,13 +108,19 @@ class ContentHistoryService {
 
     /**
      * The most recent changes across all content, for an activity list
+     *
+     * With `live_type`, `live_status` and `live_slug` from the content as it is now - null when it
+     * has since been deleted - so a row can link to the editor and to the page only where there is
+     * still something there, and without a query of its own per row to find that out.
      */
     public function recent(int $limit = 20): array {
         $sql = 'select a.`id`, a.`title`, a.`rev_id`, a.`rev_type`,'
-            .' r.`created_at` as `rev_at`, u.`name` as `rev_user_name`'
+            .' r.`created_at` as `rev_at`, u.`name` as `rev_user_name`,'
+            .' c.`type` as `live_type`, c.`status` as `live_status`, c.`slug` as `live_slug`'
             .' from '.$this->auditTable().' a'
             .' join '.$this->em->safeTableName(Revision::class).' r on r.`id` = a.`rev_id`'
             .' left join '.$this->em->safeTableName(User::class).' u on u.`id` = r.`user_id`'
+            .' left join '.$this->em->safeTableName(Content::class).' c on c.`id` = a.`id`'
             // An auto-draft is a row the editor made for itself, with no title and nothing in it.
             // Opening "New" is not a change worth reporting, and ten of them in a row turned the
             // dashboard into a stack of empty lines - which is how this was found.

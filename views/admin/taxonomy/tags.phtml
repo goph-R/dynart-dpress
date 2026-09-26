@@ -9,9 +9,10 @@
     </div>
     <?= $this->fetch('dpress_admin:tabs', ['tabs' => $tabs ?? [], 'label' => 'Taxonomy']) ?>
 
-    <?php // one sheet under the tab, the search box and the list together - the search on the
-          // page's own colour would be a gap between the tab and the list it belongs to ?>
-    <div class="panel">
+    <?php // One sheet under the tab, the search box and the list together - the search on the
+          // page's own colour would be a gap between the tab and the list it belongs to. Flush,
+          // so the table runs edge to edge the way every other list's does. ?>
+    <div class="panel flush">
         <?= $this->fetch('dpress_admin:list', [
             'list_id' => $list_id,
             'list_config' => $list_config,

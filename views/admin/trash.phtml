@@ -24,7 +24,7 @@
             <button type="button" class="button danger"
                     onclick="Dpress.post(<?= esc_attr(json_encode($empty_url)) ?>, <?= esc_attr(json_encode($empty_confirm ?? 'Empty the trash?')) ?>)">Empty trash</button>
         <?php endif ?>
-        <a class="button with-icon" href="<?= esc_attr($back_url) ?>"><?= \Dynart\Dpress\Dpress::icon('back') ?> Back to <?= esc_html(strtolower($title)) ?></a>
+        <a class="button with-icon" href="<?= esc_attr($back_url) ?>" data-back><?= \Dynart\Dpress\Dpress::icon('back') ?> Back to <?= esc_html(strtolower($title)) ?></a>
     </div>
 
     <?= $this->fetch('dpress_admin:list', [
