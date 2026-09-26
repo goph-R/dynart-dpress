@@ -16,6 +16,7 @@ use Dynart\Dpress\Controller\Admin\AssetController;
 use Dynart\Dpress\DpressException;
 use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Security\Permissions;
+use Dynart\Dpress\Service\AdminSections;
 use Dynart\Dpress\Service\SettingService;
 use Dynart\Dpress\Theme\PageAssets;
 use Throwable;
@@ -323,6 +324,46 @@ class PluginService {
         foreach ($plugin->permissions() as $permission => $group) {
             $permissions->add($permission, $group);
         }
+        $this->contributeAdminSections($record, $plugin);
+    }
+
+    /**
+     * The plugin's entries in the admin's navigation
+     *
+     * An icon ending in `.svg` is a file of the plugin's own, resolved here against its folder -
+     * and only inside it: a `../` that leaves the folder is the generic mark rather than a read of
+     * whatever file it names. Anything else is a core icon's name.
+     */
+    protected function contributeAdminSections(Plugin $record, PluginInterface $plugin): void {
+        $sections = Micro::get(AdminSections::class);
+        foreach ($plugin->adminSections() as $key => $section) {
+            if (!is_array($section)) {
+                continue;
+            }
+            $section['key'] = (string)($section['key'] ?? $key);
+            $icon = (string)($section['icon'] ?? '');
+            if (str_ends_with(strtolower($icon), '.svg')) {
+                $section['icon'] = '';
+                $section['icon_file'] = $this->pluginFile($record, $icon) ?? '';
+            }
+            $sections->add($section, $record->name);
+        }
+    }
+
+    /**
+     * A file inside the plugin's folder, or null when there is none or it would lie outside
+     */
+    protected function pluginFile(Plugin $record, string $relative): ?string {
+        if ($record->path === '') {
+            return null;
+        }
+        $folder = realpath($record->path);
+        $file = realpath($record->path.'/'.ltrim($relative, '/\\'));
+        if ($folder === false || $file === false || !is_file($file)) {
+            return null;
+        }
+        $folder = rtrim(str_replace('\\', '/', $folder), '/').'/';
+        return str_starts_with(str_replace('\\', '/', $file), $folder) ? $file : null;
     }
 
     /**

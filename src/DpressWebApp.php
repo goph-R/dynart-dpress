@@ -47,6 +47,7 @@ use Dynart\Dpress\Service\AuthService;
 use Dynart\Dpress\Theme\PageAssets;
 use Dynart\Dpress\Theme\ThemeService;
 use Dynart\Dpress\Service\SettingFields;
+use Dynart\Dpress\Service\AdminSections;
 
 /**
  * The dpress web application
@@ -153,6 +154,7 @@ class DpressWebApp extends WebApp {
         DpressServices::registerShortcodes(Micro::get(Shortcodes::class));
         DpressServices::registerBlocks(Micro::get(Blocks::class));
         DpressServices::registerSettingFields(Micro::get(SettingFields::class));
+        DpressServices::registerAdminSections(Micro::get(AdminSections::class));
         DpressServices::registerPageAssets(Micro::get(PageAssets::class));
         $this->applyTheme($view);
 

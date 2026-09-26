@@ -107,6 +107,23 @@ interface PluginInterface {
     public function assets(): array;
 
     /**
+     * Entries in the admin's navigation, as `key => section`
+     *
+     * ```php
+     * return ['recipes' => [
+     *     'label' => 'Recipes', 'route' => '/admin/recipes', 'permission' => 'recipe.view',
+     *     'icon' => 'recipes.svg',   // a file in this plugin's folder, or a core icon's name
+     *     'after' => 'media',        // or 'before' => 'users'; after Blocks if neither
+     * ]];
+     * ```
+     *
+     * The key is what the screen's controller answers from `section()` to be marked current, and
+     * it has to be new - one a section already has is left out, with a warning in the log. A
+     * section whose permission the user lacks is not shown, as the core's are not.
+     */
+    public function adminSections(): array;
+
+    /**
      * Everything that is not a list
      *
      * Subscribe to events, register form and query builders, whatever else. Called last, after

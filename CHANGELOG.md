@@ -5,6 +5,35 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.77.0] &ndash; 2026-09-26
+
+A plugin's screen can be in the admin's navigation. The first step of
+[docs/extensibility.md](docs/extensibility.md), which says what comes after it.
+
+### Added
+- **`PluginInterface::adminSections()`** - entries in the admin's navigation, as `key =>
+  ['label', 'route', 'permission', 'icon', 'after' | 'before']`. Where a plugin's screen used to be
+  at an address somebody had to be told, it is now in the list beside the core's. `AbstractPlugin`
+  answers `[]`, so no plugin changes. See [plugins.md §5c](docs/plugins.md).
+- **`AdminSections`**, the registry the navigation reads: the core's sections and the plugins'
+  in one list. The core's go through the same `add()` (`DpressServices::ADMIN_SECTIONS`), so
+  "after media" names a core key the way it names a plugin's. **The order is worked out when it is
+  read**, so it does not matter which was added first; a section saying nothing goes after Blocks,
+  at the end of the content group, and two of them keep the order they were added in. **A key
+  already taken is left out and logged** - a plugin cannot take the Posts entry by naming its own
+  `content`.
+- **A plugin's own icon**: an `.svg` in its folder, resolved against that folder and never outside
+  it, read from its `<svg` on like the core's (`Dpress::iconFile()`). Anything else is a core
+  icon's name.
+- **`docs/extensibility.md`**: what plugins still cannot do and the order it comes in - these
+  sections, then content types of a plugin's own in the one content table, then hooks on the
+  dashboard, the lists and the editor, with the editor's polish alongside.
+
+### Changed
+- **`AbstractAdminController::navigation()` reads `AdminSections`** rather than a list of its own.
+
+---
+
 ## [0.76.1] &ndash; 2026-09-26
 
 ### Changed

@@ -21,6 +21,7 @@ use Dynart\Dpress\Plugin\PluginService;
 use Dynart\Dpress\Query\ListRequest;
 use Dynart\Dpress\Security\Permissions;
 use Dynart\Dpress\Service\SettingService;
+use Dynart\Dpress\Service\AdminSections;
 
 /**
  * What every admin screen needs
@@ -341,34 +342,23 @@ abstract class AbstractAdminController extends AbstractController {
     /**
      * The admin sections this user may open
      *
-     * `icon` is its own key rather than the section's, so a section a plugin adds can point at an
-     * icon that already exists instead of shipping one.
+     * From `AdminSections`, which holds the core's and the plugins' in one list - so a plugin's
+     * screen is in the navigation, where it was once only at an address somebody had to be told.
+     * `icon` is a core icon's name, or `icon_file` a plugin's own `.svg`, so a plugin can point at
+     * an icon that already exists instead of shipping one.
      *
      * @return array [['url' => ..., 'label' => ..., 'key' => ..., 'icon' => <svg markup>]]
      */
     protected function navigation(): array {
-        $sections = [
-            ['key' => 'dashboard', 'label' => 'Dashboard', 'icon' => 'dashboard', 'route' => '/admin', 'permission' => ''],
-            ['key' => 'content',   'label' => 'Posts',     'icon' => 'content',   'route' => '/admin/content/post', 'permission' => Permissions::POST_VIEW],
-            ['key' => 'pages',     'label' => 'Pages',     'icon' => 'pages',     'route' => '/admin/content/page', 'permission' => Permissions::PAGE_VIEW],
-            ['key' => 'media',     'label' => 'Media',     'icon' => 'media',     'route' => '/admin/media', 'permission' => Permissions::MEDIA_VIEW],
-            ['key' => 'taxonomy',  'label' => 'Taxonomy',  'icon' => 'taxonomy',  'route' => '/admin/categories', 'permission' => Permissions::CATEGORY_VIEW],
-            ['key' => 'menus',     'label' => 'Menus',     'icon' => 'menus',     'route' => '/admin/menus', 'permission' => Permissions::MENU_VIEW],
-            ['key' => 'blocks',    'label' => 'Blocks',    'icon' => 'blocks',    'route' => '/admin/blocks', 'permission' => Permissions::BLOCK_VIEW],
-            ['key' => 'users',     'label' => 'Users',     'icon' => 'users',     'route' => '/admin/users', 'permission' => Permissions::USER_VIEW],
-            ['key' => 'roles',     'label' => 'Roles',     'icon' => 'roles',     'route' => '/admin/roles', 'permission' => Permissions::ROLE_VIEW],
-            ['key' => 'plugins',   'label' => 'Plugins',   'icon' => 'plugins',   'route' => '/admin/plugins', 'permission' => Permissions::PLUGIN_MANAGE],
-            ['key' => 'settings',  'label' => 'Settings',  'icon' => 'settings',  'route' => '/admin/settings', 'permission' => Permissions::SETTING_VIEW],
-        ];
         $result = [];
-        foreach ($sections as $section) {
+        foreach (Micro::get(AdminSections::class)->sections() as $section) {
             if ($section['permission'] !== '' && !$this->can($section['permission'])) {
                 continue;
             }
             $result[] = [
                 'key'   => $section['key'],
                 'label' => $section['label'],
-                'icon'  => $this->icon($section['icon']),
+                'icon'  => $section['icon_file'] !== '' ? Dpress::iconFile($section['icon_file']) : $this->icon($section['icon']),
                 'url'   => $this->router->url($section['route']),
             ];
         }

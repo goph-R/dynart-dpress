@@ -7,7 +7,7 @@ namespace Dynart\Dpress;
  */
 class Dpress {
 
-    const VERSION = '0.76.1';
+    const VERSION = '0.77.0';
 
     /** The file that marks the root of a dpress installation */
     const CONFIG_FILE_NAME = 'dpress.ini';
@@ -77,18 +77,30 @@ class Dpress {
      * out of a request.
      */
     public static function icon(string $name): string {
-        if (!isset(self::$icons[$name])) {
-            $path = self::iconsPath().'/'.$name.'.svg';
-            if (!preg_match('/^[A-Za-z0-9_-]+$/', $name) || !is_file($path)) {
-                $path = self::iconsPath().'/section.svg';
-            }
+        $path = self::iconsPath().'/'.$name.'.svg';
+        if (!preg_match('/^[A-Za-z0-9_-]+$/', $name) || !is_file($path)) {
+            $path = self::iconsPath().'/section.svg';
+        }
+        return self::iconFile($path);
+    }
+
+    /**
+     * An icon from a file named by its full path - a plugin's own, for its admin section
+     *
+     * The caller decides the path may be read; `PluginService` only hands over one inside the
+     * plugin's folder. A file that is not there, or holds no `<svg`, is the generic mark.
+     */
+    public static function iconFile(string $path): string {
+        if (!isset(self::$icons[$path])) {
             // From the `<svg` on: `section.svg` carries a PHP comment saying what it is for, and a
             // file read as text rather than rendered would put that comment into the page.
-            $markup = (string)@file_get_contents($path);
+            $markup = is_file($path) ? (string)@file_get_contents($path) : '';
             $start = stripos($markup, '<svg');
-            self::$icons[$name] = trim($start === false ? $markup : substr($markup, $start));
+            self::$icons[$path] = $start === false
+                ? ($path === self::iconsPath().'/section.svg' ? '' : self::icon('section'))
+                : trim(substr($markup, $start));
         }
-        return self::$icons[$name];
+        return self::$icons[$path];
     }
 
     public static function translationsPath(): string {

@@ -105,6 +105,7 @@ use Dynart\Dpress\Service\MediaService;
 use Dynart\Dpress\Service\BlockService;
 use Dynart\Dpress\Service\MenuService;
 use Dynart\Dpress\Service\SettingFields;
+use Dynart\Dpress\Service\AdminSections;
 use Dynart\Dpress\Service\SettingService;
 use Dynart\Dpress\Service\TaxonomyService;
 use Dynart\Dpress\Theme\Places;
@@ -240,6 +241,7 @@ class DpressServices {
         Micro::add(TaxonomyService::class);
         Micro::add(SettingService::class);
         Micro::add(SettingFields::class);
+        Micro::add(AdminSections::class);
         Micro::add(ThemeService::class);
         Micro::add(ThemeAssets::class);
         Micro::add(PageAssets::class);
@@ -397,6 +399,32 @@ class DpressServices {
      * which is the half that was broken: a plugin can now add a setting that is actually
      * saved, and it passes its field definition along with it in the one call.
      */
+    /**
+     * The admin's own sections, in the order the navigation shows them
+     *
+     * Through `AdminSections::add()`, the call a plugin's `adminSections()` ends in, so a plugin's
+     * entry and the core's are one list and "after media" can name a core key.
+     */
+    const ADMIN_SECTIONS = [
+        ['key' => 'dashboard', 'label' => 'Dashboard', 'icon' => 'dashboard', 'route' => '/admin', 'permission' => ''],
+        ['key' => 'content',   'label' => 'Posts',     'icon' => 'content',   'route' => '/admin/content/post', 'permission' => Permissions::POST_VIEW],
+        ['key' => 'pages',     'label' => 'Pages',     'icon' => 'pages',     'route' => '/admin/content/page', 'permission' => Permissions::PAGE_VIEW],
+        ['key' => 'media',     'label' => 'Media',     'icon' => 'media',     'route' => '/admin/media', 'permission' => Permissions::MEDIA_VIEW],
+        ['key' => 'taxonomy',  'label' => 'Taxonomy',  'icon' => 'taxonomy',  'route' => '/admin/categories', 'permission' => Permissions::CATEGORY_VIEW],
+        ['key' => 'menus',     'label' => 'Menus',     'icon' => 'menus',     'route' => '/admin/menus', 'permission' => Permissions::MENU_VIEW],
+        ['key' => 'blocks',    'label' => 'Blocks',    'icon' => 'blocks',    'route' => '/admin/blocks', 'permission' => Permissions::BLOCK_VIEW],
+        ['key' => 'users',     'label' => 'Users',     'icon' => 'users',     'route' => '/admin/users', 'permission' => Permissions::USER_VIEW],
+        ['key' => 'roles',     'label' => 'Roles',     'icon' => 'roles',     'route' => '/admin/roles', 'permission' => Permissions::ROLE_VIEW],
+        ['key' => 'plugins',   'label' => 'Plugins',   'icon' => 'plugins',   'route' => '/admin/plugins', 'permission' => Permissions::PLUGIN_MANAGE],
+        ['key' => 'settings',  'label' => 'Settings',  'icon' => 'settings',  'route' => '/admin/settings', 'permission' => Permissions::SETTING_VIEW],
+    ];
+
+    public static function registerAdminSections(AdminSections $sections): void {
+        foreach (self::ADMIN_SECTIONS as $section) {
+            $sections->add($section);
+        }
+    }
+
     public static function registerSettingFields(SettingFields $fields): void {
         foreach (self::SETTING_FIELDS as $name => $type) {
             $fields->add($name, $type);

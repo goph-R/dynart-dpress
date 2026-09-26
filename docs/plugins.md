@@ -51,6 +51,7 @@ class ReadingTimePlugin extends AbstractPlugin {
     public function views(): array       { return ['reading_time' => dirname(__DIR__).'/views']; }
     public function assets(): array      { return ['reading-time.js']; }
     public function permissions(): array { return ['reading_time.override' => 'reading_time']; }
+    public function adminSections(): array { return ['reading_time' => [...]]; }   // see §5c
 
     public function register(): void { /* events, form and query builders */ }
 }
@@ -230,6 +231,41 @@ Micro::get(PageAssets::class)->add('myplugin:og', [MyPlugin::class, 'openGraphTa
 
 The callable is handed the finished page and answers with markup. It is resolved through the
 container **only when its needle matches**, so registering one costs nothing.
+
+## 5c. A place in the admin's navigation
+
+**Built in 0.77.0.** A plugin with a screen of its own says where it goes, and the navigation
+shows it - where it used to be at an address somebody had to be told:
+
+```php
+public function adminSections(): array {
+    return [
+        'recipes' => [
+            'label'      => 'Recipes',
+            'route'      => '/admin/recipes',
+            'permission' => 'recipe.view',
+            'icon'       => 'icons/recipes.svg',   // a file in the plugin's folder, or a core icon's name
+            'after'      => 'media',               // or 'before' => 'users'
+        ],
+    ];
+}
+```
+
+- **The key** is what the screen's controller answers from `section()` to be marked current: a
+  plugin's admin controller extends `AbstractAdminController` and overrides it. It has to be new -
+  one a section already has (`content`, `media`, ...) is left out, with a warning in the log, so a
+  plugin cannot take the Posts entry by naming its own the same.
+- **Where**: `after` or `before` a key, the core's or another plugin's. Saying neither puts it at
+  the end of the content group, after Blocks; naming a key that is not there does the same. The
+  order is worked out when the navigation is drawn, so it does not matter which was added first.
+- **The icon** is a core icon's name (`media`, `blocks`, ...), or an `.svg` in the plugin's own
+  folder - read from its `<svg` on, like the core's, and never from outside that folder.
+- **Who sees it**: whoever holds `permission`, the rule the core's sections follow. `''` is
+  everybody who may open the admin at all.
+
+The core's own sections are in the same registry, `AdminSections`, added through the call a
+plugin's end in (`DpressServices::ADMIN_SECTIONS`), so there is one list and not a constant with
+additions.
 
 ## 6. Turning one on
 
