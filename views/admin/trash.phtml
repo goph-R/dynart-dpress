@@ -1,0 +1,35 @@
+<?php
+/**
+ * The trash of a list - posts, pages, media - as a screen of its own
+ *
+ * Its own page rather than a checkbox on the list, because what can be done here is different:
+ * restore, and delete for good. A filter that mixed the two kinds of row made every row action
+ * ask which kind it was on.
+ *
+ * @var string $title        what is in it - "Posts", "Media"
+ * @var string $back_url     the list it belongs to
+ * @var string $empty_url    where Empty trash posts to, '' for somebody who may not
+ * @var string $empty_confirm what Empty trash asks first
+ * @var string $list_id
+ * @var array  $list_config
+ */
+?>
+<?php $this->useLayout($admin_layout) ?>
+<?php $this->startBlock('content') ?>
+    <div class="page-head">
+        <h1><?= esc_html($title) ?> &middot; Trash</h1>
+        <span class="spacer"></span>
+        <?php if (!empty($empty_url)): ?>
+            <?php // a write, so a POST through the action form like every other one here ?>
+            <button type="button" class="button danger"
+                    onclick="Dpress.post(<?= esc_attr(json_encode($empty_url)) ?>, <?= esc_attr(json_encode($empty_confirm ?? 'Empty the trash?')) ?>)">Empty trash</button>
+        <?php endif ?>
+        <a class="button with-icon" href="<?= esc_attr($back_url) ?>"><?= \Dynart\Dpress\Dpress::icon('back') ?> Back to <?= esc_html(strtolower($title)) ?></a>
+    </div>
+
+    <?= $this->fetch('dpress_admin:list', [
+        'list_id' => $list_id,
+        'list_config' => $list_config,
+        'filters' => $filters ?? '',
+    ]) ?>
+<?php $this->endBlock() ?>

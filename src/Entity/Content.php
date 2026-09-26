@@ -45,6 +45,21 @@ class Content extends Entity {
      */
     const STATUS_AUTO_DRAFT = 'auto_draft';
 
+    /**
+     * In the trash: deleted as far as anybody reading the site can tell, and one click from back
+     *
+     * **A status rather than a `deleted_at` column**, because every query a visitor's page is
+     * built from already asks for `published` - so a post in the trash leaves the front page, the
+     * archives, the feed, the sitemap and the menus without one of them being touched, where a
+     * column would have needed `deleted_at is null` in each and leaked from the one it was
+     * forgotten in. The admin's lists leave it out the way they leave out an auto-draft.
+     *
+     * Not in `STATUSES`, for the auto-draft's reason: `trash()` sets it and `restore()` takes it
+     * away, and no select offers it. What a restore goes back to is read off the history, so
+     * there is no column for "what it was".
+     */
+    const STATUS_TRASH = 'trash';
+
     const STATUSES = [self::STATUS_DRAFT, self::STATUS_PUBLISHED];
 
     #[Column(type: Column::TYPE_INT, notNull: true, autoIncrement: true, primaryKey: true)]
@@ -160,6 +175,10 @@ class Content extends Entity {
      */
     public function isAutoDraft(): bool {
         return $this->status === self::STATUS_AUTO_DRAFT;
+    }
+
+    public function isTrashed(): bool {
+        return $this->status === self::STATUS_TRASH;
     }
 
     /**

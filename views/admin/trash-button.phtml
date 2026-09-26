@@ -1,0 +1,13 @@
+<?php
+/**
+ * The way into a list's trash, for its page heading
+ *
+ * A link, since opening the trash changes nothing. The count is how many are in there, and is
+ * left off at none - "Trash (0)" is a button asking to be pressed for no reason.
+ *
+ * @var string $url
+ * @var string $icon  the trash can, as the admin's inline SVG
+ * @var int    $count
+ */
+?>
+<a class="button with-icon" href="<?= esc_attr($url) ?>"><?= $icon ?> Trash<?php if (($count ?? 0) > 0): ?> <span class="count"><?= (int)$count ?></span><?php endif ?></a>

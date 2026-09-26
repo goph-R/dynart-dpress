@@ -4,7 +4,7 @@
         <h1>Taxonomy</h1>
         <span class="spacer"></span>
         <?php if (!empty($can_create)): ?>
-            <a class="button primary" href="<?= esc_attr($new_url) ?>">New tag</a>
+            <a class="button primary with-icon" href="<?= esc_attr($new_url) ?>"><?= \Dynart\Dpress\Dpress::icon('plus') ?> New tag</a>
         <?php endif ?>
     </div>
     <?= $this->fetch('dpress_admin:tabs', ['tabs' => $tabs ?? [], 'label' => 'Taxonomy']) ?>

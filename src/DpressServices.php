@@ -362,6 +362,7 @@ class DpressServices {
         Setting::TIMEZONE => 'string',
         Setting::CODE_THEME => 'string',
         Setting::ADMIN_PAGES_THUMBNAIL => 'bool',
+        Setting::ADMIN_EDITOR_CONTAIN_SCROLL => 'bool',
     ];
 
     const BLOCKS = [

@@ -7,7 +7,7 @@ namespace Dynart\Dpress;
  */
 class Dpress {
 
-    const VERSION = '0.75.0';
+    const VERSION = '0.76.0';
 
     /** The file that marks the root of a dpress installation */
     const CONFIG_FILE_NAME = 'dpress.ini';
@@ -62,6 +62,33 @@ class Dpress {
      */
     public static function iconsPath(): string {
         return self::path('icons');
+    }
+
+    /** @var array<string, string> one read of each icon per request */
+    private static array $icons = [];
+
+    /**
+     * An admin icon, as the inline SVG markup it is drawn with
+     *
+     * Static so a template can ask for one where it draws a button - `Dpress::icon('save')` -
+     * without every controller handing each button's drawing over. An icon this package does not
+     * have falls back to a generic mark rather than a gap. **The result is markup**: ours, from
+     * the package's own folder, so there is nothing to sanitise - but nothing may build the name
+     * out of a request.
+     */
+    public static function icon(string $name): string {
+        if (!isset(self::$icons[$name])) {
+            $path = self::iconsPath().'/'.$name.'.svg';
+            if (!preg_match('/^[A-Za-z0-9_-]+$/', $name) || !is_file($path)) {
+                $path = self::iconsPath().'/section.svg';
+            }
+            // From the `<svg` on: `section.svg` carries a PHP comment saying what it is for, and a
+            // file read as text rather than rendered would put that comment into the page.
+            $markup = (string)@file_get_contents($path);
+            $start = stripos($markup, '<svg');
+            self::$icons[$name] = trim($start === false ? $markup : substr($markup, $start));
+        }
+        return self::$icons[$name];
     }
 
     public static function translationsPath(): string {

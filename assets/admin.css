@@ -261,8 +261,11 @@ textarea.markdown-editor {
     font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
     font-size: 13.5px;
     height: 540px;
-    overscroll-behavior: contain;
 }
+/* The Admin setting "Keep the mouse wheel inside the editor": at the field's top and bottom the
+   wheel stops there rather than moving on to the page. Off by default, which is how every other
+   scrolling box behaves; PageUp and PageDown are the field's either way (`Dpress.pageField()`). */
+body.editor-contain-scroll textarea.markdown-editor { overscroll-behavior: contain; }
 
 .form-actions { margin-top: 22px; display: flex; gap: 10px; align-items: center; }
 
@@ -310,6 +313,15 @@ button.primary, .button.primary {
     font: inherit; cursor: pointer; text-decoration: none;
 }
 .button.small { padding: 4px 10px; font-size: 13px; }
+/* A button that carries an icon - the Trash button of a list. The icon is the inline SVG the
+   admin draws everything with, so it takes the button's colour; the count after it is how many
+   are in there, muted, and left out when there are none. */
+/* `button.with-icon` as well, or a `<button class="button">` - Posts' and Pages' New, which is a
+   button because it writes - keeps `button.button`'s inline-block, which outranks a lone class,
+   and the icon sits on the text's baseline a little above the middle */
+.with-icon, button.with-icon, .button.with-icon { display: inline-flex; align-items: center; gap: 7px; }
+.with-icon svg { width: 16px; height: 16px; flex: none; }
+.button .count { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 .button.danger, button.danger { color: var(--danger); border-color: #fecaca; }
 .button[disabled], button[disabled] { opacity: .45; cursor: default; }
 button.link { background: none; border: 0; color: var(--muted); cursor: pointer;

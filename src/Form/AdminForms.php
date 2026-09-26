@@ -380,6 +380,9 @@ class AdminForms {
             'admin_pages_thumbnail' => ['type' => 'checkbox', 'label' => 'Pages list', 'required' => false,
                                         'text' => 'Show the featured picture on the Pages list',
                                         'description' => 'The Posts list always shows it. Most pages have none, so it is off unless yours do.'],
+            'admin_editor_contain_scroll' => ['type' => 'checkbox', 'label' => 'Markdown editor', 'required' => false,
+                                              'text' => 'Keep the mouse wheel inside the editor',
+                                              'description' => 'Off, the wheel moves on to the page once the editor is scrolled to its end, as it does anywhere else. On, it stops at the end of the editor.'],
         ], false);
         $form->addValues($context['values'] ?? []);
     }

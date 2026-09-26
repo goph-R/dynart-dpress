@@ -48,6 +48,13 @@ class ContentService {
      */
     const EVENT_MOVED = 'content:moved';
 
+    /**
+     * Into the trash and out of it - and neither is `deleted`, which is still the one that means
+     * the row is gone. A listener that cleans up after a delete has nothing to clean up yet.
+     */
+    const EVENT_TRASHED = 'content:trashed';
+    const EVENT_RESTORED = 'content:restored';
+
     const MOVE_UP = 'up';
     const MOVE_DOWN = 'down';
 
@@ -442,8 +449,9 @@ class ContentService {
      * @return array<int, int>
      */
     protected function arrangedIds(Content $content): array {
-        $conditions = ['`type` = :type', '`weight` = :weight', '`status` <> :autoDraft'];
-        $params = [':type' => $content->type, ':weight' => $content->weight, ':autoDraft' => Content::STATUS_AUTO_DRAFT];
+        $conditions = ['`type` = :type', '`weight` = :weight', '`status` not in (:autoDraft, :trash)'];
+        $params = [':type' => $content->type, ':weight' => $content->weight,
+                   ':autoDraft' => Content::STATUS_AUTO_DRAFT, ':trash' => Content::STATUS_TRASH];
         if ($content->isPage()) {
             // null-safe, because the top level of the tree is the pages whose parent is null
             $conditions[] = '`parent_id` <=> :parentId';
@@ -469,9 +477,10 @@ class ContentService {
     protected function nextPosition(Content $content): int {
         return (int)$this->db->fetchOne(
             'select coalesce(max(`position`), 0) + 1 from '.$this->em->safeTableName(Content::class)
-                .' where `type` = :type and `parent_id` <=> :parentId and `id` <> :id and `status` <> :autoDraft',
+                .' where `type` = :type and `parent_id` <=> :parentId and `id` <> :id'
+                .' and `status` not in (:autoDraft, :trash)',
             [':type' => $content->type, ':parentId' => $content->parent_id, ':id' => $content->id,
-             ':autoDraft' => Content::STATUS_AUTO_DRAFT]
+             ':autoDraft' => Content::STATUS_AUTO_DRAFT, ':trash' => Content::STATUS_TRASH]
         );
     }
 
@@ -593,6 +602,11 @@ class ContentService {
         if ($content->isPublished()) {
             return;
         }
+        // out of the trash is `restore()`, which knows what it was; publishing from in there
+        // would put something on the site from a screen that says it is deleted
+        if ($content->isTrashed()) {
+            throw new DpressException('That is in the trash. Restore it first.');
+        }
         $content->status = Content::STATUS_PUBLISHED;
         $content->published_at = $publishedAt ?? $this->now();
         $content->updated_at = $this->now();
@@ -648,18 +662,146 @@ class ContentService {
      */
     public function delete(Content $content): void {
         $this->emitBoth($content, self::EVENT_BEFORE_DELETE, 'before_delete');
-        foreach ($this->findChildren($content->id) as $row) {
-            $child = $this->findById((int)$row['id']);
+        $this->reparentChildren($content);
+        $this->taxonomy->clearAssignments($content->id);
+        $this->media->detachAllOfContent($content->id);
+        $this->em->deleteById(Content::class, $content->id);
+        $this->emitBoth($content, self::EVENT_DELETED, 'deleted');
+    }
+
+    /**
+     * Hands a page's children to its own parent - for a delete, and for a move to the trash
+     *
+     * **Every child row, the trashed ones too**, asked of the table directly rather than through
+     * `findChildren()`, which leaves the trash out. A child left pointing at a row that is then
+     * deleted is a foreign key the database refuses; one left pointing at a page in the trash
+     * would come back under it on a restore nobody asked to have that effect.
+     */
+    protected function reparentChildren(Content $content): void {
+        $ids = $this->db->fetchColumn(
+            'select `id` from '.$this->em->safeTableName(Content::class).' where `parent_id` = :id',
+            [':id' => $content->id]
+        );
+        foreach ($ids as $id) {
+            $child = $this->findById((int)$id);
             if ($child !== null) {
                 $child->parent_id = $content->parent_id;
                 $child->updated_at = $this->now();
                 $this->em->save($child);
             }
         }
-        $this->taxonomy->clearAssignments($content->id);
-        $this->media->detachAllOfContent($content->id);
-        $this->em->deleteById(Content::class, $content->id);
-        $this->emitBoth($content, self::EVENT_DELETED, 'deleted');
+    }
+
+    // --- Revisions ---
+
+    /** What restoring a revision takes from it: what somebody wrote, and nothing about where it lives */
+    const REVISION_FIELDS = ['title', 'markdown', 'featured_media_id', 'css'];
+
+    /**
+     * Puts a revision's writing back, as a new revision - the ones in between stay in the history
+     *
+     * **The writing and nothing else**: the title, the text, the featured image and the CSS. Not
+     * the slug, the parent, the status, the date or the weight, because those decide where the
+     * post is and whether anybody can see it, and "bring back what it said on Tuesday" is not a
+     * request to move it, unpublish it or put it back on the front page. Each of them is one
+     * field in the editor if that is wanted too.
+     *
+     * Through `update()`, so it is an ordinary save: rendered, audited, announced. A featured
+     * image purged since then is no image rather than a foreign key the save trips over.
+     *
+     * @param array $revision a row of the audit mirror, as `ContentHistoryService::revision()` answers
+     */
+    public function restoreRevision(Content $content, array $revision): Content {
+        if ($content->isTrashed()) {
+            throw new DpressException('That is in the trash. Restore it first.');
+        }
+        $data = [];
+        foreach (self::REVISION_FIELDS as $field) {
+            if (array_key_exists($field, $revision)) {
+                $data[$field] = $revision[$field];
+            }
+        }
+        $data['title'] = (string)($data['title'] ?? $content->title);
+        $data['markdown'] = (string)($data['markdown'] ?? $content->markdown);
+        $featured = $this->nullableId($data['featured_media_id'] ?? null);
+        $data['featured_media_id'] = $featured !== null && $this->media->findById($featured) !== null ? $featured : null;
+        return $this->update($content, $data);
+    }
+
+    // --- The trash ---
+
+    /**
+     * Moves content to the trash: off the site, out of the lists, one click from back
+     *
+     * Nothing is taken from it - categories, tags and attachments all stay, so a restore is the
+     * post as it was. Only its children are let go, the way a delete lets them go: a page in the
+     * trash is not a section anybody can browse into.
+     *
+     * Saved through the entity manager, so the history has a row that says it was trashed - and
+     * that is where `restore()` reads what it was before. Whatever linked here is rendered again,
+     * so those links fall back to their words; `restore()` brings them back.
+     */
+    public function trash(Content $content): void {
+        if ($content->isTrashed()) {
+            return;
+        }
+        $this->reparentChildren($content);
+        $content->status = Content::STATUS_TRASH;
+        $content->updated_at = $this->now();
+        $this->em->save($content);
+        $this->rerenderReferrers($content);
+        $this->emitBoth($content, self::EVENT_TRASHED, 'trashed');
+    }
+
+    /**
+     * Takes content out of the trash, as it was when it went in
+     *
+     * **The status it had**, read off the newest revision that was not the trash - so a
+     * published post comes back published, under its original date, and a draft as a draft.
+     * Draft when the history has nothing to say, which is the safe answer: nothing appears on
+     * the site that nobody chose to put there.
+     */
+    public function restore(Content $content): void {
+        if (!$content->isTrashed()) {
+            return;
+        }
+        $content->status = $this->statusBeforeTrash($content);
+        if ($content->isPublished() && $content->published_at === null) {
+            $content->published_at = $this->now();
+        }
+        $content->updated_at = $this->now();
+        $this->em->save($content);
+        $this->rerenderReferrers($content);
+        $this->emitBoth($content, self::EVENT_RESTORED, 'restored');
+    }
+
+    /**
+     * The newest status in the history that was a real one
+     */
+    protected function statusBeforeTrash(Content $content): string {
+        $rows = $this->db->fetchColumn(
+            'select `status` from '.$this->em->safeAuditTableName(Content::class)
+                .' where `id` = :id and `status` in (:draft, :published) order by `rev_id` desc limit 1',
+            [':id' => $content->id, ':draft' => Content::STATUS_DRAFT, ':published' => Content::STATUS_PUBLISHED]
+        );
+        return (string)($rows[0] ?? '') ?: Content::STATUS_DRAFT;
+    }
+
+    /**
+     * Deletes everything of one type in the trash, for good
+     *
+     * @return int how many went
+     */
+    public function emptyTrash(string $type): int {
+        $count = 0;
+        foreach ($this->findAll(['type' => $this->assertType($type), 'trashed' => true]) as $row) {
+            $content = $this->findById((int)$row['id']);
+            if ($content !== null && $content->isTrashed()) {
+                $this->delete($content);
+                $count++;
+            }
+        }
+        return $count;
     }
 
     // --- Helpers ---

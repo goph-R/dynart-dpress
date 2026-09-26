@@ -9,6 +9,7 @@ use Dynart\Micro\RequestInterface;
 use Dynart\Micro\RouterInterface;
 use Dynart\Micro\SessionInterface;
 use Dynart\Micro\ViewInterface;
+use Dynart\Micro\Entities\AuditService;
 use Dynart\Dpress\Content\Dates;
 use Dynart\Dpress\Content\Slugger;
 use Dynart\Dpress\Content\MarkdownRenderer;
@@ -112,7 +113,111 @@ class ContentAdminController extends AbstractAdminController {
             'status'  => (string)$this->request->get('status', ''),
             'list_id' => 'content-list',
             'list_config' => $config,
+            // the way into the trash, for somebody who may put things in it and take them out
+            'trash'   => $this->can(Permissions::forContent($type, 'delete')) ? [
+                'url'   => $this->router->url('/admin/content/'.$type.'/trash'),
+                'icon'  => $this->icon('delete'),
+                'count' => $this->content->countAll(['type' => $type, 'trashed' => true]),
+            ] : null,
         ]);
+    }
+
+    // --- the trash ---
+
+    /**
+     * What of this type is in the trash, and nothing that is not
+     *
+     * A screen of its own rather than a status in the list's filter: here every row is a deleted
+     * one, so its two actions - Restore, Delete permanently - never have to ask which kind of row
+     * they are on, and nothing on the ordinary list can be deleted for good by a slip.
+     */
+    #[Route('GET', '/admin/content/?/trash')]
+    public function trash(string $type): string {
+        $this->enter($type, 'delete');
+        $config = $this->trashConfig($type);
+        $context = $this->firstPageContext($config, self::SORTABLE, ['search']);
+        $config['firstPage'] = $this->page(['type' => $type, 'trashed' => true] + $context);
+        $isPage = $type === Content::TYPE_PAGE;
+        return $this->admin('dpress_admin:trash', [
+            'title'       => $isPage ? 'Pages' : 'Posts',
+            'back_url'    => $this->router->url('/admin/content/'.$type),
+            'empty_url'   => $this->router->url('/admin/content/'.$type.'/empty-trash'),
+            'empty_confirm' => 'Delete every '.($isPage ? 'page' : 'post').' in the trash for good?'
+                .' Their history is kept, but they cannot be restored from here any more.',
+            'list_id'     => 'content-trash',
+            'list_config' => $config,
+            'filters'     => '<input type="search" name="search" placeholder="Search...">',
+        ]);
+    }
+
+    #[Route('GET', '/admin/content/?/trash/list')]
+    public function trashRows(string $type): array {
+        $this->enter($type, 'delete');
+        $context = $this->list->context(self::SORTABLE, ['search']);
+        return $this->page(['type' => $type, 'trashed' => true] + $context);
+    }
+
+    /**
+     * The list's columns without the ones that mean nothing in the trash, and the trash's actions
+     */
+    protected function trashConfig(string $type): array {
+        $config = $this->listConfig($type);
+        $config['endpoint'] = $this->router->url('/admin/content/'.$type.'/trash/list');
+        // newest in the trash first: what somebody came to take back out is what they just put in
+        $config['orderBy'] = 'updated_at';
+        $config['orderDir'] = 'desc';
+        unset($config['columns']['status'], $config['columns']['weight']);
+        $config['columns']['updated_at']['label'] = 'Trashed';
+        $config['rowActions'] = [
+            ['type' => 'restore', 'title' => 'Restore', 'icon' => $this->icon('restore'),
+             'post' => $this->router->url('/admin/content/'.$type.'/restore/')],
+            ['type' => 'delete', 'title' => 'Delete permanently', 'icon' => $this->icon('delete'),
+             'post' => $this->router->url('/admin/content/'.$type.'/destroy/'),
+             'confirm' => 'Delete this for good? Its history is kept, but it cannot be restored from here any more.'],
+        ];
+        return $config;
+    }
+
+    #[Route('POST', '/admin/content/?/restore/?')]
+    public function restore(string $type, string $id): string {
+        $this->enter($type, 'delete');
+        $this->requireAction();
+        $content = $this->found($this->content->findById((int)$id));
+        $this->assertType($content, $type);
+        $this->content->restore($content);
+        $this->done('/admin/content/'.$type.'/trash', 'Restored'.($content->isPublished() ? ', and published again.' : ' as a draft.'));
+        return '';
+    }
+
+    /**
+     * Delete permanently - the row, its links and its attachments; the history stays
+     *
+     * Only from the trash. Something still on the list is one slip from gone, and "cannot be
+     * restored" should never be the first thing that happens to it.
+     */
+    #[Route('POST', '/admin/content/?/destroy/?')]
+    public function destroy(string $type, string $id): string {
+        $this->enter($type, 'delete');
+        $this->requireAction();
+        $content = $this->found($this->content->findById((int)$id));
+        $this->assertType($content, $type);
+        if (!$content->isTrashed()) {
+            $this->done('/admin/content/'.$type, 'Move it to the trash first.');
+            return '';
+        }
+        $this->content->delete($content);
+        $this->done('/admin/content/'.$type.'/trash', 'Deleted for good. Its history is kept.');
+        return '';
+    }
+
+    #[Route('POST', '/admin/content/?/empty-trash')]
+    public function emptyTrash(string $type): string {
+        $this->enter($type, 'delete');
+        $this->requireAction();
+        $count = $this->content->emptyTrash($type);
+        $this->done('/admin/content/'.$type.'/trash',
+            $count === 0 ? 'The trash was already empty.' : "Deleted $count for good. Their history is kept.");
+        return '';
     }
 
     /**
@@ -161,12 +266,14 @@ class ContentAdminController extends AbstractAdminController {
      *
      * Built by hand rather than handing the entity over: the row is a public API of the admin and
      * `markdown` / `body_html` have no business travelling to the browser on every list request.
-     */
-    /**
+     *
      * @param ?array $pictures [media id => Media] for a list with the picture column, null without
      */
     protected function row(array $content, ?array $pictures = null): array {
         $type = $content['type'];
+        // nothing in the trash opens in the editor - it is restored first, from the row
+        $editable = $this->can(Permissions::forContent($type, 'update'))
+            && $content['status'] !== Content::STATUS_TRASH;
         $row = [
             'id'           => (int)$content['id'],
             'title'        => $content['title'],
@@ -178,7 +285,7 @@ class ContentAdminController extends AbstractAdminController {
             // the way in, and the only one: the title cell is the link. Left out for somebody who
             // may not edit, and the column falls back to plain text - a link to a page that is
             // going to refuse them is worse than no link.
-            'edit_url'     => $this->can(Permissions::forContent($type, 'update'))
+            'edit_url'     => $editable
                 ? $this->router->url('/admin/content/'.$type.'/edit/'.$content['id']) : '',
         ];
         if ($pictures !== null) {
@@ -210,11 +317,15 @@ class ContentAdminController extends AbstractAdminController {
                 'link' => $this->router->url('/admin/content/'.$type.'/history/'),
             ];
         }
-        $rowActions = array_merge($rowActions, $this->deleteRowAction(
-            '/admin/content/'.$type.'/delete/',
-            Permissions::forContent($type, 'delete'),
-            'Delete this permanently? Its history is kept.'
-        ));
+        // Into the trash, with no question asked: it comes back with one click, and a confirmation
+        // in front of something that undoes is a dialog people learn to dismiss before it reaches
+        // the one that does not - Delete permanently, in the trash.
+        if ($this->can(Permissions::forContent($type, 'delete'))) {
+            $rowActions[] = [
+                'type' => 'delete', 'title' => 'Move to trash', 'icon' => $this->icon('delete'),
+                'post' => $this->router->url('/admin/content/'.$type.'/delete/'),
+            ];
+        }
         $config = [
             'endpoint' => $this->router->url('/admin/content/'.$type.'/list'),
             // No column: the order the site uses - weight, then what up and down arranged, then
@@ -281,6 +392,12 @@ class ContentAdminController extends AbstractAdminController {
         $this->enter($type, 'update');
         $content = $this->found($this->content->findById((int)$id));
         $this->assertType($content, $type);
+        // An old link, a bookmark, the back button: the editor would save it and leave it in the
+        // trash with changes nobody can see, or publish it from there. Restoring comes first.
+        if ($content->isTrashed()) {
+            $this->done('/admin/content/'.$type.'/trash', 'That one is in the trash. Restore it to edit it.');
+            return '';
+        }
         $form = $this->forms->create(AdminForms::CONTENT, $this->editorContext($type, $content));
         // The date is checked before anything is written. Half a save - the text stored and the
         // date refused - is a worse answer than none, and `done()` redirects, so a message put
@@ -366,13 +483,27 @@ class ContentAdminController extends AbstractAdminController {
                 ['url' => $this->router->url('/admin/content/'.$type.'/edit/'.$stored->id),
                  'label' => 'Back to the editor']);
         }
-        $content = $this->previewOf($stored, $values);
-        $this->addContentStyle($content);
-        $route = '/admin/content/'.$type.'/preview/'.$stored->id;
         // the token travels with every page number, so a body written in `---` parts pages
         // through exactly as it will once it is saved
-        $common = $this->pagedBody($content, $route, [self::PREVIEW_TOKEN => $token]) + [
-            'preview'     => true,
+        return $this->renderPreview($stored, $values, '/admin/content/'.$type.'/preview/'.$stored->id,
+            [self::PREVIEW_TOKEN => $token], true);
+    }
+
+    /**
+     * A set of the editor's values, drawn as the page they would make
+     *
+     * What the editor's Preview and a revision's preview both are: the stored row with some of
+     * its fields replaced, rendered through the theme under the preview bar - which says `true`'s
+     * "nothing here is saved", or whatever `$bar` says instead.
+     *
+     * @param array  $routeParams what every page link of a `---` body has to carry along
+     * @param string|bool $bar    the preview bar's message, or `true` for the editor's own
+     */
+    protected function renderPreview(Content $stored, array $values, string $route, array $routeParams, string|bool $bar): string {
+        $content = $this->previewOf($stored, $values);
+        $this->addContentStyle($content);
+        $common = $this->pagedBody($content, $route, $routeParams) + [
+            'preview'     => $bar,
             'title'       => $content->title,
             'content'     => $content,
             'author'      => $this->authorOf($content),
@@ -563,11 +694,6 @@ class ContentAdminController extends AbstractAdminController {
             'form'    => $form,
             'content' => $content,
             'back_url' => $this->router->url('/admin/content/'.$type),
-            // A saved post, draft or published alike: the front end already serves an unpublished
-            // one to anybody who may edit posts, so hiding the button was the only thing keeping a
-            // draft out of sight. An auto-draft holds nothing yet, so there is genuinely nothing to
-            // look at - that is what Preview is for.
-            'view_url' => $isNew ? '' : $this->router->url($this->content->publicPath($content)),
             'preview_url' => $this->router->url('/admin/content/'.$type.'/preview/'.$content->id),
 
             // one revision saying an empty row was made is not a history worth offering
@@ -928,6 +1054,10 @@ class ContentAdminController extends AbstractAdminController {
         $this->requireAction();
         $content = $this->found($this->content->findById((int)$id));
         $this->assertType($content, $type);
+        if ($content->isTrashed()) {
+            $this->done('/admin/content/'.$type.'/trash', 'That one is in the trash. Restore it first.');
+            return '';
+        }
         $this->content->publish($content);
         $this->done('/admin/content/'.$type, 'Published.');
         return '';
@@ -944,14 +1074,20 @@ class ContentAdminController extends AbstractAdminController {
         return '';
     }
 
+    /**
+     * Delete, from the list - which is a move to the trash; for good is `destroy()`, in there
+     *
+     * The same address it always had, so a plugin's link or somebody's muscle memory still lands
+     * on the gentle one.
+     */
     #[Route('POST', '/admin/content/?/delete/?')]
     public function delete(string $type, string $id): string {
         $this->enter($type, 'delete');
         $this->requireAction();
         $content = $this->found($this->content->findById((int)$id));
         $this->assertType($content, $type);
-        $this->content->delete($content);
-        $this->done('/admin/content/'.$type, 'Deleted.');
+        $this->content->trash($content);
+        $this->done('/admin/content/'.$type, 'Moved to the trash.');
         return '';
     }
 
@@ -963,13 +1099,82 @@ class ContentAdminController extends AbstractAdminController {
         $this->requirePermission(Permissions::CONTENT_HISTORY);
         $content = $this->found($this->content->findById((int)$id));
         $this->assertType($content, $type);
+        $base = '/admin/content/'.$type.'/history/'.$content->id;
         return $this->admin('dpress_admin:content/history', [
             'title'     => 'History',
             'type'      => $type,
             'content'   => $content,
             'revisions' => $this->history->revisions($content->id),
             'back_url'  => $this->router->url('/admin/content/'.$type.'/edit/'.$content->id),
+            // the two per-row buttons, as prefixes the revision's id is put after
+            'preview_url' => $this->router->url($base.'/preview/'),
+            // restoring writes, so it is for somebody who may edit - and not from the trash
+            'restore_url' => $this->can(Permissions::forContent($type, 'update')) && !$content->isTrashed()
+                ? $this->router->url($base.'/restore/') : '',
+            'preview_icon' => $this->icon('eye'),
+            'restore_icon' => $this->icon('restore'),
         ]);
+    }
+
+    /**
+     * One revision, drawn as the page it made
+     *
+     * Through the editor's preview renderer, with the revision's writing in place of the stored
+     * row's - so what is on the screen is what restoring it would put on the site, down to the
+     * CSS. The tags and categories are today's: they are not part of a revision.
+     */
+    #[Route('GET', '/admin/content/?/history/?/preview/?')]
+    public function revisionPreview(string $type, string $id, string $revisionId): string {
+        [$content, $revision] = $this->revisionOf($type, $id, $revisionId);
+        $values = ['tags' => implode(', ', array_column($this->taxonomy->tagsOf($content->id), 'name')),
+                   'categories' => $this->taxonomy->categoryIdsOf($content->id)];
+        foreach (ContentService::REVISION_FIELDS as $field) {
+            $values[$field] = (string)($revision[$field] ?? '');
+        }
+        $when = substr((string)($revision['rev_at'] ?? ''), 0, 16);
+        $who = trim((string)($revision['rev_user_name'] ?? ''));
+        return $this->renderPreview($content, $values,
+            '/admin/content/'.$type.'/history/'.$content->id.'/preview/'.$revisionId, [],
+            'A revision from '.$when.($who !== '' ? ', by '.$who : '').' - how it looked then. Nothing here is saved.');
+    }
+
+    /**
+     * Puts a revision's writing back - as a new revision, so nothing in between is lost
+     *
+     * Asked about first, in the browser: it replaces the text somebody is working on.
+     */
+    #[Route('POST', '/admin/content/?/history/?/restore/?')]
+    public function revisionRestore(string $type, string $id, string $revisionId): string {
+        $this->enter($type, 'update');
+        $this->requireAction();
+        [$content, $revision] = $this->revisionOf($type, $id, $revisionId);
+        $history = '/admin/content/'.$type.'/history/'.$content->id;
+        if ($content->isTrashed()) {
+            $this->done($history, 'That one is in the trash. Restore it first.');
+            return '';
+        }
+        $this->content->restoreRevision($content, $revision);
+        $this->done($history, 'Restored the revision from '.substr((string)($revision['rev_at'] ?? ''), 0, 16)
+            .'. What it said before is the revision above it.');
+        return '';
+    }
+
+    /**
+     * The content and one of its revisions, or a 404 - checked for the history permission, and
+     * that the revision is a state of it and not its deletion
+     *
+     * @return array [Content, array]
+     */
+    protected function revisionOf(string $type, string $id, string $revisionId): array {
+        $this->enter($type, 'view');
+        $this->requirePermission(Permissions::CONTENT_HISTORY);
+        $content = $this->found($this->content->findById((int)$id));
+        $this->assertType($content, $type);
+        $revision = $this->history->revision($content->id, (int)$revisionId);
+        if ($revision === null || ($revision['rev_type'] ?? '') === AuditService::TYPE_DEL) {
+            $this->app()->sendError(404);
+        }
+        return [$content, $revision];
     }
 
     /**

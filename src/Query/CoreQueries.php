@@ -191,10 +191,15 @@ class CoreQueries {
 
     /**
      * Deleted items are hidden unless the caller asks for them
+     *
+     * `trashed` is the trash - **only** the deleted ones, which is what the Trash screen lists
+     * and what emptying it goes through. `with_deleted` is both, for the CLI's listing.
      */
     public function mediaList(array $context): Query {
         $query = new Query(Media::class);
-        if (empty($context['with_deleted'])) {
+        if (!empty($context['trashed'])) {
+            $query->addCondition('`deleted_at` is not null');
+        } else if (empty($context['with_deleted'])) {
             $query->addCondition('`deleted_at` is null');
         }
         if (!empty($context['category'])) {
@@ -245,6 +250,9 @@ class CoreQueries {
         $query->addCondition('`slug` = :slug', [':slug' => $context['slug'] ?? '']);
         if ($context['published_only'] ?? true) {
             $this->onlyPublished($query);
+        } else {
+            // a draft answers to its slug for somebody who may see drafts; the trash does not
+            $query->addCondition('`status` <> :notTrash', [':notTrash' => Content::STATUS_TRASH]);
         }
         return $query;
     }
@@ -254,6 +262,10 @@ class CoreQueries {
         $query->addCondition('`parent_id` = :parentId', [':parentId' => $context['parent_id'] ?? 0]);
         if ($context['published_only'] ?? false) {
             $this->onlyPublished($query);
+        } else {
+            // trashing a page hands its children to its parent, but one trashed beside them is
+            // still a row with this parent - and a page in the trash is not in anybody's section
+            $query->addCondition('`status` <> :notTrash', [':notTrash' => Content::STATUS_TRASH]);
         }
         // a weight first here too, so "In this section" and the page tree in the admin can be
         // put in an order somebody chose rather than in the one the alphabet chose - and the
@@ -300,9 +312,18 @@ class CoreQueries {
      * caller because "list some content" is asked in a dozen places and every one of them means
      * the same thing by it. `contentBySlug` and the archive are published-only and so exclude
      * these already.
+     *
+     * **Nor is the trash, unless `trashed` asks for it** - and then it is only the trash, which
+     * is the Trash screen's list. The same reasoning: "some content" never means the deleted
+     * ones, so it is said once here rather than remembered in every caller.
      */
     protected function applyContentFilters(Query $query, array $context): void {
         $query->addCondition('`status` <> :notAutoDraft', [':notAutoDraft' => Content::STATUS_AUTO_DRAFT]);
+        if (!empty($context['trashed'])) {
+            $query->addCondition('`status` = :trash', [':trash' => Content::STATUS_TRASH]);
+        } else {
+            $query->addCondition('`status` <> :notTrash', [':notTrash' => Content::STATUS_TRASH]);
+        }
         if (!empty($context['type'])) {
             $query->addCondition('`type` = :type', [':type' => $context['type']]);
         }

@@ -5,6 +5,85 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.76.0] &ndash; 2026-09-26
+
+A trash, for posts and pages and for media; Preview and Restore in a post's history; and a
+setting for whether the markdown editor keeps the mouse wheel.
+
+### Added
+- **Preview and Restore on every revision in a post's or a page's history.** Preview opens the
+  revision in a new tab through the editor's own preview renderer, under a bar that says which
+  revision it is and by whom (`$preview` may now be the bar's message; a theme passes it through
+  untouched). Restore asks first, then puts back the revision's **title, text, featured image and
+  CSS** as a **new revision** - `ContentService::restoreRevision()`, an ordinary `update()` - so
+  what it said a moment ago is the revision above it. **Not the slug, status, date, parent or
+  weight**: those decide where the post is and whether anybody sees it, and "bring back what it
+  said on Tuesday" is not a request to move or unpublish it. Not offered on the newest row (it is
+  what the post already says), on a deletion, or from the trash. A featured image purged since
+  comes back as none. The history also says who made each revision.
+- **Icons on the admin's buttons**: an arrow on every Back, a plus on New and Add, the upload
+  arrow on Upload, a floppy on Save, and in the editor an eye on Preview and a scroll on History.
+  The history's Preview and Restore are the icon row actions every list has - the eye and the
+  circling arrow. `Dpress::icon($name)` is how a template asks for one, and the admin
+  controllers' `icon()` is it too; `.with-icon` lays out any button that carries one.
+- **"Keep the mouse wheel inside the editor"**, on the Admin tab of the settings, **off by
+  default**: the markdown field no longer stops the wheel at its top and bottom unless asked to,
+  so a wheel at the end of the field moves on to the page as it does anywhere else. It is a class
+  on the admin's `<body>`, so an editor reached by a partial navigation behaves the same.
+  PageUp and PageDown stay the field's either way.
+- **Delete moves to the trash.** A row's delete is **Move to trash** now, on the Posts, Pages and
+  Media lists, and asks nothing - it comes back with one click, and a confirmation in front of
+  something that undoes is a dialog people learn to dismiss before they reach the one that does
+  not. Each list has a **Trash** button with the trash can and how many are in there.
+- **The Trash screens** (`/admin/content/<type>/trash`, `/admin/media/trash`) list only what is in
+  the trash, with **Restore** and **Delete permanently** on every row and **Empty trash** at the
+  top. Only those two ask first. Nothing can be deleted for good from the ordinary list any more.
+- **`Content::STATUS_TRASH`.** A status rather than a `deleted_at` column, because every query a
+  visitor's page is built from already asks for `published` - so a post in the trash leaves the
+  front page, the archives, the feed, the sitemap and the menus without one of them changing,
+  where a column would have needed a condition in each and leaked from the one that forgot it.
+  Like the auto-draft it is not in `STATUSES`: no select offers it, and the admin's lists leave it
+  out in the one place they leave out the auto-draft, unless `trashed` asks for only the trash.
+- **`ContentService::trash()` / `restore()` / `emptyTrash()`.** Trashing keeps the categories,
+  tags and attachments - a restore is the post as it was - and hands a page's children to its
+  parent, as a delete does. **A restore brings back the status it had**, read off the newest
+  revision that was not the trash, so a published post comes back published under its original
+  date; draft when the history has nothing to say. Both re-render what links to it: **a link to
+  something in the trash falls back to its words**, the answer a missing post gets, and comes back
+  with it. `content:trashed` and `content:restored` (and the per-type pair), and not `deleted`.
+- **`MediaService::emptyTrash()`**, and `trashed` on the media query - the admin's Trash and
+  `media:purge -all` now go through the same one.
+
+### Fixed
+- **The fallback icon put a PHP comment into the page.** `section.svg` opens with a comment saying
+  what it is for, and the icon was read as text rather than rendered, so every section or row
+  action naming an icon the admin does not have printed the comment before its circle. An icon is
+  now taken from its `<svg` on.
+
+### Changed
+- **The editor has no View button any more.** Preview shows the same page, and shows what is in
+  the boxes rather than what was last saved - the one of the two somebody in an editor wants.
+- **The media list's "Show deleted" box is gone**, for the Trash screen.
+- **Nothing in the trash opens in the editor or publishes**; both say to restore it first.
+- **Deleting a page hands on every child row**, the trashed ones too - asked of the table rather
+  than through `findChildren()`, which leaves the trash out and would have left a trashed child
+  pointing at a row that no longer exists.
+- `content:delete` in the CLI is still a delete for good: a command somebody typed an id into is
+  not a slip.
+- **The markdown field has the CSS box's Tab, Shift+Tab and Home.** Tab over a selection of
+  several lines indents them, Shift+Tab outdents, and Home goes to where the line's text starts,
+  then to where the line does - which is what moving a nested list or a code block wants. One
+  `indentKeys()` behind both fields, so a key does not behave one way in one box and another way
+  in the box under it. Tab at the caret goes through `insertText` now too, so Ctrl+Z takes it
+  back on its own rather than with everything typed before it. Enter is unchanged here: a list
+  continuation is a different question from a CSS indent.
+
+### Notes
+No schema change: the trash is a value of the `status` column content already has, and
+`deleted_at` on media, which it had too.
+
+---
+
 ## [0.75.0] &ndash; 2026-09-26
 
 Posts and pages can be moved up and down in the admin list, the Posts list shows their pictures,

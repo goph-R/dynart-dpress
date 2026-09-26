@@ -7,15 +7,21 @@
  * answer: this has to look like itself in a stylesheet it has never met.
  *
  * Renders nothing at all unless `$preview` is set, so a template can fetch it unconditionally.
+ *
+ * `$preview` is `true` for the editor's preview, or the message itself - a revision's preview
+ * says which revision it is. It is the variable a theme passes through untouched, so a theme that
+ * fetches this bar needs no change for it to say something else.
  */
 if (empty($preview)) {
     return;
 }
+$message = is_string($preview) ? $preview
+    : 'Preview — nothing here is saved. Close this tab and press Save to keep it.';
 ?>
 <div style="position: fixed; inset: 0 0 auto 0; z-index: 2147483647;
             background: #b45309; color: #fff; padding: 10px 16px; text-align: center;
             font: 700 14px/1.4 system-ui, sans-serif; box-shadow: 0 1px 6px rgba(0,0,0,.35);">
-    Preview &mdash; nothing here is saved. Close this tab and press Save to keep it.
+    <?= esc_html($message) ?>
 </div>
 <?php // so the bar does not sit on top of whatever the theme put at the very top of the page ?>
 <div style="height: 40px;" aria-hidden="true"></div>

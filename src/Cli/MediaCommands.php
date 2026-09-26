@@ -188,16 +188,10 @@ class MediaCommands extends AbstractCommands {
     }
 
     /**
-     * Everything in the bin
-     *
-     * `with_deleted` widens the list to *both*, which is right for a screen showing a bin toggle
-     * and wrong here, so the ones that are still in the library are dropped again.
+     * Everything in the bin - the admin's Trash, through the same query
      */
     protected function binned(): array {
-        return array_values(array_filter(
-            $this->media->findAll(['with_deleted' => true]),
-            fn(array $row): bool => !empty($row['deleted_at'])
-        ));
+        return $this->media->findAll(['trashed' => true]);
     }
 
     /**

@@ -12,9 +12,9 @@
         <h1><?= esc_html($menu->name) ?></h1>
         <span class="spacer"></span>
         <?php if (!empty($can_edit)): ?>
-            <a class="button primary" href="<?= esc_attr($new_url) ?>">Add item</a>
+            <a class="button primary with-icon" href="<?= esc_attr($new_url) ?>"><?= \Dynart\Dpress\Dpress::icon('plus') ?> Add item</a>
         <?php endif ?>
-        <a class="button" href="<?= esc_attr($back_url) ?>">Back</a>
+        <a class="button with-icon" href="<?= esc_attr($back_url) ?>"><?= \Dynart\Dpress\Dpress::icon('back') ?> Back</a>
     </div>
 
     <?= $this->fetch('dpress_admin:tree', [

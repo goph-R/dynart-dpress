@@ -52,7 +52,7 @@ class MediaAdminController extends AbstractAdminController {
     public function index(): string {
         $this->requirePermission(Permissions::MEDIA_VIEW);
         $config = $this->listConfig();
-        $config['firstPage'] = $this->page($this->withDeleted($this->firstPageContext($config, self::SORTABLE, ['search', 'category'])));
+        $config['firstPage'] = $this->page($this->firstPageContext($config, self::SORTABLE, ['search', 'category']));
         return $this->admin('dpress_admin:media/list', [
             'title'       => 'Media',
             'can_upload'  => $this->can(Permissions::MEDIA_CREATE),
@@ -60,23 +60,69 @@ class MediaAdminController extends AbstractAdminController {
             'categories'  => Media::CATEGORIES,
             'list_id'     => 'media-list',
             'list_config' => $config,
+            // the way into the trash, for somebody who may put things in it and take them out
+            'trash'       => $this->can(Permissions::MEDIA_DELETE) ? [
+                'url'   => $this->router->url('/admin/media/trash'),
+                'icon'  => $this->icon('delete'),
+                'count' => $this->media->countAll(['trashed' => true]),
+            ] : null,
         ]);
     }
 
     #[Route('GET', '/admin/media/list')]
     public function rowsJson(): array {
         $this->requirePermission(Permissions::MEDIA_VIEW);
-        return $this->page($this->withDeleted($this->list->context(self::SORTABLE, ['search', 'category'])));
+        return $this->page($this->list->context(self::SORTABLE, ['search', 'category']));
+    }
+
+    // --- the trash ---
+
+    /**
+     * What is in the trash, and nothing that is not
+     *
+     * A screen of its own in place of the "Show deleted" box the list had: here a row is always
+     * a deleted one, so its two actions - Restore, Delete permanently - never have to ask which
+     * kind of row they are on.
+     */
+    #[Route('GET', '/admin/media/trash')]
+    public function trash(): string {
+        $this->requirePermission(Permissions::MEDIA_DELETE);
+        $config = $this->trashConfig();
+        $config['firstPage'] = $this->page(
+            ['trashed' => true] + $this->firstPageContext($config, self::SORTABLE, ['search', 'category'])
+        );
+        return $this->admin('dpress_admin:trash', [
+            'title'       => 'Media',
+            'back_url'    => $this->router->url('/admin/media'),
+            'empty_url'   => $this->router->url('/admin/media/empty-trash'),
+            'empty_confirm' => 'Delete every file in the trash for good? The files are removed from disk,'
+                .' and every revision of a post that shows one of them will break.',
+            'list_id'     => 'media-trash',
+            'list_config' => $config,
+            'filters'     => $this->view->fetch('dpress_admin:media/filters', ['categories' => Media::CATEGORIES]),
+        ]);
+    }
+
+    #[Route('GET', '/admin/media/trash/list')]
+    public function trashRows(): array {
+        $this->requirePermission(Permissions::MEDIA_DELETE);
+        return $this->page(['trashed' => true] + $this->list->context(self::SORTABLE, ['search', 'category']));
     }
 
     /**
-     * The one filter that is a permission rather than a field
+     * The list's own columns, with the trash's endpoint and the trash's two actions
      */
-    protected function withDeleted(array $context): array {
-        if ($this->can(Permissions::MEDIA_DELETE) && $this->request->get('with_deleted')) {
-            $context['with_deleted'] = true;
-        }
-        return $context;
+    protected function trashConfig(): array {
+        $config = $this->listConfig();
+        $config['endpoint'] = $this->router->url('/admin/media/trash/list');
+        $config['rowActions'] = [
+            ['type' => 'restore', 'title' => 'Restore', 'icon' => $this->icon('restore'),
+             'post' => $this->router->url('/admin/media/restore/')],
+            ['type' => 'delete', 'title' => 'Delete permanently', 'icon' => $this->icon('delete'),
+             'post' => $this->router->url('/admin/media/purge/'),
+             'confirm' => 'Delete this file for good? It is removed from disk, and every revision of a post that shows it will break.'],
+        ];
+        return $config;
     }
 
     /**
@@ -107,17 +153,13 @@ class MediaAdminController extends AbstractAdminController {
     }
 
     protected function listConfig(): array {
-        $rowActions = [];
-        if ($this->can(Permissions::MEDIA_DELETE)) {
-            // only on a row that is already deleted, which is what `visibleWhen` is for
-            $rowActions[] = ['type' => 'restore', 'title' => 'Restore', 'icon' => $this->icon('restore'),
-                             'post' => $this->router->url('/admin/media/restore/'),
-                             'visibleWhen' => ['deleted' => true]];
-        }
-        $rowActions = array_merge($rowActions, $this->deleteRowAction(
-            '/admin/media/delete/', Permissions::MEDIA_DELETE,
-            'Delete this? The file stays on disk until it is purged.'
-        ));
+        // Into the trash, with no question asked: it comes back out with one click, and a
+        // confirmation in front of something that undoes is a dialog people learn to dismiss
+        // before it reaches the one that does not.
+        $rowActions = $this->can(Permissions::MEDIA_DELETE) ? [[
+            'type' => 'delete', 'title' => 'Move to trash', 'icon' => $this->icon('delete'),
+            'post' => $this->router->url('/admin/media/delete/'),
+        ]] : [];
         return [
             'endpoint' => $this->router->url('/admin/media/list'),
             'orderBy'  => 'created_at',
@@ -232,7 +274,7 @@ class MediaAdminController extends AbstractAdminController {
         $this->requirePermission(Permissions::MEDIA_DELETE);
         $this->requireAction();
         $this->media->delete($this->found($this->media->findById((int)$id)));
-        $this->done('/admin/media', 'Deleted.');
+        $this->done('/admin/media', 'Moved to the trash.');
         return '';
     }
 
@@ -241,7 +283,39 @@ class MediaAdminController extends AbstractAdminController {
         $this->requirePermission(Permissions::MEDIA_DELETE);
         $this->requireAction();
         $this->media->restore($this->found($this->media->findById((int)$id)));
-        $this->done('/admin/media', 'Restored.');
+        $this->done('/admin/media/trash', 'Restored.');
+        return '';
+    }
+
+    /**
+     * Delete permanently - the file, its derivatives and the row
+     *
+     * Only for something already in the trash: a file still in the library is one click from a
+     * post somebody is reading, and "gone from disk" should never be the first thing that happens
+     * to it.
+     */
+    #[Route('POST', '/admin/media/purge/?')]
+    public function purge(string $id): string {
+        $this->requirePermission(Permissions::MEDIA_DELETE);
+        $this->requireAction();
+        $media = $this->found($this->media->findById((int)$id));
+        if (!$media->isDeleted()) {
+            $this->done('/admin/media', 'Move it to the trash first.');
+            return '';
+        }
+        $cleared = $this->media->purge($media);
+        $this->done('/admin/media/trash', 'Deleted for good.'
+            .($cleared > 0 ? " $cleared post(s) lost their featured image." : ''));
+        return '';
+    }
+
+    #[Route('POST', '/admin/media/empty-trash')]
+    public function emptyTrash(): string {
+        $this->requirePermission(Permissions::MEDIA_DELETE);
+        $this->requireAction();
+        [$purged, $cleared] = $this->media->emptyTrash();
+        $this->done('/admin/media/trash', $purged === 0 ? 'The trash was already empty.'
+            : "Deleted $purged file(s) for good.".($cleared > 0 ? " $cleared post(s) lost their featured image." : ''));
         return '';
     }
 }

@@ -8,7 +8,7 @@
             <?= $form->fetch() ?>
             <?php if (!empty($can_save)): ?>
                 <div class="form-actions">
-                    <button type="submit" class="primary">Save</button>
+                    <button type="submit" class="primary with-icon"><?= \Dynart\Dpress\Dpress::icon('save') ?> Save</button>
                 </div>
             <?php else: ?>
                 <p class="form-description">You may read these settings but not change them.</p>

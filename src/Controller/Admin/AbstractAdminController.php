@@ -13,12 +13,14 @@ use Dynart\Micro\ViewInterface;
 use Dynart\Dpress\Controller\AbstractController;
 use Dynart\Dpress\Dpress;
 use Dynart\Dpress\DpressException;
+use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Form\AdminForms;
 use Dynart\Dpress\Form\DpressForm;
 use Dynart\Dpress\Form\FormFactory;
 use Dynart\Dpress\Plugin\PluginService;
 use Dynart\Dpress\Query\ListRequest;
 use Dynart\Dpress\Security\Permissions;
+use Dynart\Dpress\Service\SettingService;
 
 /**
  * What every admin screen needs
@@ -97,6 +99,10 @@ abstract class AbstractAdminController extends AbstractController {
         // The endpoint checks the permission too - this only keeps a useless control off screen.
         $this->view->set('media_upload_url', $this->can(Permissions::MEDIA_CREATE)
             ? $this->router->url('/admin/media/upload/json') : '');
+        // on the body rather than on the field, so an editor reached by a partial navigation -
+        // which swaps the main area and keeps the body - behaves the same as one loaded whole
+        $this->view->set('editor_contain_scroll', Micro::get(SettingService::class)
+            ->getBool(Setting::ADMIN_EDITOR_CONTAIN_SCROLL, false));
         // a plugin's stylesheet and script go in the layout rather than in its widget's own
         // template: a screen reached by a partial navigation is inserted HTML, and inserted HTML
         // does not run its scripts. The layout is only rendered on a real page load, which is
@@ -283,9 +289,6 @@ abstract class AbstractAdminController extends AbstractController {
         return $context;
     }
 
-    /** @var string[] Rendered once each: the same icon repeats across a screen */
-    private array $icons = [];
-
     /**
      * The inline SVG of an icon, by name
      *
@@ -305,14 +308,7 @@ abstract class AbstractAdminController extends AbstractController {
      * request either.
      */
     protected function icon(string $name): string {
-        if (!isset($this->icons[$name])) {
-            $path = Dpress::iconsPath().'/'.$name.'.svg';
-            if (!is_file($path)) {
-                $path = Dpress::iconsPath().'/section.svg';
-            }
-            $this->icons[$name] = trim((string)@file_get_contents($path));
-        }
-        return $this->icons[$name];
+        return Dpress::icon($name);
     }
 
     /**

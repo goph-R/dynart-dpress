@@ -3,8 +3,11 @@
     <div class="page-head">
         <h1>Media</h1>
         <span class="spacer"></span>
+        <?php if (!empty($trash)): ?>
+            <?= $this->fetch('dpress_admin:trash-button', $trash) ?>
+        <?php endif ?>
         <?php if (!empty($can_upload)): ?>
-            <a class="button primary" href="<?= esc_attr($upload_url) ?>">Upload</a>
+            <a class="button primary with-icon" href="<?= esc_attr($upload_url) ?>"><?= \Dynart\Dpress\Dpress::icon('upload') ?> Upload</a>
         <?php endif ?>
     </div>
 

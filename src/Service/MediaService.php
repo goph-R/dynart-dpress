@@ -356,6 +356,28 @@ class MediaService {
     }
 
     /**
+     * Purges everything in the trash, and nothing else
+     *
+     * Only what somebody has already put in the trash - which is what makes an all-at-once
+     * version of the most destructive operation in the library a reasonable button to have.
+     *
+     * @return int[] [how many went, how many pieces of content lost their featured image]
+     */
+    public function emptyTrash(): array {
+        $purged = 0;
+        $cleared = 0;
+        foreach ($this->findAll(['trashed' => true]) as $row) {
+            $media = $this->findById((int)$row['id']);
+            if ($media === null || !$media->isDeleted()) {
+                continue;
+            }
+            $cleared += $this->purge($media);
+            $purged++;
+        }
+        return [$purged, $cleared];
+    }
+
+    /**
      * Takes this item off every post that had it as its featured image
      *
      * One statement rather than a save each, for two reasons. `ContentService` is built on this

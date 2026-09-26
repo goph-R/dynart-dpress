@@ -518,13 +518,12 @@
             }
 
             textarea.addEventListener('keydown', function (event) {
-                if (event.ctrlKey || event.altKey || event.metaKey) {
+                if (event.ctrlKey || event.altKey || event.metaKey || event.isComposing) {
                     return;
                 }
-                // a tab in a code block should indent, not leave the field
-                if (event.key === 'Tab' && !event.shiftKey) {
-                    event.preventDefault();
-                    replaceSelection(textarea, '    ', '', false);
+                // a tab in a code block should indent, not leave the field - and Shift+Tab and
+                // Home work as they do in the CSS box below it
+                if (indentKeys(textarea, event)) {
                     return;
                 }
                 // Shift is left alone: shift+PageDown selects a page, and taking that away to
@@ -707,6 +706,54 @@
         }
     }
 
+    /**
+     * Tab, Shift+Tab and Home, the way an editor has them - for both fields somebody types
+     * structure into, the markdown and the CSS
+     *
+     * Tab types four spaces at the caret, unless the selection spans lines - then it is the lines
+     * that move, and Shift+Tab always moves lines. Home goes to where the line's text starts, and
+     * from there to where the line does; Shift+Home selects the same way. Done here rather than in
+     * each field's handler, because a key that behaves one way in one box and another way in the
+     * box under it is a key nobody learns.
+     *
+     * @return {boolean} whether the key was one of these, and so is done with
+     */
+    function indentKeys(textarea, event) {
+        if (event.key === 'Tab') {
+            event.preventDefault();
+            var from = textarea.selectionStart;
+            var to = textarea.selectionEnd;
+            if (!event.shiftKey && textarea.value.slice(from, to).indexOf('\n') < 0) {
+                typeInto(textarea, CODE_INDENT);
+                return true;
+            }
+            var change = Dpress.codeIndent(textarea.value, from, to, event.shiftKey);
+            if (change.text !== textarea.value.slice(change.from, change.to)) {
+                textarea.setSelectionRange(change.from, change.to);
+                typeInto(textarea, change.text);
+            }
+            textarea.setSelectionRange(change.start, change.end);
+            return true;
+        }
+        if (event.key === 'Home') {
+            event.preventDefault();
+            // the end that moves: the caret, which is the start of a backwards selection
+            var backwards = textarea.selectionDirection === 'backward';
+            var moving = backwards ? textarea.selectionStart : textarea.selectionEnd;
+            var anchor = backwards ? textarea.selectionEnd : textarea.selectionStart;
+            var target = Dpress.codeHome(textarea.value, moving);
+            if (!event.shiftKey) {
+                textarea.setSelectionRange(target, target);
+            } else if (target < anchor) {
+                textarea.setSelectionRange(target, anchor, 'backward');
+            } else {
+                textarea.setSelectionRange(anchor, target, 'forward');
+            }
+            return true;
+        }
+        return false;
+    }
+
     function initCodeFields(root) {
         root.querySelectorAll('textarea[data-code="css"]').forEach(function (textarea) {
             if (textarea.dataset.codeBound) {
@@ -721,38 +768,7 @@
                 if (event.ctrlKey || event.altKey || event.metaKey || event.isComposing) {
                     return;
                 }
-                if (event.key === 'Tab') {
-                    event.preventDefault();
-                    var from = textarea.selectionStart;
-                    var to = textarea.selectionEnd;
-                    // four spaces at the caret, unless the selection spans lines or it is an
-                    // outdent - then it is the lines themselves that move
-                    if (!event.shiftKey && textarea.value.slice(from, to).indexOf('\n') < 0) {
-                        typeInto(textarea, CODE_INDENT);
-                        return;
-                    }
-                    var change = Dpress.codeIndent(textarea.value, from, to, event.shiftKey);
-                    if (change.text !== textarea.value.slice(change.from, change.to)) {
-                        textarea.setSelectionRange(change.from, change.to);
-                        typeInto(textarea, change.text);
-                    }
-                    textarea.setSelectionRange(change.start, change.end);
-                    return;
-                }
-                if (event.key === 'Home') {
-                    event.preventDefault();
-                    // the end that moves: the caret, which is the start of a backwards selection
-                    var backwards = textarea.selectionDirection === 'backward';
-                    var moving = backwards ? textarea.selectionStart : textarea.selectionEnd;
-                    var anchor = backwards ? textarea.selectionEnd : textarea.selectionStart;
-                    var target = Dpress.codeHome(textarea.value, moving);
-                    if (!event.shiftKey) {
-                        textarea.setSelectionRange(target, target);
-                    } else if (target < anchor) {
-                        textarea.setSelectionRange(target, anchor, 'backward');
-                    } else {
-                        textarea.setSelectionRange(anchor, target, 'forward');
-                    }
+                if (indentKeys(textarea, event)) {
                     return;
                 }
                 if (event.key === 'Enter' && !event.shiftKey) {

@@ -3,21 +3,20 @@
     <div class="page-head">
         <h1><?= esc_html($title) ?></h1>
         <span class="spacer"></span>
-        <?php if (!empty($view_url)): ?>
-            <a class="button" href="<?= esc_attr($view_url) ?>" target="_blank" rel="noopener">View</a>
-        <?php endif ?>
+        <?php // No View: Preview shows the same page, and shows what is in the boxes rather than
+              // what was last saved - which is the one of the two somebody in an editor wants. ?>
         <?php // A submit button for the editor form, standing outside it: `form` names the form
               // it belongs to, `formaction` sends it somewhere else and `formtarget` opens that
               // in a new tab. So the boxes travel exactly as Save would send them, with no
               // second copy of the fields and no JavaScript - and this page stays as it is. ?>
         <?php if (!empty($preview_url)): ?>
-            <button type="submit" class="button" form="content-form" data-preview-cursor
-                    formaction="<?= esc_attr($preview_url) ?>" formtarget="_blank">Preview</button>
+            <button type="submit" class="button with-icon" form="content-form" data-preview-cursor
+                    formaction="<?= esc_attr($preview_url) ?>" formtarget="_blank"><?= \Dynart\Dpress\Dpress::icon('eye') ?> Preview</button>
         <?php endif ?>
         <?php if (!empty($history_url)): ?>
-            <a class="button" href="<?= esc_attr($history_url) ?>">History</a>
+            <a class="button with-icon" href="<?= esc_attr($history_url) ?>"><?= \Dynart\Dpress\Dpress::icon('scroll') ?> History</a>
         <?php endif ?>
-        <a class="button" href="<?= esc_attr($back_url) ?>">Back</a>
+        <a class="button with-icon" href="<?= esc_attr($back_url) ?>"><?= \Dynart\Dpress\Dpress::icon('back') ?> Back</a>
     </div>
     <div class="panel">
         <form method="post" id="content-form">
@@ -34,8 +33,8 @@
         <?php if (!empty($can_attach)): ?>
             <?php ob_start() ?>
                 <div class="attachments-actions">
-                    <button type="button" class="button"
-                            data-attach="<?= esc_attr($attachments['attach_url']) ?>">Add attachment</button>
+                    <button type="button" class="button with-icon"
+                            data-attach="<?= esc_attr($attachments['attach_url']) ?>"><?= \Dynart\Dpress\Dpress::icon('plus') ?> Add attachment</button>
                 </div>
                 <div id="<?= esc_attr($attachments['list_id']) ?>" data-attachment-list
                      data-list="<?= esc_attr(json_encode($attachments['config'], JSON_UNESCAPED_SLASHES)) ?>"></div>
@@ -51,7 +50,7 @@
         <?php // below the attachments, so Save is the last thing on the screen - and outside the
               // form with it, so `form` says which form it saves ?>
         <div class="form-actions">
-            <button type="submit" class="primary" form="content-form">Save</button>
+            <button type="submit" class="primary with-icon" form="content-form"><?= \Dynart\Dpress\Dpress::icon('save') ?> Save</button>
             <a class="button" href="<?= esc_attr($back_url) ?>">Cancel</a>
         </div>
     </div>

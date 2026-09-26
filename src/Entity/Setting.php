@@ -175,6 +175,16 @@ class Setting extends Entity {
      */
     const ADMIN_PAGES_THUMBNAIL = 'admin_pages_thumbnail';
 
+    /**
+     * Whether the markdown field keeps the mouse wheel to itself at its top and bottom
+     *
+     * **Off by default**, which is the browser's own way: scrolled to the end of the field, the
+     * wheel carries on and moves the page. On, it stops there (`overscroll-behavior: contain`),
+     * for somebody who scrolls a long post with the wheel and would rather the admin did not jump
+     * away under them at the last line. PageUp and PageDown are the field's either way.
+     */
+    const ADMIN_EDITOR_CONTAIN_SCROLL = 'admin_editor_contain_scroll';
+
     const DATE_FORMAT = 'date_format';
     const TIMEZONE = 'timezone';
 

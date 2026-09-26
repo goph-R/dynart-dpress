@@ -3,7 +3,7 @@
     <div class="page-head">
         <h1>History</h1>
         <span class="spacer"></span>
-        <a class="button" href="<?= esc_attr($back_url) ?>">Back</a>
+        <a class="button with-icon" href="<?= esc_attr($back_url) ?>"><?= \Dynart\Dpress\Dpress::icon('back') ?> Back</a>
     </div>
     <p class="breadcrumb"><?= esc_html($content->title) ?></p>
     <div class="panel">
@@ -12,19 +12,42 @@
         <?php else: ?>
             <table class="plain">
                 <thead>
-                    <tr><th>When</th><th>What</th><th>Title</th><th>Status</th></tr>
+                    <tr><th>When</th><th>What</th><th>By</th><th>Title</th><th>Status</th><th></th></tr>
                 </thead>
                 <tbody>
                 <?php // `rev_at` and `rev_type`, which is what `revisions()` selects. It said
                       // `changed_at` and `operation`, so When and What were blank on every
                       // history screen there has ever been - the same two names the dashboard
                       // had wrong, in the same way, found the same way: by somebody looking. ?>
-                <?php foreach ($revisions as $revision): ?>
+                <?php foreach ($revisions as $index => $revision): ?>
+                    <?php $revisionId = (int)($revision['rev_id'] ?? 0) ?>
+                    <?php $when = substr((string)($revision['rev_at'] ?? ''), 0, 16) ?>
+                    <?php // a deletion is the row going, not a state it was in - nothing to show or bring back ?>
+                    <?php $isDeletion = ($revision['rev_type'] ?? '') === 'del' ?>
                     <tr>
-                        <td><?= esc_html(substr((string)($revision['rev_at'] ?? ''), 0, 16)) ?></td>
+                        <td><?= esc_html($when) ?></td>
                         <td><?= esc_html((string)($revision['rev_type'] ?? '')) ?></td>
+                        <td><?= esc_html((string)($revision['rev_user_name'] ?? '')) ?></td>
                         <td><?= esc_html((string)($revision['title'] ?? '')) ?></td>
                         <td><?= esc_html((string)($revision['status'] ?? '')) ?></td>
+                        <?php // the row actions every list has - an icon, and its name as the tooltip and
+                              // for a screen reader - rather than a second kind of button in one admin ?>
+                        <td class="actions-column">
+                            <?php if (!$isDeletion): ?>
+                                <?php // a new tab, the editor's Preview's way: the history stays where it was ?>
+                                <a class="action preview" href="<?= esc_attr($preview_url.$revisionId) ?>"
+                                   target="_blank" rel="noopener" title="Preview" aria-label="Preview"><?= $preview_icon ?></a>
+                                <?php // Not on the newest row: that one is what the post already says, and
+                                      // restoring it would write a revision that changes nothing. ?>
+                                <?php if ($restore_url !== '' && $index > 0): ?>
+                                    <button type="button" class="action restore" title="Restore" aria-label="Restore"
+                                            onclick="Dpress.post(<?= esc_attr(json_encode($restore_url.$revisionId)) ?>, <?= esc_attr(json_encode(
+                                                'Restore the title, text, featured image and CSS from '.$when.'?'
+                                                ."\n\nWhat it says now stays in the history, and the slug, status, date and weight are left as they are."
+                                            )) ?>)"><?= $restore_icon ?></button>
+                                <?php endif ?>
+                            <?php endif ?>
+                        </td>
                     </tr>
                 <?php endforeach ?>
                 </tbody>

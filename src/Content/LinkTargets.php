@@ -67,9 +67,14 @@ class LinkTargets implements LinkTargetResolverInterface {
      * A draft resolves too. Linking to something not published yet is an ordinary thing to do
      * while writing, and the link starts working the moment it is - refusing here would leave a
      * bare word in the text instead, and no way to tell why.
+     *
+     * The trash does not: something deleted is gone as far as a reader can tell, and a link to
+     * it becomes its words, the answer a missing post gets. `trash()` and `restore()` re-render
+     * what links here, so the link comes back with the post.
      */
     protected function contentUrl(int $id): ?string {
         $content = $this->content->findById($id);
-        return $content === null ? null : $this->router->url($this->content->publicPath($content));
+        return $content === null || $content->isTrashed()
+            ? null : $this->router->url($this->content->publicPath($content));
     }
 }
