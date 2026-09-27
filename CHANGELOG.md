@@ -5,6 +5,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.81.1] &ndash; 2026-09-27
+
+### Fixed
+- **A login cookie the site cannot verify no longer locks the visitor out.** `JwtValidator`
+  answers 401 for the whole request when the token it is given does not verify, and the cookie
+  reader gives it whatever the access cookie holds - so a cookie signed with another secret made
+  every page a 401, the login form and the login itself included, until the visitor cleared
+  their cookies by hand. It happens whenever the secret changes: `dpress init` on a server that
+  already had users, a reinstall, another dpress site on the same host with the same cookie name.
+
+  `TokenRefresher` now checks the token it is handed. One that does not verify - another
+  secret, expired, garbage - is taken off the request; the refresh cookie gets its chance, which
+  renews the login when it still can, and otherwise both cookies are cleared and the request goes
+  on anonymous. Public pages answer, a page that needs a login still says 401, and the browser
+  stops sending the bad cookie.
+
+  Found on a server where `dpress init` had been run again: the site answered 401 everywhere in
+  a normal browser window and worked in a private one.
+
+---
+
 ## [0.81.0] &ndash; 2026-09-26
 
 The front page can be somewhere else.
