@@ -32,6 +32,15 @@ if ($configPath === null && DpressCliApp::commandNeedsConfig($argv[1] ?? null)) 
     fwrite(STDERR, "Run the command from inside your site, or pass -config <path>.\n");
     exit(1);
 }
+// Not a core command, and no site: it is a typo, or a plugin's command - and a plugin's commands
+// come from the site's config, which is not here. Started anyway it ran half configured, its
+// logger writing to a logs/ in whatever directory this was run from (over ssh, /root).
+$command = $argv[1] ?? null;
+if ($configPath === null && $command !== null && $command[0] !== '-' && !DpressCliApp::isCoreCommand($command)) {
+    fwrite(STDERR, "'$command' is not a dpress command - or it is a plugin's, and a plugin's commands come\n");
+    fwrite(STDERR, "from a site. Run it from inside your site, or pass -config <path>.\n");
+    exit(1);
+}
 
 Micro::run(new DpressCliApp($configPath === null ? [] : [$configPath]));
 

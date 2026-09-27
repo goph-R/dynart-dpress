@@ -5,6 +5,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.81.2] &ndash; 2026-09-27
+
+### Fixed
+- **A plugin's command run outside a site stops and says why**, instead of starting half
+  configured. `dpress` finds `dpress.ini` by looking up from where it is run, and a command it
+  does not know was let through without one - so that the application could answer an unknown
+  command with the help. A plugin's command is one it does not know until the site's config is
+  loaded, so `dpress docs:build` run from the wrong directory started with no config at all, and
+  died on its logger: the framework's default log directory is relative, and it tried to write
+  a `logs/` wherever it was - over `ssh`, in `/root`.
+
+  Now, with no `dpress.ini` found, a command that is not one of the core's stops with *"'docs:build'
+  is not a dpress command - or it is a plugin's ... Run it from inside your site, or pass
+  -config <path>."* The help, the core's own commands and a typo inside a site all answer as
+  before.
+
+---
+
 ## [0.81.1] &ndash; 2026-09-27
 
 ### Fixed

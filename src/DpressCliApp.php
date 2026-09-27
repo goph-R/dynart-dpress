@@ -290,11 +290,19 @@ class DpressCliApp extends CliApp {
     /** The parameters every command accepts */
     const COMMON_PARAMS = ['config'];
 
+    /** Is this one of the core's own commands - as opposed to a plugin's, or a typo? */
+    public static function isCoreCommand(?string $name): bool {
+        return $name !== null && isset(self::COMMANDS[$name]);
+    }
+
     /**
      * Does this command need a config file to be found before the application starts?
      *
      * An unknown command needs none: it has to reach the application so it can answer with the
-     * help, rather than complain about a missing config the user was never asked for.
+     * help, rather than complain about a missing config the user was never asked for. **Inside a
+     * site**, that is - outside one, `bin/dpress` stops an unknown command itself, because it may
+     * be a plugin's, and a plugin's command started without its site's config ran half configured:
+     * the logger fell back to a `logs/` in whatever directory it was run from.
      */
     public static function commandNeedsConfig(?string $name): bool {
         if ($name === null || !isset(self::COMMANDS[$name])) {
