@@ -5,6 +5,37 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.82.0] &ndash; 2026-09-27
+
+Boxes around Markdown.
+
+### Added
+- **Fenced divs** - Pandoc's syntax, which djot and MyST share:
+
+  ```
+  ::: {.center}
+  ![Idle](media#55) ![Running](media#56)
+  :::
+  ```
+
+  is `<div class="center">` around what is inside, rendered as the Markdown it is - paragraphs,
+  lists, pictures, callouts, other boxes. `{#an-id .a-class .another}` for an id and classes,
+  `::: center` for one bare class; a bare `:::` closes the innermost box. Three colons or more,
+  like a code fence, so `std::vector` and `::1` never start one. Raw HTML is stripped from every
+  document, so until now a box was something only a theme could make.
+
+  **Checked before the editor saves**, with the line: a `:::` that closes nothing, a box never
+  closed or still open at a `---` page break, an attribute that is not an id or a class, an id
+  used twice. The renderer is forgiving - it closes what is left open at the end of a part - so
+  nothing saved before renders differently.
+
+  **Coloured in the editor**: the fences like a callout's marker, the box's name like a
+  shortcode. See `docs/fenced-divs.md`.
+
+  Nothing to re-render: no text saved so far has a line of three colons with a name after them.
+
+---
+
 ## [0.81.2] &ndash; 2026-09-27
 
 ### Fixed

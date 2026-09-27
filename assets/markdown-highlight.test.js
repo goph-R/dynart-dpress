@@ -208,6 +208,30 @@ const tests = {
         assert.strictEqual(painted.replace(/ $/, ''), text);
     },
 
+    'a box: its colons one colour, its name another'() {
+        const text = '::: {.center}\n![a](media#1)\n:::';
+        assert.deepStrictEqual(typed(text, 'div'), [':::', ':::']);
+        assert.deepStrictEqual(typed(text, 'div-name'), ['{.center}']);
+        // the picture inside is still a picture
+        assert.deepStrictEqual(typed(text, 'ref'), ['media#1']);
+    },
+
+    'a box with an id, a bare class, more colons and trailing ones'() {
+        assert.deepStrictEqual(typed('::: {#g .a .b}', 'div-name'), ['{#g .a .b}']);
+        assert.deepStrictEqual(typed('::: center', 'div-name'), ['center']);
+        assert.deepStrictEqual(typed(':::::: {.a} :::', 'div'), ['::::::', ':::']);
+    },
+
+    'a colon fence inside a code block is code, and two colons are text'() {
+        const text = '```\n::: {.x}\n:::\n```';
+        assert.deepStrictEqual(typed(text, 'div'), []);
+        assert.deepStrictEqual(typed('std::vector\n:: {.x}', 'div'), []);
+    },
+
+    'a line that only starts with colons is not a fence'() {
+        assert.deepStrictEqual(typed('::: note that this is prose', 'div'), []);
+    },
+
     'the # of a reference is painted on its own, and only the first one'() {
         const painted = markdown.render('[x](content#5#top)');
         assert.ok(painted.indexOf('<span class="md-ref">content<span class="md-ref-hash">#</span>5#top</span>') !== -1, painted);

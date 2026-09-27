@@ -35,6 +35,7 @@ use Dynart\Dpress\Cli\SystemCommands;
 use Dynart\Dpress\Cli\UserCommands;
 use Dynart\Dpress\Content\Autolinks;
 use Dynart\Dpress\Content\Callouts;
+use Dynart\Dpress\Content\FencedDivs;
 use Dynart\Dpress\Content\CodeAssets;
 use Dynart\Dpress\Content\CodeBlockRenderer;
 use Dynart\Dpress\Content\InternalLinks;
@@ -222,6 +223,7 @@ class DpressServices {
         Micro::add(InternalLinks::class);
         Micro::add(Shortcodes::class);
         Micro::add(Callouts::class);
+        Micro::add(FencedDivs::class);
         Micro::add(Autolinks::class);
         Micro::add(CodeAssets::class);
         Micro::add(CodeBlockRenderer::class);
@@ -289,6 +291,7 @@ class DpressServices {
         $events->subscribe(MarkdownRenderer::EVENT_ENVIRONMENT, [ShortcodeRenderer::class, 'onEnvironment']);
         $events->subscribe(MarkdownRenderer::EVENT_ENVIRONMENT, [CodeBlockRenderer::class, 'onEnvironment']);
         $events->subscribe(MarkdownRenderer::EVENT_ENVIRONMENT, [Callouts::class, 'onEnvironment']);
+        $events->subscribe(MarkdownRenderer::EVENT_ENVIRONMENT, [FencedDivs::class, 'onEnvironment']);
         $events->subscribe(MarkdownRenderer::EVENT_ENVIRONMENT, [Autolinks::class, 'onEnvironment']);
         // a renamed category or tag moves the URL every `category#3` and `tag#7` resolved to
         $events->subscribe(TaxonomyService::EVENT_CATEGORY_SLUG_CHANGED, [ContentService::class, 'rerenderCategoryReferrers']);

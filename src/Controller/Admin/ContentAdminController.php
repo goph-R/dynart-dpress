@@ -11,6 +11,7 @@ use Dynart\Micro\SessionInterface;
 use Dynart\Micro\ViewInterface;
 use Dynart\Micro\Entities\AuditService;
 use Dynart\Dpress\Content\Dates;
+use Dynart\Dpress\Content\FencedDivs;
 use Dynart\Dpress\Content\Slugger;
 use Dynart\Dpress\Content\MarkdownRenderer;
 use Dynart\Dpress\Entity\Content;
@@ -403,7 +404,7 @@ class ContentAdminController extends AbstractAdminController {
         // The date is checked before anything is written. Half a save - the text stored and the
         // date refused - is a worse answer than none, and `done()` redirects, so a message put
         // on the form after the save is a message nobody ever sees.
-        if ($form->process() && $this->publishedAtIsReadable($form)) {
+        if ($form->process() && $this->publishedAtIsReadable($form) && $this->boxesAreClosed($form)) {
             // read before the save, which is what turns an auto-draft into a draft
             $wasAutoDraft = $content->isAutoDraft();
             $form->handle(function ($form) use ($content, $type) {
@@ -714,6 +715,24 @@ class ContentAdminController extends AbstractAdminController {
      * four clicks - which means a typo is possible, and a typo has to come back as a sentence
      * about that box rather than as a date somewhere near the one that was meant.
      */
+    /**
+     * Every `:::` box in the text opened and closed, before anything is written
+     *
+     * The renderer would close what is left open, so this is not about a broken page - it is
+     * about the page somebody meant. A stray `:::` or a box that swallows the rest of the post is
+     * a mistake that shows only once it is published, and the line number is here, now.
+     */
+    protected function boxesAreClosed($form): bool {
+        $markdown = (string)($form->values()['markdown'] ?? '');
+        $problems = FencedDivs::problems($markdown, $this->markdown->breaks($markdown));
+        if ($problems === []) {
+            return true;
+        }
+        $more = count($problems) - 1;
+        $form->addFieldError('markdown', $problems[0].($more > 0 ? " (And $more more.)" : ''));
+        return false;
+    }
+
     protected function publishedAtIsReadable($form): bool {
         $typed = trim((string)($form->values()['published_at'] ?? ''));
         if ($typed === '' || $this->dates->parse($typed) !== null) {

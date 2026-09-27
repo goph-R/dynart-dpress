@@ -152,6 +152,18 @@ class MarkdownRenderer {
      *                  on line 0 is opening front matter rather than a break
      * @return int[]
      */
+    /**
+     * The page break lines of a whole document, 0-based - the lead's separator and every one after
+     *
+     * What `FencedDivs::problems()` needs to know a box cannot reach across: each part is
+     * rendered on its own.
+     *
+     * @return int[]
+     */
+    public function breaks(string $markdown): array {
+        return $this->separatorLines(preg_split('/\R/', $markdown));
+    }
+
     protected function separatorLines(array $lines, int $from = 1): array {
         $found = [];
         $fence = '';

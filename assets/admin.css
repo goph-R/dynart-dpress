@@ -417,6 +417,9 @@ textarea.is-highlighted::selection { background: var(--md-selection); }
 .markdown-highlight .md-fence       { color: var(--md-marker); }
 .markdown-highlight .md-quote       { color: var(--md-quote); font-style: italic; }
 .markdown-highlight .md-callout     { color: var(--md-callout); font-weight: 700; }
+/* a box's `:::` fences read as structure, as a callout's marker does; its name as a name */
+.markdown-highlight .md-div         { color: var(--md-callout); font-weight: 700; }
+.markdown-highlight .md-div-name    { color: var(--md-shortcode); }
 .markdown-highlight .md-list        { color: var(--md-list); }
 .markdown-highlight .md-link        { color: var(--md-link); }
 .markdown-highlight .md-url         { color: var(--md-url); text-decoration: underline; }

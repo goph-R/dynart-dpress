@@ -41,6 +41,10 @@
 
     var FENCE = /^\s{0,3}(`{3,}|~{3,})/;
     var FENCE_CLOSE = /^\s{0,3}(`{3,}|~{3,})\s*$/;
+    // A box, `FencedDivs::OPEN` and `CLOSE`: the colons, then `{#id .class}` or one bare class,
+    // then optional colons - or colons alone, which close it
+    var DIV_OPEN = /^( {0,3})(:{3,})([ \t]*)(\{[^}]*\}|[^\s{}:]+)([ \t]*:*)[ \t]*$/;
+    var DIV_CLOSE = /^( {0,3})(:{3,})[ \t]*$/;
     var CODE_SPAN = /(`+)[\s\S]*?\1(?!`)/g;
     var LINK = /(!?)\[((?:[^\[\]\\]|\\[\s\S])*)\]\((<[^>\n]*>|[^\s()]*)((?:\s+"[^"]*")?)\)/g;
     var REFERENCE = /\[((?:[^\[\]\\]|\\[\s\S])*)\]\[([^\]\n]*)\]/g;
@@ -313,6 +317,25 @@
             // A separator on line zero is opening front matter, not a break - `separatorLines()`
             if (index >= 1 && trimmed === SEPARATOR) {
                 marks.claim(row.start, row.start + trimmed.length, 'separator');
+                return;
+            }
+            // A box's fences: the colons one colour, what the box is called another, so where a
+            // box starts and ends reads at a glance and a typo in its name stands out
+            var div = DIV_OPEN.exec(trimmed);
+            if (div) {
+                var colonsAt = row.start + div[1].length;
+                var nameAt = colonsAt + div[2].length + div[3].length;
+                marks.claim(colonsAt, colonsAt + div[2].length, 'div');
+                marks.claim(nameAt, nameAt + div[4].length, 'div-name');
+                if (div[5].replace(/[ \t]/g, '') !== '') {
+                    var trailing = nameAt + div[4].length + div[5].search(/:/);
+                    marks.claim(trailing, row.start + trimmed.length, 'div');
+                }
+                return;
+            }
+            var closing = DIV_CLOSE.exec(trimmed);
+            if (closing) {
+                marks.claim(row.start + closing[1].length, row.start + trimmed.length, 'div');
                 return;
             }
             block(text, marks, row.start, row.end);
