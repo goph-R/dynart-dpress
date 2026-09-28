@@ -387,7 +387,7 @@ class AdminForms {
                                               'text' => 'Keep the mouse wheel inside the editor',
                                               'description' => 'Off, the wheel moves on to the page once the editor is scrolled to its end, as it does anywhere else. On, it stops at the end of the editor.'],
             'admin_editor_columns' => ['type' => 'text', 'label' => 'Line length', 'required' => false,
-                                       'description' => 'Where the editor wraps its lines when Wrap text is ticked, in characters, and where its dotted line stands. 80 by default.'],
+                                       'description' => 'Where the editor wraps its lines when Wrap text is ticked, in characters, and where its dotted line stands. 100 by default.'],
         ], false);
         $form->addValues($context['values'] ?? []);
     }

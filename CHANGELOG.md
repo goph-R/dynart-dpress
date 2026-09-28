@@ -5,6 +5,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.83.2] &ndash; 2026-09-29
+
+### Changed
+- **The editors wrap at 100 characters by default**, not 80: room for a table row or a sentence,
+  and where this project's own Markdown is wrapped. A site that has saved a Line length keeps its
+  own (Settings > Admin UI).
+
+---
+
 ## [0.83.1] &ndash; 2026-09-29
 
 ### Changed

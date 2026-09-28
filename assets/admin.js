@@ -478,7 +478,7 @@
      */
     function editorColumns() {
         var columns = parseInt(document.body && document.body.dataset.editorColumns, 10);
-        return columns > 0 ? columns : 80;
+        return columns > 0 ? columns : 100;
     }
 
     /** Whether *Wrap text* is ticked: remembered in this browser, for every Markdown field alike */
