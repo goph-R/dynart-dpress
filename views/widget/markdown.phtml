@@ -1,10 +1,13 @@
 <?php
 /**
- * The markdown field: a textarea, deliberately not an editor
+ * The markdown field: a textarea with an editor's comforts, and never more than a textarea under them
  *
- * `admin.js` binds anything matching `textarea.markdown-editor`, so the class is not decoration -
- * it is the binding, and it is what `markdown-highlight.js` paints its colours behind. Neither
- * of them changes the value: with the scripts off this is a textarea and the field still works.
+ * Colours, line numbers, a wrap column with a dotted line, Tab and Shift+Tab, a smart Home, full
+ * size - and still a `<textarea>` holding exactly what was typed. Nothing replaces it and nothing
+ * rewrites it: the colours and the numbers are drawn on a backdrop behind it, the rest is keys
+ * and padding. `admin.js` binds anything matching `textarea.markdown-editor`, so the class is not
+ * decoration - it is the binding, and it is what `markdown-highlight.js` paints behind. With the
+ * scripts off this is a plain textarea and the field still works.
  *
  * `attributes` is where the content builder puts `data-insert-media`, which is what grows the one
  * button the field has.

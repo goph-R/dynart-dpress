@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.83.1] &ndash; 2026-09-29
+
+### Changed
+- **Full size's Save is under the text, at the right** - where Save is on every other screen, and
+  where the form's own is under the form - rather than on the bar above it. It is drawn as the
+  form's Save is, icon and all, since that is the button it presses.
+- **The Markdown field is described as what it is now**: "a textarea with an editor's comforts,
+  and never more than a textarea under them" in place of "deliberately not an editor" - in its
+  template, the README, `CLAUDE.md` and the two documents that argued it. The reasoning stands; by
+  0.83.0 the field had simply grown most of a code editor on top of it.
+
+---
+
 ## [0.83.0] &ndash; 2026-09-29
 
 The code editors, for writing longer things in.

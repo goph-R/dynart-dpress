@@ -579,9 +579,10 @@
                     }));
             }
 
-            // Full size: the field over the whole window - and, in it, Save, since the form's own
-            // buttons are underneath. Save presses the form's primary button rather than
-            // submitting the form, so it is exactly the Save the author would have pressed.
+            // Full size: the field over the whole window - and, under it, Save, since the form's
+            // own buttons are underneath the field. At the bottom right, where Save is on every
+            // other screen. It presses the form's primary button rather than submitting the form,
+            // so it is exactly the Save the author would have pressed.
             var frame = null;
             var saveButton = button('Save', 'Save', 'markdown-full-save', function () {
                 var save = textarea.form && textarea.form.querySelector('button[type=submit].primary');
@@ -589,11 +590,19 @@
                     save.click();
                 }
             });
+            // the form's Save as it is drawn - its icon and its words - so the two are one button
+            saveButton.classList.add('primary', 'with-icon');
+            var formSave = textarea.form && textarea.form.querySelector('button[type=submit].primary');
+            if (formSave) {
+                saveButton.innerHTML = formSave.innerHTML;
+            }
+            var saveBar = document.createElement('div');
+            saveBar.className = 'markdown-full-bar';
+            saveBar.appendChild(saveButton);
             var fullButton = button('Full size', 'Edit in the whole window - Esc to come back',
                 'markdown-full', function () {
                     setFull(!frame.classList.contains('is-full'));
                 });
-            toolbar.appendChild(saveButton);
             toolbar.appendChild(fullButton);
 
             // Wrap text, at the bar's left: wrapped at the Line length setting, or lines that run
@@ -614,13 +623,14 @@
                 Dpress.markdown.attach(textarea);
             }
 
-            // One frame around the bar and the field, which is what goes full size
+            // One frame around the bars and the field, which is what goes full size
             var field = textarea.parentNode.classList.contains('markdown-field') ? textarea.parentNode : textarea;
             frame = document.createElement('div');
             frame.className = 'markdown-frame';
             toolbar.parentNode.insertBefore(frame, toolbar);
             frame.appendChild(toolbar);
             frame.appendChild(field);
+            frame.appendChild(saveBar);
 
             placeColumns(textarea, wrapBox.checked);
             wrapBox.addEventListener('change', function () {

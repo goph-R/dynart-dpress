@@ -32,10 +32,15 @@ Three things follow from that sentence, and each is a decision rather than a mec
 
 ## 1. The editor stays a textarea
 
-Plan §5.9 and `CLAUDE.md` say the markdown field is *"a textarea with a toolbar, deliberately
-not an editor"*, because a field whose value is anything other than what the author typed
-eventually rewrites somebody's document on save, and the content model here is that the markdown
-is the truth. **That decision stands.** It was reconsidered while planning this and kept.
+Plan §5.9 said the markdown field is *"a textarea with a toolbar, deliberately not an editor"*,
+because a field whose value is anything other than what the author typed eventually rewrites
+somebody's document on save, and the content model here is that the markdown is the truth.
+**That decision stands** - it was reconsidered while planning this and kept - though the words
+have moved on: by 0.83.0 the field colours its text, numbers its lines, wraps at a column with a
+dotted line, indents with Tab and goes full size, which is most of what anybody means by a code
+editor. What it has never become is an editor *widget*: it is still a `<textarea>` holding exactly
+what was typed, and everything it does is drawn behind it or done with keys. **A textarea with an
+editor's comforts, and never more than a textarea under them** is the rule now.
 
 What settled it was the preview. Any editor widget that renders markdown in the browser renders
 it with a *different implementation* than the one that builds the page, and this site's server

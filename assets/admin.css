@@ -425,10 +425,10 @@ html.markdown-full-open { overflow: hidden; }
     height: 100% !important;   /* over the height a drag of the resize handle wrote inline */
     width: 100%; resize: none;
 }
-/* Save is the form's, and underneath - so it is here only while the field covers it */
-.markdown-frame:not(.is-full) .markdown-full-save { display: none; }
-/* coloured as the form's primary Save is, in both themes - it is that button */
-.markdown-toolbar .markdown-full-save { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 600; }
+/* Save, under a full size field and at its right, as the form's own is under the form - here only
+   while the field covers that one. It is a `.primary` button, so it looks like the one it presses. */
+.markdown-full-bar { display: flex; justify-content: flex-end; flex: none; margin-top: 10px; }
+.markdown-frame:not(.is-full) .markdown-full-bar { display: none; }
 
 /* Wrap text, at the bar's left - the buttons stay at its right */
 .markdown-toolbar .markdown-wrap {

@@ -8,7 +8,7 @@ are rendered when they are saved, and a page view is a handful of queries and no
 front end ships **no JavaScript** — a page loads a script only if there is something on it that
 needs one, a code block or a plugin's widget.
 
-Status: **0.83.0**, feature complete and pre-1.0. Everything below is built. What 1.0 is waiting
+Status: **0.83.1**, feature complete and pre-1.0. Everything below is built. What 1.0 is waiting
 on is the schema settling down — until then a schema change means dropping and recreating the
 database, and there are no rename migrations.
 
@@ -18,12 +18,13 @@ database, and there are no rename migrations.
 
 ## What it does
 
-**Writing.** Markdown, in a textarea that is deliberately not a WYSIWYG editor — a field whose
-value is anything other than what the author typed eventually rewrites somebody's document on
-save. It is coloured rather than replaced: a highlighted backdrop sits behind the real field, so
-the value, the selection and the undo stack are untouched. Two buttons are all that is left, for
-the two things a keyboard cannot do — inserting from the media library, which needs an id nobody
-memorises, and picking an emoji.
+**Writing.** Markdown, in a textarea with a code editor's comforts - colours, line numbers, a
+wrap column, Tab indenting, full size - and never a WYSIWYG editor: a field whose value is
+anything other than what the author typed eventually rewrites somebody's document on save. It is
+dressed rather than replaced: the colours and the numbers are a backdrop behind the real field, so
+the value, the selection and the undo stack are untouched. Two insert buttons, for the two things a
+keyboard cannot do - inserting from the media library, which needs an id nobody memorises, and
+picking an emoji.
 
 - The first line that is only `---` splits the **lead** from the body; every one after that is a
   **page break**, so a long post is served a page at a time with *Previous* and *Next*

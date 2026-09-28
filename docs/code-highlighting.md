@@ -140,8 +140,8 @@ touching a document.
 - **A light and a dark theme switched by `prefers-color-scheme`.** Enlighter's themes are each
   individually light or dark rather than designed to be stacked, so pairing them means scoping two
   stylesheets and checking they do not leak. One theme, chosen, until that is worth doing.
-- **Highlighting by language in the admin editor.** The markdown field is still a textarea,
-  deliberately not an editor — see `docs/media-in-the-editor.md` §1. Since 0.67.0
+- **Highlighting by language in the admin editor.** The markdown field is still a textarea
+  underneath, whatever it has grown on top - see `docs/media-in-the-editor.md` §1. Since 0.67.0
   `assets/markdown-highlight.js` paints the *markdown* in colour behind it, fences included, but
   the code inside a fence is one colour there: it is this site's markdown grammar, not
   EnlighterJS.
