@@ -348,36 +348,63 @@
     }
 
     /**
-     * The document as markup for the backdrop
+     * The document as markup for the backdrop, a `<span class="md-line">` to each of its lines
      *
-     * A `<pre>` swallows a final newline, so a text ending in one gets a space after it or the
-     * last line of the field sits a row above the caret.
+     * **The line spans are what numbers the lines** (`'numbers' => true` on the field): made
+     * blocks, each is as tall as its line wrapped, and a CSS counter in front of it puts the
+     * number on the line's first row - so a wrapped paragraph or a long table row is one number,
+     * however many rows it takes. Without that they are plain inline spans and change nothing.
+     * Each keeps its `\n`, so the text is the document character for character either way.
+     *
+     * A token that ran across lines would have to be closed at the end of one and opened again at
+     * the start of the next; none of this grammar's do, but the split below does it anyway.
+     *
+     * A `<pre>` swallows a final newline, so an empty last line gets a space, or the last line of
+     * the field sits a row above the caret.
      */
     function render(text, grammar) {
         grammar = grammar || MARKDOWN;
         text = text === null || text === undefined ? '' : String(text);
-        var out;
-        if (text.length > LIMIT) {
-            out = escapeHtml(text);
-        } else {
-            out = '';
-            var at = 0;
-            grammar.tokenize(text).forEach(function (span) {
-                if (span.start > at) {
-                    out += escapeHtml(text.slice(at, span.start));
+        if (text === '') {
+            return '';
+        }
+        var lineClass = grammar.prefix + 'line';
+        var out = '';
+        var line = '';
+
+        function emit(piece, type) {
+            piece.split('\n').forEach(function (part, index) {
+                if (index > 0) {
+                    out += '<span class="' + lineClass + '">' + line + '\n</span>';
+                    line = '';
                 }
-                var inner = escapeHtml(text.slice(span.start, span.end));
-                if (span.type === 'ref') {
+                if (part === '') {
+                    return;
+                }
+                var inner = escapeHtml(part);
+                if (type === 'ref') {
                     // the `#` of `post#12` on its own, so a theme can set it apart - only the
                     // first: `content#5#top` is a reference and then an ordinary fragment
                     inner = inner.replace('#', '<span class="' + grammar.prefix + 'ref-hash">#</span>');
                 }
-                out += '<span class="' + grammar.prefix + span.type + '">' + inner + '</span>';
+                line += type ? '<span class="' + grammar.prefix + type + '">' + inner + '</span>' : inner;
+            });
+        }
+
+        if (text.length > LIMIT) {
+            emit(text, null);
+        } else {
+            var at = 0;
+            grammar.tokenize(text).forEach(function (span) {
+                if (span.start > at) {
+                    emit(text.slice(at, span.start), null);
+                }
+                emit(text.slice(span.start, span.end), span.type);
                 at = span.end;
             });
-            out += escapeHtml(text.slice(at));
+            emit(text.slice(at), null);
         }
-        return /\n$/.test(text) ? out + ' ' : out;
+        return out + '<span class="' + lineClass + '">' + (line === '' ? ' ' : line) + '</span>';
     }
 
     /**
@@ -423,6 +450,10 @@
         wrapper.className = 'markdown-field';
         var pre = document.createElement('pre');
         pre.className = 'markdown-highlight';
+        // numbered lines are the backdrop's to draw - the textarea only makes room for them
+        if (textarea.classList.contains('numbered')) {
+            pre.classList.add('numbered');
+        }
         pre.setAttribute('aria-hidden', 'true');   // the textarea already reads out its own value
 
         textarea.parentNode.insertBefore(wrapper, textarea);
@@ -464,6 +495,12 @@
             var gutter = textarea.offsetWidth - textarea.clientWidth
                 - (parseFloat(style.borderLeftWidth) || 0) - (parseFloat(style.borderRightWidth) || 0);
             pre.style.paddingRight = ((parseFloat(style.paddingRight) || 0) + Math.max(0, gutter)) + 'px';
+            // The same at the bottom, for a field that scrolls sideways (`'wrap' => false`): its
+            // horizontal scrollbar takes height from the textarea, and without this the colours
+            // end a scrollbar's height away from the letters once it is scrolled to the end
+            var floor = textarea.offsetHeight - textarea.clientHeight
+                - (parseFloat(style.borderTopWidth) || 0) - (parseFloat(style.borderBottomWidth) || 0);
+            pre.style.paddingBottom = ((parseFloat(style.paddingBottom) || 0) + Math.max(0, floor)) + 'px';
         }
 
         measure();

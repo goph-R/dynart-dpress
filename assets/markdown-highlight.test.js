@@ -251,8 +251,22 @@ const tests = {
 
     /** A `<pre>` swallows the last newline, and the caret then sits a row below the paint */
     'a document ending in a newline keeps its last line'() {
-        assert.ok(/ $/.test(markdown.render('a\n')));
-        assert.ok(!/ $/.test(markdown.render('a')));
+        assert.ok(markdown.render('a\n').endsWith('<span class="md-line"> </span>'));
+        assert.ok(markdown.render('a').endsWith('<span class="md-line">a</span>'));
+    },
+
+    /** What numbers the lines: one span a line, the newline kept inside it */
+    'every line is a span of its own, a wrapped one included'() {
+        const long = 'word '.repeat(200).trim();
+        assert.strictEqual(
+            markdown.render('one\n\n' + long),
+            '<span class="md-line">one\n</span><span class="md-line">\n</span><span class="md-line">' + long + '</span>'
+        );
+    },
+
+    'a token stays whole inside its line'() {
+        assert.strictEqual(markdown.render('**b**\nx'),
+            '<span class="md-line"><span class="md-strong">**b**</span>\n</span><span class="md-line">x</span>');
     },
 
     'an empty document paints nothing and does not throw'() {
@@ -265,7 +279,9 @@ const tests = {
     'a very long document is painted plain'() {
         const text = '# heading\n'.repeat(Math.ceil(markdown.LIMIT / 10) + 1);
         assert.ok(text.length > markdown.LIMIT);
-        assert.strictEqual(markdown.render(text).indexOf('<span'), -1);
+        // lines still, so a long document is numbered too - but not one colour
+        assert.ok(!/class="md-(?!line")/.test(markdown.render(text)));
+        assert.ok(markdown.render(text).startsWith('<span class="md-line"># heading\n</span>'));
     },
 
     /**

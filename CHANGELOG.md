@@ -5,6 +5,42 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.83.0] &ndash; 2026-09-29
+
+The code editors, for writing longer things in.
+
+### Added
+- **Line numbers in every code editor** - the Markdown fields and the CSS ones - in a gutter on the
+  left. **Wrapping stays**: a paragraph or a long table row that wraps onto three rows has one
+  number, on its first row, which is what makes a wrapped table readable. `'numbers' => false` on
+  a Markdown field for one without.
+
+  Drawn by the coloured backdrop the fields already have, which now puts each line in a span of
+  its own: numbered, those spans are blocks - each as tall as its line wrapped - and a CSS counter
+  writes the number in front of each.
+- **Wrap text**, a box at the left of the Markdown field's bar. Ticked, the lines wrap at the
+  **Line length** setting's column (Settings > Admin UI, **80 characters** by default) whatever the
+  field's width - the room to the right of the column is kept as padding, so the field still
+  spans its container. Unticked, the lines run on and the field scrolls sideways. Either way a
+  1px dotted line marks the column. Remembered in the browser, for every Markdown field alike;
+  `'wrap' => false` only sets where it starts the first time.
+
+  The column is counted in characters of the field's own font (`ch`), past its padding, its line
+  numbers, its borders and its scrollbar - whose room is now always kept, so the column does not
+  move when a document grows long enough to need one.
+- **Full size**, a button on the Markdown field's bar: the field over the whole window, its whole
+  width, and the same button or **Esc** brings it back. Save is on the bar while the form's own is
+  underneath, and presses that one. The pickers still open over it - they are modal dialogs.
+
+### Changed
+- **Settings > Admin is Settings > Admin UI.** It is about how the admin looks and behaves, and it
+  was easy to read as "administration".
+- **A field being typed in keeps its 1px border**, a step brighter in the dark theme and a step
+  darker in the light one, where the browser drew its own 2px ring around it - a second, thicker
+  frame outside the first. `--line-focus` is the colour.
+
+---
+
 ## [0.82.0] &ndash; 2026-09-27
 
 Boxes around Markdown.

@@ -195,6 +195,19 @@ class Setting extends Entity {
      */
     const ADMIN_EDITOR_CONTAIN_SCROLL = 'admin_editor_contain_scroll';
 
+    /**
+     * Where the code editors wrap, in characters - and where their dotted line stands
+     *
+     * The Markdown field's *Wrap text* box wraps its lines at this many characters, however wide
+     * the field; unticked, the lines run on and this is only the dotted line. 80 by default, the
+     * width text has been wrapped to since terminals had one.
+     */
+    const ADMIN_EDITOR_COLUMNS = 'admin_editor_columns';
+    const DEFAULT_EDITOR_COLUMNS = 80;
+    /** The narrowest and the widest the setting is taken to mean */
+    const MIN_EDITOR_COLUMNS = 20;
+    const MAX_EDITOR_COLUMNS = 300;
+
     const DATE_FORMAT = 'date_format';
     const TIMEZONE = 'timezone';
 

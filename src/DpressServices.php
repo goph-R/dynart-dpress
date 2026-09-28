@@ -371,6 +371,7 @@ class DpressServices {
         Setting::CODE_THEME => 'string',
         Setting::ADMIN_PAGES_THUMBNAIL => 'bool',
         Setting::ADMIN_EDITOR_CONTAIN_SCROLL => 'bool',
+        Setting::ADMIN_EDITOR_COLUMNS => 'int',
     ];
 
     const BLOCKS = [

@@ -104,6 +104,10 @@ abstract class AbstractAdminController extends AbstractController {
         // which swaps the main area and keeps the body - behaves the same as one loaded whole
         $this->view->set('editor_contain_scroll', Micro::get(SettingService::class)
             ->getBool(Setting::ADMIN_EDITOR_CONTAIN_SCROLL, false));
+        // the same, and for the same reason: where the editors wrap and draw their dotted line
+        $this->view->set('editor_columns', max(Setting::MIN_EDITOR_COLUMNS, min(Setting::MAX_EDITOR_COLUMNS,
+            Micro::get(SettingService::class)->getInt(Setting::ADMIN_EDITOR_COLUMNS, Setting::DEFAULT_EDITOR_COLUMNS)
+                ?: Setting::DEFAULT_EDITOR_COLUMNS)));
         // a plugin's stylesheet and script go in the layout rather than in its widget's own
         // template: a screen reached by a partial navigation is inserted HTML, and inserted HTML
         // does not run its scripts. The layout is only rendered on a real page load, which is

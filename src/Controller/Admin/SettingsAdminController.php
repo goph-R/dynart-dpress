@@ -189,7 +189,7 @@ class SettingsAdminController extends AbstractAdminController {
         return $this->tabs([
             self::TAB_SITE  => ['label' => 'Site', 'route' => '/admin/settings', 'permission' => Permissions::SETTING_VIEW],
             self::TAB_THEME => ['label' => 'Theme', 'route' => '/admin/settings/theme', 'permission' => Permissions::SETTING_VIEW],
-            self::TAB_ADMIN => ['label' => 'Admin', 'route' => '/admin/settings/admin', 'permission' => Permissions::SETTING_VIEW],
+            self::TAB_ADMIN => ['label' => 'Admin UI', 'route' => '/admin/settings/admin', 'permission' => Permissions::SETTING_VIEW],
         ], $current);
     }
 

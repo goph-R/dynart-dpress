@@ -472,7 +472,79 @@
         return element;
     }
 
+    /**
+     * Where the Markdown field wraps, in characters: Settings > Admin UI > Line length, which the
+     * layout puts on the body - so it is there for a screen reached by a partial navigation too
+     */
+    function editorColumns() {
+        var columns = parseInt(document.body && document.body.dataset.editorColumns, 10);
+        return columns > 0 ? columns : 80;
+    }
+
+    /** Whether *Wrap text* is ticked: remembered in this browser, for every Markdown field alike */
+    var WRAP_KEY = 'dpress-editor-wrap';
+
+    function wrapRemembered(fallback) {
+        try {
+            var stored = global.localStorage.getItem(WRAP_KEY);
+            return stored === null ? fallback : stored === '1';
+        } catch (error) {
+            return fallback;
+        }
+    }
+
+    function rememberWrap(on) {
+        try {
+            global.localStorage.setItem(WRAP_KEY, on ? '1' : '0');
+        } catch (error) {
+            // a convenience: the box simply starts as the field says next time
+        }
+    }
+
+    /**
+     * Wraps the field at `editorColumns()` characters, or lets its lines run - and puts the
+     * dotted line at that column either way
+     *
+     * **The field keeps its whole width.** A textarea wraps at the edge of its text, so the room to
+     * the right of the column is made padding: the width, less the left padding (and the line
+     * numbers in it), the borders, the scrollbar, and that many characters - `ch` is one character
+     * of the field's own monospaced font, so the column is counted in characters, not guessed in
+     * pixels. `100%` is the field's width, and the arithmetic stays the browser's: a window made
+     * narrower moves nothing out of place, and one narrower than the column wraps at its edge.
+     *
+     * Unticked, the lines do not wrap at all and the field scrolls sideways; the dotted line
+     * still shows where the column is.
+     */
+    function placeColumns(textarea, wrap) {
+        var columns = editorColumns();
+        textarea.style.paddingRight = '';
+        textarea.classList.toggle('no-wrap', !wrap);
+        textarea.setAttribute('wrap', wrap ? 'soft' : 'off');
+        var style = global.getComputedStyle(textarea);
+        var px = function (name) { return parseFloat(style[name]) || 0; };
+        if (wrap) {
+            var borders = px('borderLeftWidth') + px('borderRightWidth');
+            var scrollbar = Math.max(0, textarea.offsetWidth - textarea.clientWidth - borders);
+            textarea.style.paddingRight = 'max(' + px('paddingRight') + 'px, calc(100% - '
+                + (px('paddingLeft') + borders + scrollbar) + 'px - ' + columns + 'ch))';
+        }
+        var backdrop = textarea.dpressHighlight && textarea.dpressHighlight.element;
+        if (backdrop) {
+            backdrop.classList.add('has-ruler');
+            backdrop.style.setProperty('--wrap-at', 'calc(' + px('paddingLeft') + 'px + ' + columns + 'ch)');
+        }
+        if (textarea.dpressHighlight) {
+            textarea.dpressHighlight.measure();
+            textarea.dpressHighlight.repaint();
+        }
+    }
+
     function initMarkdown(root) {
+        // A screen left while a field was full size took its field with it, and would leave the
+        // page it arrives at unable to scroll
+        if (!document.querySelector('.markdown-frame.is-full')) {
+            document.documentElement.classList.remove('markdown-full-open');
+        }
         root.querySelectorAll('textarea.markdown-editor').forEach(function (textarea) {
             if (textarea.dataset.markdownBound) {
                 return;
@@ -507,17 +579,72 @@
                     }));
             }
 
-            // No button, no bar: a screen with nothing to put in it should not grow an empty one
-            if (toolbar.firstChild) {
-                textarea.parentNode.insertBefore(toolbar, textarea);
-            }
+            // Full size: the field over the whole window - and, in it, Save, since the form's own
+            // buttons are underneath. Save presses the form's primary button rather than
+            // submitting the form, so it is exactly the Save the author would have pressed.
+            var frame = null;
+            var saveButton = button('Save', 'Save', 'markdown-full-save', function () {
+                var save = textarea.form && textarea.form.querySelector('button[type=submit].primary');
+                if (save) {
+                    save.click();
+                }
+            });
+            var fullButton = button('Full size', 'Edit in the whole window - Esc to come back',
+                'markdown-full', function () {
+                    setFull(!frame.classList.contains('is-full'));
+                });
+            toolbar.appendChild(saveButton);
+            toolbar.appendChild(fullButton);
+
+            // Wrap text, at the bar's left: wrapped at the Line length setting, or lines that run
+            // on and a field that scrolls sideways. Ticked unless the field asked not to be
+            // (`'wrap' => false`) - and after that as this browser last left it.
+            var wrapBox = document.createElement('input');
+            wrapBox.type = 'checkbox';
+            wrapBox.checked = wrapRemembered(!textarea.classList.contains('no-wrap'));
+            var wrapLabel = document.createElement('label');
+            wrapLabel.className = 'markdown-wrap';
+            wrapLabel.appendChild(wrapBox);
+            wrapLabel.appendChild(document.createTextNode(' Wrap text'));
+            toolbar.insertBefore(wrapLabel, toolbar.firstChild);
+            textarea.parentNode.insertBefore(toolbar, textarea);
 
             // Last, because it wraps the textarea and the toolbar belongs above the wrapper
             if (Dpress.markdown) {
                 Dpress.markdown.attach(textarea);
             }
 
+            // One frame around the bar and the field, which is what goes full size
+            var field = textarea.parentNode.classList.contains('markdown-field') ? textarea.parentNode : textarea;
+            frame = document.createElement('div');
+            frame.className = 'markdown-frame';
+            toolbar.parentNode.insertBefore(frame, toolbar);
+            frame.appendChild(toolbar);
+            frame.appendChild(field);
+
+            placeColumns(textarea, wrapBox.checked);
+            wrapBox.addEventListener('change', function () {
+                rememberWrap(wrapBox.checked);
+                placeColumns(textarea, wrapBox.checked);
+                textarea.focus();
+            });
+
+            function setFull(on) {
+                frame.classList.toggle('is-full', on);
+                document.documentElement.classList.toggle('markdown-full-open', on);
+                fullButton.textContent = on ? 'Exit full size' : 'Full size';
+                fullButton.setAttribute('aria-pressed', on ? 'true' : 'false');
+                // the field's width changed, and the scrollbar's room with it
+                placeColumns(textarea, wrapBox.checked);
+                textarea.focus();
+            }
+
             textarea.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && frame.classList.contains('is-full')) {
+                    event.preventDefault();
+                    setFull(false);
+                    return;
+                }
                 if (event.ctrlKey || event.altKey || event.metaKey || event.isComposing) {
                     return;
                 }
@@ -760,7 +887,9 @@
                 return;
             }
             textarea.dataset.codeBound = '1';
-            // the markdown field's backdrop, with the CSS tokenizer instead of the markdown one
+            // the markdown field's backdrop, with the CSS tokenizer instead of the markdown one -
+            // and its line numbers, which every code field has
+            textarea.classList.add('numbered');
             if (Dpress.markdown && Dpress.css) {
                 Dpress.markdown.attach(textarea, Dpress.css.grammar);
             }

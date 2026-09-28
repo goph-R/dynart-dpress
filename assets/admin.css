@@ -16,6 +16,7 @@
     --ink: #18181b;
     --muted: #71717a;
     --line: #e4e4e7;
+    --line-focus: #d4d4d8;   /* a field being typed in: a step from --line, towards the ink */
     --accent: #18181b;
     --danger: #dc2626;
     --ok: #166534;
@@ -52,6 +53,7 @@
         --ink: #e4e4e7;
         --muted: #a1a1aa;
         --line: #3f3f46;
+        --line-focus: #52525b;
         --accent: #fafafa;
 
         /* Dracula, unchanged: #282a36 ground, and the palette's own eight. The field keeps its
@@ -235,6 +237,10 @@ input[type=email], select, textarea {
     border-radius: var(--radius); font: inherit; background: var(--panel); color: inherit;
 }
 textarea { line-height: 1.5; resize: vertical; }
+/* The field being typed in keeps its own 1px border, a step brighter, in place of the browser's
+   2px ring - which drew a second, thicker frame outside the first. */
+input[type=text]:focus, input[type=password]:focus, input[type=search]:focus, input[type=number]:focus,
+input[type=email]:focus, select:focus, textarea:focus { outline: none; border-color: var(--line-focus); }
 /* Four lines rather than the browser's two, for a box that says nothing about its own size - a
    description is rarely one line, and a box that shows two looks like it wants one. Lines of the
    line height above, plus the padding and the border. A box with `rows`, and the markdown field's
@@ -266,6 +272,45 @@ textarea.markdown-editor {
     font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
     font-size: 13.5px;
     height: 540px;
+}
+/* *Wrap text* unticked (`admin.js`): the lines run on and the field scrolls sideways. The backdrop
+   copies these three off the textarea, so the colours scroll with the text. The scrollbar's room
+   is kept whether there is a scrollbar or not, so the wrap column - which counts it - stays put
+   when a document grows long enough to need one. */
+textarea.markdown-editor { scrollbar-gutter: stable; }
+textarea.markdown-editor.no-wrap { white-space: pre; overflow-wrap: normal; word-break: normal; overflow-x: auto; }
+/* Numbered lines, in every code field - the Markdown ones and the CSS ones. The textarea makes room
+   on the left, which the backdrop copies with the rest of the metrics; the backdrop draws a number
+   in front of each of its lines, which are blocks here, each as tall as its line wrapped - so a
+   paragraph or a long table row that wraps onto three rows has one number, on the first. The
+   gutter's shade is the backdrop's own background, so it stays put while the text scrolls past. */
+textarea.numbered { padding-left: 52px; }
+.markdown-highlight.numbered {
+    counter-reset: code-line;
+    background-image: linear-gradient(to right, rgba(127, 127, 127, .09) 42px, transparent 42px);
+}
+.markdown-highlight.numbered .md-line,
+.markdown-highlight.numbered .css-line { display: block; position: relative; counter-increment: code-line; }
+.markdown-highlight.numbered .md-line::before,
+.markdown-highlight.numbered .css-line::before {
+    content: counter(code-line);
+    position: absolute; left: -52px; width: 34px;
+    text-align: right; color: var(--md-marker); font-weight: 400; font-style: normal;
+}
+/* The dotted line, where the Line length setting's characters end - a column one pixel wide, drawn
+   by the backdrop at `--wrap-at` (`admin.js`), so it stands still while the text scrolls; over the
+   gutter's shade when the lines are numbered, which they are unless a field says otherwise. */
+.markdown-highlight.has-ruler {
+    background-image: repeating-linear-gradient(to bottom, var(--md-marker) 0 1px, transparent 1px 4px);
+    background-size: 1px 100%;
+    background-position: var(--wrap-at, 100%) 0;
+    background-repeat: no-repeat;
+}
+.markdown-highlight.has-ruler.numbered {
+    background-image: repeating-linear-gradient(to bottom, var(--md-marker) 0 1px, transparent 1px 4px),
+                      linear-gradient(to right, rgba(127, 127, 127, .09) 42px, transparent 42px);
+    background-size: 1px 100%, 100% 100%;
+    background-position: var(--wrap-at, 100%) 0, 0 0;
 }
 /* The Admin setting "Keep the mouse wheel inside the editor": at the field's top and bottom the
    wheel stops there rather than moving on to the page. Off by default, which is how every other
@@ -363,6 +408,34 @@ button.link { background: none; border: 0; color: var(--muted); cursor: pointer;
     padding: 3px 9px; font: inherit; font-size: 13px; cursor: pointer; color: var(--ink); min-width: 32px;
 }
 .markdown-toolbar button:hover { border-color: var(--accent); }
+
+/* Full size (`admin.js`): the bar and the field over the whole window, its whole width, with a
+   dotted line and the wrap column where they are anywhere. The page underneath stops scrolling, so a wheel
+   at the end of the text does not move a page nobody can see. */
+html.markdown-full-open { overflow: hidden; }
+.markdown-frame.is-full {
+    position: fixed; inset: 0; z-index: 1000;
+    display: flex; flex-direction: column;
+    background: var(--bg); padding: 12px 16px;
+}
+.markdown-frame.is-full .markdown-toolbar { flex: none; }
+.markdown-frame.is-full .markdown-field,
+.markdown-frame.is-full > textarea.markdown-editor { flex: 1; min-height: 0; width: 100%; }
+.markdown-frame.is-full textarea.markdown-editor {
+    height: 100% !important;   /* over the height a drag of the resize handle wrote inline */
+    width: 100%; resize: none;
+}
+/* Save is the form's, and underneath - so it is here only while the field covers it */
+.markdown-frame:not(.is-full) .markdown-full-save { display: none; }
+/* coloured as the form's primary Save is, in both themes - it is that button */
+.markdown-toolbar .markdown-full-save { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 600; }
+
+/* Wrap text, at the bar's left - the buttons stay at its right */
+.markdown-toolbar .markdown-wrap {
+    display: inline-flex; align-items: center; gap: 6px; margin-right: auto;
+    font-size: 13px; color: var(--muted); cursor: pointer; user-select: none;
+}
+.markdown-toolbar .markdown-wrap input { margin: 0; }
 
 /* The face is the label, so it is set at the size a label would be read at rather than inheriting
    13px - and in the emoji faces, so it is the colour drawing and not the black-and-white glyph a

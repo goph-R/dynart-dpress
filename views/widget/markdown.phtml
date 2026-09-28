@@ -9,6 +9,12 @@
  * `attributes` is where the content builder puts `data-insert-media`, which is what grows the one
  * button the field has.
  *
+ * **The lines are numbered**, in a gutter on the left - a wrapped line keeps one number, on its
+ * first row, so wrapping and numbering go together. `'numbers' => false` for a field without.
+ *
+ * **`'wrap' => false`** only sets where the *Wrap text* box starts, the first time: after that it
+ * is as this browser last left it (`admin.js`).
+ *
  * **No browser text assistance.** `spellcheck` is off because this is source and not prose: a
  * dictionary flags every fenced identifier, every slug and every URL word, and under a coloured
  * field the underlines sit on a layer of their own. `autocorrect` is off for a harder reason -
@@ -16,5 +22,7 @@
  * author typed is the one thing this whole editor is built not to be.
  */
 $id = $form->idByNameAndField($name, $field);
+$noWrap = ($field['wrap'] ?? true) === false;
+$numbered = ($field['numbers'] ?? true) !== false;
 ?>
-<textarea id="<?= $id ?>" name="<?= $form->inputName($name) ?>" class="markdown-editor" rows="26" spellcheck="false" autocorrect="off"<?= esc_attrs($field['attributes'] ?? []) ?>><?= $form->value($name, true) ?></textarea>
+<textarea id="<?= $id ?>" name="<?= $form->inputName($name) ?>" class="markdown-editor<?= $noWrap ? ' no-wrap' : '' ?><?= $numbered ? ' numbered' : '' ?>" rows="26" spellcheck="false" autocorrect="off"<?= $noWrap ? ' wrap="off"' : '' ?><?= esc_attrs($field['attributes'] ?? []) ?>><?= $form->value($name, true) ?></textarea>
