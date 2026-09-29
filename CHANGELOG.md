@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.88.0] &ndash; 2026-09-29
+
+### Added
+- **A category filter on the Posts list**: one dropdown, one category at a time - a post in it,
+  whatever else it is in. Subcategories are indented under their parent. Pages have no
+  categories (a parent page instead), so the Pages list has no such filter. Remembered with the
+  rest of the list's state, like every filter.
+
+---
+
 ## [0.87.0] &ndash; 2026-09-29
 
 ### Changed

@@ -49,6 +49,9 @@ class ContentAdminController extends AbstractAdminController {
 
     const SORTABLE = ['id', 'title', 'status', 'weight', 'published_at', 'created_at', 'updated_at'];
 
+    /** What the list is filtered by - `category_id` only ever arrives from the Posts screen */
+    const LIST_FILTERS = ['search', 'status', 'category_id'];
+
     public function __construct(
         ViewInterface $view,
         RouterInterface $router,
@@ -104,7 +107,7 @@ class ContentAdminController extends AbstractAdminController {
         $this->enter($type, 'view');
         $isPage = $type === Content::TYPE_PAGE;
         $config = $this->listConfig($type);
-        $context = $this->firstPageContext($config, self::SORTABLE, ['search', 'status']);
+        $context = $this->firstPageContext($config, self::SORTABLE, self::LIST_FILTERS);
         $context['type'] = $type;
         $config['firstPage'] = $this->page($context);
         return $this->admin('dpress_admin:content/list', [
@@ -113,6 +116,9 @@ class ContentAdminController extends AbstractAdminController {
             'new_url' => $this->router->url('/admin/content/'.$type.'/new'),
             'can_create' => $this->can(Permissions::forContent($type, 'create')),
             'status'  => (string)$this->request->get('status', ''),
+            // a post has categories and a page has a parent instead, so only the posts get the filter
+            'category_filter' => $isPage ? [] : $this->categoryFilterOptions(),
+            'category_id' => (string)$this->request->get('category_id', ''),
             'list_id' => 'content-list',
             'list_config' => $config,
             // the way into the trash, for somebody who may put things in it and take them out
@@ -231,7 +237,7 @@ class ContentAdminController extends AbstractAdminController {
     #[Route('GET', '/admin/content/?/list')]
     public function rowsJson(string $type): array {
         $this->enter($type, 'view');
-        $context = $this->list->context(self::SORTABLE, ['search', 'status']);
+        $context = $this->list->context(self::SORTABLE, self::LIST_FILTERS);
         $context['type'] = $type;
         return $this->page($context);
     }
@@ -928,6 +934,27 @@ class ContentAdminController extends AbstractAdminController {
             }
             $options[$page['id']] = $page['title'];
         }
+        return $options;
+    }
+
+    /**
+     * The Posts list's category filter: every category, a child under its parent and indented
+     * by an em space a level, so a subcategory reads as one without a tree widget
+     *
+     * @return array<int, string> id => the name as the option shows it
+     */
+    protected function categoryFilterOptions(): array {
+        $rows = $this->taxonomy->categories();
+        $options = [];
+        $walk = function (?int $parent, int $depth) use (&$walk, &$options, $rows): void {
+            foreach ($rows as $row) {
+                if (($row['parent_id'] === null ? null : (int)$row['parent_id']) === $parent) {
+                    $options[(int)$row['id']] = str_repeat("\u{2003}", $depth).$row['name'];
+                    $walk((int)$row['id'], $depth + 1);
+                }
+            }
+        };
+        $walk(null, 0);
         return $options;
     }
 

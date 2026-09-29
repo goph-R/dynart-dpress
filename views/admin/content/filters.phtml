@@ -4,7 +4,13 @@
  *
  * `dynamic-list.js` serializes this whole form on every request, so a field added here reaches
  * the endpoint with nothing else to change - which is why the sort and the page live in it too.
+ *
+ * `$category_filter` (id => name, indented) is given on the Posts screen only - a page has a
+ * parent rather than categories - and is one category at a time: a post in it, whatever else
+ * it is in. The options are escaped here; a category name is whatever somebody typed.
  */
+$categoryFilter = $category_filter ?? [];
+$categoryId = (string)($category_id ?? '');
 ?>
 <input type="search" name="search" placeholder="Search title or text...">
 <select name="status">
@@ -12,3 +18,11 @@
     <option value="draft"<?= ($status ?? '') === 'draft' ? ' selected' : '' ?>>Draft</option>
     <option value="published"<?= ($status ?? '') === 'published' ? ' selected' : '' ?>>Published</option>
 </select>
+<?php if ($categoryFilter !== []): ?>
+<select name="category_id" aria-label="Category">
+    <option value="">Any category</option>
+    <?php foreach ($categoryFilter as $id => $name): ?>
+    <option value="<?= (int)$id ?>"<?= $categoryId === (string)$id ? ' selected' : '' ?>><?= esc_html($name) ?></option>
+    <?php endforeach ?>
+</select>
+<?php endif ?>

@@ -18,6 +18,8 @@
     <?= $this->fetch('dpress_admin:list', [
         'list_id' => $list_id,
         'list_config' => $list_config,
-        'filters' => $this->fetch('dpress_admin:content/filters', ['status' => $status]),
+        'filters' => $this->fetch('dpress_admin:content/filters', [
+            'status' => $status, 'category_filter' => $category_filter ?? [], 'category_id' => $category_id ?? '',
+        ]),
     ]) ?>
 <?php $this->endBlock() ?>

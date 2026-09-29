@@ -355,6 +355,16 @@ class CoreQueries {
                 [':search' => '%'.$context['search'].'%']
             );
         }
+        // `category_id`: only what is in that one category - the admin's Posts filter. `exists`
+        // rather than a join, so a post is one row however the rest of its categories fall.
+        if (!empty($context['category_id'])) {
+            $query->addCondition(
+                'exists (select 1 from '.$this->safeTable(ContentCategory::class).' `fc`'
+                    .' where `fc`.`content_id` = '.$this->safeTable(Content::class).'.`id`'
+                    .' and `fc`.`category_id` = :filterCategoryId)',
+                [':filterCategoryId' => (int)$context['category_id']]
+            );
+        }
         if (!empty($context['status'])) {
             $query->addCondition('`status` = :status', [':status' => $context['status']]);
         } else if ($context['published_only'] ?? false) {
