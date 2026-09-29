@@ -5,6 +5,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.86.0] &ndash; 2026-09-29
+
+### Added
+- **A click on a thumbnail in the media list** (and the trash) shows it big in Preview media's
+  dialog. It is still a link to the file, so a middle click or Ctrl+click opens that in a new tab.
+  The list's `htmlLink` view has a `previewProperty` option for it.
+- **Every admin list remembers where it was left**, in that browser tab: its filters, its sort and
+  its page come back when you return to the screen - after an edit, from the navigation, or with
+  Back. Kept per screen and per list in `sessionStorage`, so a new tab starts fresh. An address
+  that carries a filter or a sort wins over what was remembered, and a remembered page that is
+  empty now (its rows went to the trash) falls back to the first one.
+
+### Fixed
+- The × a search box shows once something is typed has the pointer a button has.
+
+---
+
 ## [0.85.1] &ndash; 2026-09-29
 
 ### Fixed

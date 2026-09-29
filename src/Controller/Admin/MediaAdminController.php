@@ -167,10 +167,10 @@ class MediaAdminController extends AbstractAdminController {
             'columns'  => [
                 'id' => ['label' => '#', 'align' => 'right', 'width' => '1%'],
                 // the name opens the item's own page, as it does in every other list; the
-                // picture opens the file, which is the thing this list is otherwise the only
-                // one-click way to reach
+                // picture shows the file big over the list (Preview media's dialog), and is still
+                // a link to it for a middle click or a new tab
                 'thumbnail_html' => ['label' => 'Icon', 'view' => 'htmlLink', 'sortable' => false, 'width' => '54px',
-                                     'options' => ['hrefProperty' => 'url']],
+                                     'options' => ['hrefProperty' => 'url', 'previewProperty' => 'id']],
                 'file_name'  => ['label' => 'File', 'view' => 'link', 'options' => ['hrefProperty' => 'edit_url']],
                 'category'   => ['label' => 'Kind'],
                 'size'       => ['label' => 'Size', 'view' => 'bytes', 'align' => 'right'],

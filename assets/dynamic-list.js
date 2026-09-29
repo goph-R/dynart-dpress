@@ -103,7 +103,11 @@
             if (!href) {
                 return content;
             }
-            return '<a href="' + escapeHtml(href) + '">' + content + '</a>';
+            // `previewProperty`: the library id a plain click shows in Dpress's Preview media
+            // dialog instead of following the link (`admin.js`) - the link stays for a new tab
+            var preview = options.previewProperty && item[options.previewProperty] !== undefined
+                ? ' data-media-preview-id="' + escapeHtml(String(item[options.previewProperty])) + '"' : '';
+            return '<a href="' + escapeHtml(href) + '"' + preview + '>' + content + '</a>';
         },
 
         dateTime: function (item, property) {

@@ -169,6 +169,27 @@
         var filterForm = config.filterForm
             ? (typeof config.filterForm === 'string' ? document.querySelector(config.filterForm) : config.filterForm)
             : null;
+        // A list with no filters still has a page and a sort to remember, and the form is where
+        // `DynamicList` keeps them - so it gets one, hidden, rather than making its own
+        if (!filterForm && container.id && container.parentNode) {
+            filterForm = document.createElement('form');
+            filterForm.hidden = true;
+            container.parentNode.insertBefore(filterForm, container);
+        }
+
+        // Where this list was left, in this tab: the filters, the sort and the page come back when
+        // the screen does - after an edit, or from the navigation. The seeded first page is the
+        // default one, so a list that is restored asks for its rows instead.
+        // without URL rewriting the screen is the route parameter, and every screen one path
+        var routeParam = (document.body && document.body.getAttribute('data-route-param')) || '';
+        var screen = routeParam
+            ? (new URLSearchParams(global.location.search).get(routeParam) || '/')
+            : global.location.pathname;
+        var stateKey = container.id ? Dpress.listStateKey(screen, container.id) : '';
+        var restored = stateKey !== '' && filterForm && !Dpress.listAddressed(global.location.search, routeParam)
+            && restoreListState(filterForm, stateKey, config);
+        var findItems = config.findItems || Dpress.endpoint(config.endpoint);
+        var retried = false;
 
         // declared before the constructor, because a row action built now may need to refresh
         // the list it belongs to when it is clicked long afterwards
@@ -182,13 +203,28 @@
             allOrderDisabled: config.allOrderDisabled || false,
             orderDisabled: config.orderDisabled || [],
             texts: config.texts || {},
-            firstPage: config.firstPage || null,
+            firstPage: restored ? null : (config.firstPage || null),
             columnViews: columnViews,
             rowActions: (config.rowActions || []).map(function (declared) {
                 return declaredRowAction(declared, function () { return list; });
             }),
             groupActions: (config.groupActions || []).map(declaredGroupAction),
-            findItems: config.findItems || Dpress.endpoint(config.endpoint)
+            findItems: !stateKey ? findItems : function (filters, done, failed) {
+                findItems(filters, function (result) {
+                    // a remembered page that is not there any more - the rows went to the trash
+                    // since - is the first page, rather than an empty table with no way back
+                    var offset = filterForm.querySelector('input[name="offset"]');
+                    if (!retried && offset && parseInt(offset.value, 10) > 0 && result && (result.items || []).length === 0) {
+                        retried = true;
+                        offset.value = '0';
+                        list.refresh();
+                        return;
+                    }
+                    retried = false;
+                    saveListState(filterForm, stateKey);
+                    done(result);
+                }, failed);
+            }
         });
 
         if (filterForm) {
@@ -196,6 +232,115 @@
         }
         return list;
     };
+
+    // --- remembering where a list was ---
+
+    /** The prefix of the keys, so the whole of it can be found and cleared */
+    var LIST_STATE = 'dpress-list:';
+
+    /** One list's key: the screen's path and the list's id, so two lists on a screen are two */
+    Dpress.listStateKey = function (path, id) {
+        return LIST_STATE + String(path || '') + '#' + String(id || '');
+    };
+
+    /**
+     * Whether the address already says what the list shows - a sort or a filter somebody linked
+     * to, which the server rendered and which wins over anything remembered
+     */
+    Dpress.listAddressed = function (search, routeParam) {
+        var params = new URLSearchParams(search || '');
+        var addressed = false;
+        params.forEach(function (value, name) {
+            // the partial load's flag, and the screen itself where there is no URL rewriting
+            if (name !== 'ajax' && name !== routeParam) {
+                addressed = true;
+            }
+        });
+        return addressed;
+    };
+
+    function saveListState(form, key) {
+        var pairs = [];
+        new FormData(form).forEach(function (value, name) {
+            if (typeof value === 'string') {
+                pairs.push([name, value]);
+            }
+        });
+        try {
+            global.sessionStorage.setItem(key, JSON.stringify(pairs));
+        } catch (error) {
+            // a convenience: without storage the list simply starts at its first page
+        }
+    }
+
+    /**
+     * Puts a remembered state back into the form, before the list reads it
+     *
+     * The fields the server rendered get their values back; the list's own hidden ones - sort,
+     * order, offset, page size - are created here with theirs, and `DynamicList` takes over an
+     * input that is already there rather than adding a second. A state that is the one the
+     * screen starts in anyway is not a restore, so that screen keeps its seeded first page.
+     *
+     * @return {boolean} whether anything was restored
+     */
+    function restoreListState(form, key, config) {
+        var pairs;
+        try {
+            pairs = JSON.parse(global.sessionStorage.getItem(key) || 'null');
+        } catch (error) {
+            pairs = null;
+        }
+        if (!Array.isArray(pairs) || pairs.length === 0) {
+            return false;
+        }
+        var defaults = {sort: config.orderBy || '', order: config.orderDir || 'asc', offset: '0'};
+        var changed = pairs.some(function (pair) {
+            if (Object.prototype.hasOwnProperty.call(defaults, pair[0])) {
+                return pair[1] !== defaults[pair[0]];
+            }
+            if (pair[0] === 'max') {
+                return false;
+            }
+            var field = form.elements.namedItem(pair[0]);
+            var initial = field && field.type !== 'checkbox' && field.type !== 'radio' ? field.value : '';
+            return pair[1] !== initial;
+        });
+        if (!changed) {
+            return false;
+        }
+        var byName = {};
+        pairs.forEach(function (pair) {
+            (byName[pair[0]] = byName[pair[0]] || []).push(pair[1]);
+        });
+        var placed = {};
+        Array.prototype.forEach.call(form.elements, function (field) {
+            if (!field.name || !(field.name in byName)) {
+                if (field.type === 'checkbox' && field.name) {
+                    field.checked = false;   // not in a saved form means it was not ticked
+                }
+                return;
+            }
+            placed[field.name] = true;
+            var values = byName[field.name];
+            if (field.type === 'checkbox' || field.type === 'radio') {
+                field.checked = values.indexOf(field.value) !== -1;
+            } else if (field.multiple && field.options) {
+                Array.prototype.forEach.call(field.options, function (option) {
+                    option.selected = values.indexOf(option.value) !== -1;
+                });
+            } else {
+                field.value = values[0];
+            }
+        });
+        Object.keys(byName).filter(function (name) { return !placed[name]; }).forEach(function (name) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = name;
+            input.value = byName[name][0];
+            form.appendChild(input);
+        });
+        return true;
+    }
 
     /**
      * Builds every list on a piece of the page that has not been built yet
@@ -2031,8 +2176,37 @@
         }
     };
 
+    /**
+     * A thumbnail in a list that says which library item it is (`data-media-preview-id`, the
+     * `htmlLink` view's `previewProperty`) shows it in Preview media's dialog on a plain click
+     *
+     * Once, on the document, since lists draw their rows long after `init()` and again on every
+     * page of them. A click with a modifier, or with the middle button, is left to the link - a
+     * new tab with the file is still what it asks for.
+     */
+    var listPreviewsBound = false;
+
+    function initListPreviews() {
+        if (listPreviewsBound || typeof document.addEventListener !== 'function') {
+            return;
+        }
+        listPreviewsBound = true;
+        document.addEventListener('click', function (event) {
+            var link = event.target && event.target.closest ? event.target.closest('a[data-media-preview-id]') : null;
+            if (!link || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+                return;
+            }
+            var id = parseInt(link.getAttribute('data-media-preview-id'), 10);
+            if (id > 0) {
+                event.preventDefault();
+                Dpress.previewMedia({target: 'media#' + id, kind: 'media', id: id, path: null, type: null}, link);
+            }
+        });
+    }
+
     Dpress.init = function (root) {
         root = root || document;
+        initListPreviews();
         initConfirms(root);
         initCodeEditors(root);
         initMediaFields(root);

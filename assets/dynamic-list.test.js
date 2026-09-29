@@ -202,6 +202,15 @@ const tests = {
         assert.strictEqual(view({cell: '<img>'}, 'cell', {hrefProperty: 'url'}), '<img>');
     },
 
+    /** the media list's thumbnail: still a link to the file, and the id Preview media shows */
+    'the htmlLink view can name the library item a click previews'() {
+        const view = global.DynamicListColumnView.htmlLink;
+        assert.strictEqual(
+            view({cell: '<img>', url: '/u/a.jpg', id: 12}, 'cell', {hrefProperty: 'url', previewProperty: 'id'}),
+            '<a href="/u/a.jpg" data-media-preview-id="12"><img></a>'
+        );
+    },
+
     'it pages by the total, not by the rows it was given'() {
         const it = build({columnViews: COLUMNS, pageSize: 2}, TWO_ROWS);
         const labels = it.paging().children.map(b => b.textContent);

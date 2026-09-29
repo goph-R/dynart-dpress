@@ -508,6 +508,24 @@ const tests = {
         assert.strictEqual(window.Dpress.codeNewline('- item', '', 'markdown').text, '\n');
     },
 
+    // --- where a list was left ---
+
+    'each list on each screen is remembered on its own'() {
+        const key = window.Dpress.listStateKey;
+        assert.strictEqual(key('/admin/media', 'media-list'), 'dpress-list:/admin/media#media-list');
+        assert.notStrictEqual(key('/admin/content/post', 'list'), key('/admin/content/page', 'list'));
+    },
+
+    'an address that says what to show wins over what was remembered'() {
+        const addressed = window.Dpress.listAddressed;
+        assert.strictEqual(addressed('', ''), false);
+        assert.strictEqual(addressed('?ajax=1', ''), false);
+        assert.strictEqual(addressed('?category=image', ''), true);
+        // without URL rewriting the screen itself is a parameter, and is not a filter
+        assert.strictEqual(addressed('?route=/admin/media', 'route'), false);
+        assert.strictEqual(addressed('?route=/admin/media&search=cat', 'route'), true);
+    },
+
     // --- Preview media: which reference the caret is in ---
 
     'a media reference in an image is found anywhere in its destination'() {
