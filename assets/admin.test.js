@@ -508,6 +508,53 @@ const tests = {
         assert.strictEqual(window.Dpress.codeNewline('- item', '', 'markdown').text, '\n');
     },
 
+    // --- Preview media: which reference the caret is in ---
+
+    'a media reference in an image is found anywhere in its destination'() {
+        const text = 'See ![The palette](media#12) here';
+        for (const at of [text.indexOf('media'), text.indexOf('#12'), text.indexOf(')')]) {
+            const found = window.Dpress.mediaTargetAt(text, at);
+            assert.strictEqual(found.kind, 'media', 'at ' + at);
+            assert.strictEqual(found.id, 12);
+        }
+    },
+
+    'the caret in the alt text or outside the brackets finds nothing'() {
+        const text = 'See ![The palette](media#12) here';
+        assert.strictEqual(window.Dpress.mediaTargetAt(text, text.indexOf('palette')), null);
+        assert.strictEqual(window.Dpress.mediaTargetAt(text, text.indexOf('here')), null);
+    },
+
+    'a relative image path is found with its type'() {
+        const text = '![x](images/vga.png "The palette")';
+        const found = window.Dpress.mediaTargetAt(text, text.indexOf('vga'));
+        assert.deepStrictEqual([found.kind, found.path, found.type], ['path', 'images/vga.png', 'image']);
+    },
+
+    'a video in a shortcode is found by its media reference'() {
+        const text = "{{ video('media#7') }}";
+        assert.strictEqual(window.Dpress.mediaTargetAt(text, text.indexOf('#7')).id, 7);
+    },
+
+    'a reference definition is a destination too'() {
+        const text = 'Intro\n[shot]: ../images/shot.webm';
+        const found = window.Dpress.mediaTargetAt(text, text.indexOf('shot.webm'));
+        assert.deepStrictEqual([found.path, found.type], ['../images/shot.webm', 'video']);
+    },
+
+    'links to pages, headings and other sites are not media'() {
+        for (const text of ['[a](../ENGINE/BASEGAME.md)', '[a](#setup)', '![a](https://example.com/a.png)',
+                            '![a](//cdn.test/a.png)', '![a](images/logo.svg)', '[a](media)']) {
+            assert.strictEqual(window.Dpress.mediaTargetAt(text, text.length - 3), null, text);
+        }
+    },
+
+    'only the line the caret is on counts'() {
+        const text = '![a](media#1)\nplain text';
+        assert.strictEqual(window.Dpress.mediaTargetAt(text, text.indexOf('plain')), null);
+        assert.strictEqual(window.Dpress.mediaTargetAt(text, 8).id, 1);
+    },
+
     // --- Tab, Shift+Tab and Home in a code field ---
 
     /** What the whole value becomes, and what is selected in it afterwards */

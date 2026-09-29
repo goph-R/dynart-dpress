@@ -49,6 +49,8 @@ use Dynart\Dpress\Controller\Admin\AssetController;
 </head>
 <body class="admin<?= !empty($editor_contain_scroll) ? ' editor-contain-scroll' : '' ?>" data-editor-columns="<?= (int)($editor_columns ?? 100) ?>" data-media-endpoint="<?= esc_attr(route_url('/admin/media/list')) ?>"
       data-media-upload="<?= esc_attr($media_upload_url ?? '') ?>"
+      data-media-preview="<?= esc_attr(route_url('/admin/media/preview')) ?>"
+      data-site-url="<?= esc_attr(route_url('/')) ?>"
       data-admin-url="<?= esc_attr($admin_url ?? '') ?>"
       data-route-param="<?= esc_attr($admin_route_param ?? '') ?>">
 

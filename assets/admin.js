@@ -598,6 +598,35 @@
                     }));
             }
 
+            // Preview media: what the reference the caret is in points at, over the page. Always
+            // on the bar and only enabled in a reference, so the bar does not shift as the caret
+            // moves; Alt+P is the same without the mouse.
+            var previewButton = null;
+            function previewTarget() {
+                return Dpress.mediaTargetAt(textarea.value, textarea.selectionStart);
+            }
+            function preview() {
+                var found = previewTarget();
+                if (found) {
+                    Dpress.previewMedia(found, textarea);
+                }
+            }
+            if (language === 'markdown') {
+                previewButton = button('Preview media', 'Preview media (Alt+P)', 'code-preview', preview);
+                previewButton.disabled = true;
+                toolbar.appendChild(previewButton);
+                var refresh = function () {
+                    var found = previewTarget();
+                    previewButton.disabled = found === null;
+                    previewButton.title = found === null
+                        ? 'Preview media (Alt+P) - put the cursor in an image or a media#123 reference'
+                        : 'Preview ' + found.target + ' (Alt+P)';
+                };
+                ['keyup', 'click', 'input', 'select', 'focus'].forEach(function (name) {
+                    textarea.addEventListener(name, refresh);
+                });
+            }
+
             // Full size: the field over the whole window - and, under it, Save, since the form's
             // own buttons are underneath the field. At the bottom right, where Save is on every
             // other screen. It presses the form's primary button rather than submitting the form,
@@ -673,6 +702,13 @@
                 if (event.key === 'Escape' && frame.classList.contains('is-full')) {
                     event.preventDefault();
                     setFull(false);
+                    return;
+                }
+                // Alt+P, by the key's place rather than its letter, so it is the same key on every
+                // layout; AltGr is Ctrl+Alt, and is left to type what it types
+                if (previewButton && event.altKey && !event.ctrlKey && !event.metaKey && event.code === 'KeyP') {
+                    event.preventDefault();
+                    preview();
                     return;
                 }
                 if (event.ctrlKey || event.altKey || event.metaKey || event.isComposing) {
@@ -1241,6 +1277,194 @@
         return (item.category === 'image' ? '!' : '') + '[' + label + '](media#' + item.id + ')';
     };
 
+    // --- Preview media, in the markdown field ---
+
+    /** What a relative path is previewed as, by its extension - no SVG, which the Docs build refuses */
+    var PREVIEW_TYPES = {
+        png: 'image', jpg: 'image', jpeg: 'image', gif: 'image', webp: 'image', avif: 'image',
+        mp4: 'video', webm: 'video', mp3: 'audio', m4a: 'audio', ogg: 'audio', wav: 'audio'
+    };
+
+    /**
+     * The media reference the caret is in, or null - what *Preview media* would show
+     *
+     * The caret is in one when it is anywhere in the destination of `![alt](here)` or
+     * `[text](here)`, of a reference definition `[x]: here`, or on a `media#12` wherever it is
+     * written - which is also how the video and audio shortcodes name their file. A `media#<id>`
+     * is always one; a relative path only when its extension is an image, a video or audio, so a
+     * link to another page or to a heading is not. An address with a scheme is somewhere else's.
+     *
+     * Pure, so it is the part a test can ask about.
+     *
+     * @return {?{target: string, kind: string, id: ?number, path: ?string, type: ?string}}
+     *         `kind` is `media` (with `id`) or `path` (with `path` and `type`)
+     */
+    Dpress.mediaTargetAt = function (value, position) {
+        value = String(value || '');
+        var lineStart = value.lastIndexOf('\n', position - 1) + 1;
+        var lineEnd = value.indexOf('\n', position);
+        var line = value.slice(lineStart, lineEnd < 0 ? value.length : lineEnd);
+        var column = position - lineStart;
+        var spans = [];
+        var match;
+        var destination = /\]\(\s*(<[^>\n]*>|[^\s()]+)/g;
+        while ((match = destination.exec(line)) !== null) {
+            var at = match.index + match[0].length - match[1].length;
+            spans.push({start: at, end: at + match[1].length, text: match[1]});
+        }
+        var definition = /^(\s{0,3}\[[^\]\n]+\]:[ \t]*)(<[^>\n]*>|\S+)/.exec(line);
+        if (definition) {
+            spans.push({start: definition[1].length, end: definition[1].length + definition[2].length, text: definition[2]});
+        }
+        var library = /media#\d+/g;
+        while ((match = library.exec(line)) !== null) {
+            spans.push({start: match.index, end: match.index + match[0].length, text: match[0]});
+        }
+        for (var i = 0; i < spans.length; i++) {
+            if (column < spans[i].start || column > spans[i].end) {
+                continue;
+            }
+            var target = spans[i].text.replace(/^<|>$/g, '');
+            var reference = /^media#(\d+)(?:[#?].*)?$/.exec(target);
+            if (reference) {
+                return {target: target, kind: 'media', id: parseInt(reference[1], 10), path: null, type: null};
+            }
+            if (/^[a-z][a-z0-9+.-]*:/i.test(target) || target.indexOf('//') === 0 || target.charAt(0) === '#') {
+                continue;
+            }
+            var bare = target.replace(/[?#].*$/, '');
+            var name = bare.split('/').pop();
+            var type = PREVIEW_TYPES[name.slice(name.lastIndexOf('.') + 1).toLowerCase()];
+            if (name.lastIndexOf('.') > 0 && type) {
+                return {target: target, kind: 'path', id: null, path: bare, type: type};
+            }
+        }
+        return null;
+    };
+
+    /**
+     * Where a relative path is fetched from for a preview
+     *
+     * A field can say (`data-relative-preview` - the Docs editor's, which answers from the page's
+     * own folder in the source); otherwise the path is read the way the site would read it,
+     * against the site's address.
+     */
+    function previewUrlOf(found, textarea) {
+        var own = textarea && textarea.getAttribute('data-relative-preview');
+        if (own) {
+            return own + (own.indexOf('?') === -1 ? '?' : '&') + 'path=' + encodeURIComponent(found.path);
+        }
+        try {
+            return new URL(found.path, document.body.getAttribute('data-site-url') || global.location.href).href;
+        } catch (error) {
+            return found.path;
+        }
+    }
+
+    /**
+     * Shows a media reference over the page, dimmed behind it
+     *
+     * Esc, a click on the dimmed part or the close button end it, and the field gets the focus
+     * back with the caret where it was. Nothing in it changes the document.
+     */
+    Dpress.previewMedia = function (found, textarea) {
+        var dialog = document.createElement('dialog');
+        dialog.className = 'media-preview';
+        dialog.innerHTML = '<button type="button" class="close" title="Close" aria-label="Close">&times;</button>'
+            + '<figure><div class="media-preview-body"><p class="media-preview-note">Loading…</p></div>'
+            + '<figcaption></figcaption></figure>';
+        document.body.appendChild(dialog);
+        var body = dialog.querySelector('.media-preview-body');
+        var caption = dialog.querySelector('figcaption');
+        caption.textContent = found.target;
+
+        function note(text) {
+            body.innerHTML = '';
+            var p = document.createElement('p');
+            p.className = 'media-preview-note';
+            p.textContent = text;
+            body.appendChild(p);
+        }
+
+        function show(type, url, alt, missing) {
+            var element;
+            if (type === 'image') {
+                element = document.createElement('img');
+                element.alt = alt || '';
+            } else if (type === 'video' || type === 'audio') {
+                element = document.createElement(type);
+                element.controls = true;
+                element.preload = 'metadata';
+            } else {
+                element = document.createElement('a');
+                element.href = url;
+                element.target = '_blank';
+                element.rel = 'noopener';
+                element.textContent = 'Open the file';
+                body.innerHTML = '';
+                body.appendChild(element);
+                return;
+            }
+            element.addEventListener('error', function () {
+                note(missing);
+            });
+            element.src = url;
+            body.innerHTML = '';
+            body.appendChild(element);
+        }
+
+        if (found.kind === 'media') {
+            var endpoint = document.body.getAttribute('data-media-preview') || '';
+            fetch(endpoint + (endpoint.indexOf('?') === -1 ? '?' : '&') + 'id=' + found.id, {
+                headers: {'Accept': 'application/json'},
+                credentials: 'same-origin'
+            }).then(function (response) {
+                if (!response.ok) {
+                    throw new Error(response.status === 404 ? 'missing' : 'HTTP ' + response.status);
+                }
+                return response.json();
+            }).then(function (item) {
+                var parts = [found.target, item.file_name];
+                if (item.width && item.height) {
+                    parts.push(item.width + ' × ' + item.height);
+                }
+                if (item.deleted) {
+                    parts.push('in the trash');
+                }
+                caption.textContent = parts.join(' · ');
+                show(item.category, item.url, item.alt, item.file_name + ' could not be loaded.');
+            }).catch(function (error) {
+                note(error.message === 'missing'
+                    ? found.target + ' is not in the library.'
+                    : 'The library could not be asked about ' + found.target + '.');
+            });
+        } else {
+            show(found.type, previewUrlOf(found, textarea), '', found.path + ' is not there.');
+        }
+
+        function close() {
+            if (dialog.open) {
+                dialog.close();
+            }
+        }
+
+        dialog.addEventListener('close', function () {
+            dialog.remove();
+            if (textarea) {
+                textarea.focus();
+            }
+        });
+        dialog.querySelector('.close').addEventListener('click', close);
+        // a click on the dimmed part is a click on the dialog itself; on what it holds, it is not
+        dialog.addEventListener('click', function (event) {
+            if (event.target === dialog) {
+                close();
+            }
+        });
+        dialog.showModal();
+        return dialog;
+    };
+
     /**
      * The media picker behind a `media` form field
      *
@@ -1256,6 +1480,26 @@
             var input = field.querySelector('[data-media-input]');
             var preview = field.querySelector('[data-media-preview]');
             var clear = field.querySelector('[data-media-clear]');
+
+            // The thumbnail is the way to the big picture: a click - or Enter or Space on it, since
+            // it takes the focus - shows the chosen item in Preview media's dialog. Asked of the
+            // library by its id, so a picture chosen a moment ago works as well as a saved one.
+            preview.tabIndex = 0;
+            preview.setAttribute('role', 'button');
+            preview.title = 'Preview';
+            function showChosen() {
+                var id = parseInt(input.value, 10);
+                if (id > 0 && preview.childNodes.length > 0) {
+                    Dpress.previewMedia({target: 'media#' + id, kind: 'media', id: id, path: null, type: null}, preview);
+                }
+            }
+            preview.addEventListener('click', showChosen);
+            preview.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    showChosen();
+                }
+            });
 
             field.querySelector('[data-media-pick]').addEventListener('click', function () {
                 Dpress.pickMedia(function (item) {

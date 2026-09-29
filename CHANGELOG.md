@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.85.0] &ndash; 2026-09-29
+
+### Added
+- **Preview media** in the markdown editor's bar, and **Alt+P**: with the cursor in an image's or
+  a link's destination, a reference definition or a `media#12` (the video and audio shortcodes
+  too), it shows the file over the page, which is dimmed behind it - an image, a video or audio.
+  Esc or a click on the dim closes it. Disabled while the cursor is in no reference, so the bar
+  does not move as you type. A `media#12` is asked of the library (`GET /admin/media/preview?id=`,
+  the permission to see the library), an image at the `large` size; a relative path is read
+  against the site's address - or where the field says (`data-relative-preview`, the Docs
+  editor's, which reads it from the page's folder). No SVG from a path.
+- **A click on the featured image's thumbnail** (any media field's) shows it big, in the same
+  dialog - or Enter on it, since it takes the focus.
+
+---
+
 ## [0.84.0] &ndash; 2026-09-29
 
 ### Changed

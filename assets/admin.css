@@ -395,6 +395,9 @@ button.link { background: none; border: 0; color: var(--muted); cursor: pointer;
    opens with a gap in front of its first button. The template keeps it genuinely empty. */
 .media-field-preview:empty { display: none; }
 .media-field-preview img { max-height: 64px; border-radius: var(--radius); display: block; }
+/* a click on the thumbnail shows it big (`admin.js`, Preview media's dialog) */
+.media-field-preview { cursor: zoom-in; border-radius: var(--radius); }
+.media-field-preview:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 
 /* `justify-content` rather than a `margin-left: auto` on one of them, which is what held the bar
@@ -600,7 +603,9 @@ td[data-property="id"] { white-space: nowrap; color: var(--muted); font-variant-
 #attachments-section .form-section-body { padding-bottom: 14px; }
 .form-section .dynamic-list { background: transparent; }
 /* the toolbar's odd one out: it attaches a file rather than marking up text, so it sits apart */
-.code-toolbar .code-insert[disabled] { opacity: .45; cursor: not-allowed; }
+.code-toolbar .code-insert[disabled],
+.code-toolbar .code-preview[disabled] { opacity: .45; cursor: not-allowed; }
+.code-toolbar .code-preview[disabled]:hover { border-color: var(--line); }
 
 /* --- the emoji picker dialog ---
    The media picker's shape, because they are the same kind of thing: pick one, and the dialog is
@@ -708,6 +713,33 @@ dialog.media-picker .picker-filters { padding: 14px 18px 0; }
 dialog.media-picker .picker-list { padding: 14px 18px 18px; }
 dialog.media-picker .dynamic-list { background: none; }
 dialog.media-picker .action.choose { color: var(--ink); text-decoration: underline; }
+
+/* Preview media (`admin.js`): the file alone over the page, the page dimmed well down behind it -
+   darker than the pickers', which are something to work in, where this is something to look at.
+   No padding on the dialog itself, so a click on the dim is a click outside it. */
+dialog.media-preview {
+    border: 0; padding: 0; background: none; color: #f2f2f2; overflow: visible;
+    max-width: 92vw; max-height: 92vh;
+}
+dialog.media-preview::backdrop { background: rgba(0, 0, 0, .78); }
+dialog.media-preview figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+dialog.media-preview img,
+dialog.media-preview video {
+    display: block; max-width: 90vw; max-height: 82vh; width: auto; height: auto;
+    border-radius: var(--radius); box-shadow: 0 10px 40px rgba(0, 0, 0, .5);
+    /* a transparent PNG on the dim would be half invisible */
+    background: repeating-conic-gradient(#ddd 0 25%, #fff 0 50%) 0 0 / 16px 16px;
+}
+dialog.media-preview video { background: #000; }
+dialog.media-preview audio { width: min(480px, 90vw); }
+dialog.media-preview figcaption { font-size: 13px; opacity: .85; text-align: center; overflow-wrap: anywhere; }
+dialog.media-preview .media-preview-note { margin: 0; padding: 18px 24px; background: var(--panel); color: var(--ink); border-radius: var(--radius); }
+dialog.media-preview a { color: #fff; }
+dialog.media-preview .close {
+    position: fixed; top: 12px; right: 16px; background: none; border: 0;
+    font-size: 30px; line-height: 1; color: #fff; cursor: pointer; opacity: .8;
+}
+dialog.media-preview .close:hover { opacity: 1; }
 
 /* --- narrow screens --- */
 

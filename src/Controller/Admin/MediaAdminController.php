@@ -248,6 +248,31 @@ class MediaAdminController extends AbstractAdminController {
         return get_object_vars($media);
     }
 
+    /**
+     * What the editor's *Preview media* shows for a `media#<id>` (`?id=`)
+     *
+     * An image at the `large` preset - a preview does not need the original's bytes, and a
+     * 6000px photo would arrive long after the dialog did - and anything else as it is stored.
+     * A row in the trash is answered too, with `deleted`: a post can still say `media#12` after
+     * somebody binned it, and "in the trash" is the useful thing to tell its author.
+     */
+    #[Route('GET', '/admin/media/preview')]
+    public function preview(): array {
+        $this->requirePermission(Permissions::MEDIA_VIEW);
+        $media = $this->found($this->media->findById((int)$this->request->get('id', 0)));
+        return [
+            'id'        => $media->id,
+            'category'  => $media->category,
+            'mime_type' => $media->mime_type,
+            'url'       => $this->mediaView->url($media, $media->isResizable() ? 'large' : ''),
+            'file_name' => $media->file_name,
+            'alt'       => (string)$media->alt,
+            'width'     => $media->width,
+            'height'    => $media->height,
+            'deleted'   => $media->isDeleted(),
+        ];
+    }
+
     #[Route('GET', '/admin/media/edit/?')]
     #[Route('POST', '/admin/media/edit/?')]
     public function edit(string $id): string {
