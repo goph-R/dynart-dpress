@@ -14,6 +14,7 @@ const path = require('path');
 const assert = require('assert');
 
 global.window = global;
+eval(fs.readFileSync(path.join(__dirname, 'code-backdrop.js'), 'utf8'));
 eval(fs.readFileSync(path.join(__dirname, 'markdown-highlight.js'), 'utf8'));
 eval(fs.readFileSync(path.join(__dirname, 'css-highlight.js'), 'utf8'));
 
@@ -91,7 +92,7 @@ const tests = {
     },
 
     'the shared painter paints it with its own classes, and escapes the text'() {
-        const painted = markdown.render('a { content: "</style>" }', css.grammar);
+        const painted = window.Dpress.backdrop.render('a { content: "</style>" }', css.grammar);
         assert.ok(painted.includes('<span class="css-selector">a</span>'));
         assert.ok(painted.includes('&lt;/style&gt;'));
         assert.ok(!painted.includes('md-'));

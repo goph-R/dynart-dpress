@@ -156,8 +156,9 @@ class AdminForms {
                             .' 0 is normal and orders by date as usual; a higher number floats up, a negative one sinks. Any whole number.'],
             'css'    => ['type' => 'textarea', 'label' => 'Additional CSS', 'required' => false,
                         'section' => self::SECTION_ADVANCED,
-                        // `data-code` is what `admin.js` colours and indents; the class is the font
-                        'attributes' => ['rows' => '6', 'spellcheck' => 'false', 'class' => 'code',
+                        // `data-code` is what `admin.js` makes an editor of, the markdown field's
+                        // bar and keys included; `code` is the font, `numbered` the line numbers
+                        'attributes' => ['rows' => '6', 'spellcheck' => 'false', 'class' => 'code numbered',
                                          'data-code' => 'css'],
                         'description' => 'Added to the head of this '.($isPage ? 'page' : 'post').' only, after the theme\'s stylesheet.'
                             .' For the one table or picture that needs it - anything the whole site wants belongs in the theme.'],

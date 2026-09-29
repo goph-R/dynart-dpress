@@ -18,6 +18,7 @@ const path = require('path');
 const assert = require('assert');
 
 global.window = global;
+eval(fs.readFileSync(path.join(__dirname, 'code-backdrop.js'), 'utf8'));
 eval(fs.readFileSync(path.join(__dirname, 'markdown-highlight.js'), 'utf8'));
 
 const markdown = window.Dpress.markdown;
@@ -277,8 +278,8 @@ const tests = {
 
     /** Above the limit the text is still the text, just without the colours */
     'a very long document is painted plain'() {
-        const text = '# heading\n'.repeat(Math.ceil(markdown.LIMIT / 10) + 1);
-        assert.ok(text.length > markdown.LIMIT);
+        const text = '# heading\n'.repeat(Math.ceil(window.Dpress.backdrop.LIMIT / 10) + 1);
+        assert.ok(text.length > window.Dpress.backdrop.LIMIT);
         // lines still, so a long document is numbered too - but not one colour
         assert.ok(!/class="md-(?!line")/.test(markdown.render(text)));
         assert.ok(markdown.render(text).startsWith('<span class="md-line"># heading\n</span>'));

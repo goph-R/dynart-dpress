@@ -445,9 +445,14 @@
     }
 
     /**
-     * What sits around a markdown textarea: colour behind it, and one button over it
+     * What sits around a code field - the markdown and the CSS alike: colour behind it, a bar over it
      *
-     * Deliberately not an editor, and since 0.67.0 deliberately not a toolbar either. The
+     * One setup for every `textarea[data-code]` (and `textarea.markdown-editor`, the markdown
+     * field's older name for the same thing), so a field is wrapped, numbered, made full size and
+     * given its keys the same way whatever language it holds; only the colours and the insert
+     * buttons depend on it.
+     *
+     * Deliberately not a formatting toolbar, since 0.67.0. The
      * formatting buttons - bold, italic, heading, quote, list, code, link, separator - are gone.
      * They wrote marks that are shorter to type than to reach for, which is the point of markdown
      * and the reason nobody used them: a whole blog was migrated through this field and only the
@@ -455,7 +460,7 @@
      * because writing `![alt](media#12)` means knowing an id the library has and the author
      * does not.
      *
-     * The colouring is `markdown-highlight.js` and changes nothing about the field: a `<pre>`
+     * The colouring is `code-backdrop.js` and changes nothing about the field: a `<pre>`
      * behind it, painted from the value, unable to write back. A field whose value is anything
      * other than exactly what the author typed eventually rewrites somebody's document on save,
      * and the content model here is "the markdown is the truth".
@@ -539,29 +544,43 @@
         }
     }
 
-    function initMarkdown(root) {
+    /** The grammar a field is coloured with, by its `data-code` - none for a language unknown here */
+    function grammarOf(language) {
+        if (language === 'markdown') {
+            return Dpress.markdown ? Dpress.markdown.grammar : null;
+        }
+        if (language === 'css') {
+            return Dpress.css ? Dpress.css.grammar : null;
+        }
+        return null;
+    }
+
+    function initCodeEditors(root) {
         // A screen left while a field was full size took its field with it, and would leave the
         // page it arrives at unable to scroll
-        if (!document.querySelector('.markdown-frame.is-full')) {
-            document.documentElement.classList.remove('markdown-full-open');
+        if (!document.querySelector('.code-frame.is-full')) {
+            document.documentElement.classList.remove('code-full-open');
         }
-        root.querySelectorAll('textarea.markdown-editor').forEach(function (textarea) {
-            if (textarea.dataset.markdownBound) {
+        root.querySelectorAll('textarea[data-code], textarea.markdown-editor').forEach(function (textarea) {
+            if (textarea.dataset.editorBound) {
                 return;
             }
-            textarea.dataset.markdownBound = '1';
+            textarea.dataset.editorBound = '1';
+            var language = textarea.dataset.code || 'markdown';
+            textarea.classList.add('code-editor');
 
             var toolbar = document.createElement('div');
-            toolbar.className = 'markdown-toolbar';
+            toolbar.className = 'code-toolbar';
 
             // Both buttons write something the keyboard cannot, which is the whole test for
             // being on this bar - the formatting buttons went in 0.67.0 because typing `**` is
-            // quicker than reaching for a button that types `**`.
-            if (Dpress.emoji) {
+            // quicker than reaching for a button that types `**`. Both write markdown, so a CSS
+            // field has neither.
+            if (Dpress.emoji && language === 'markdown') {
                 // A pictogram here, where "Insert from library" is words, and the difference is
                 // the point: this button's face is a sample of what it inserts, so the drawing
                 // *is* the label. A picture of a frame was standing in for one.
-                toolbar.appendChild(button('🙂', 'Insert an emoji', 'markdown-emoji', function () {
+                toolbar.appendChild(button('🙂', 'Insert an emoji', 'code-emoji', function () {
                     Dpress.emoji.pick(function (character) {
                         replaceSelection(textarea, character, '', false);
                     });
@@ -572,7 +591,7 @@
             // nothing and needs no post id, so it works on something that has never been saved.
             if (textarea.hasAttribute('data-insert-media')) {
                 toolbar.appendChild(button('Insert from library', 'Insert a file from the library',
-                    'markdown-insert', function () {
+                    'code-insert', function () {
                         Dpress.pickMedia(function (item) {
                             Dpress.insertMedia(item, textarea);
                         });
@@ -584,7 +603,7 @@
             // other screen. It presses the form's primary button rather than submitting the form,
             // so it is exactly the Save the author would have pressed.
             var frame = null;
-            var saveButton = button('Save', 'Save', 'markdown-full-save', function () {
+            var saveButton = button('Save', 'Save', 'code-full-save', function () {
                 var save = textarea.form && textarea.form.querySelector('button[type=submit].primary');
                 if (save) {
                     save.click();
@@ -597,10 +616,10 @@
                 saveButton.innerHTML = formSave.innerHTML;
             }
             var saveBar = document.createElement('div');
-            saveBar.className = 'markdown-full-bar';
+            saveBar.className = 'code-full-bar';
             saveBar.appendChild(saveButton);
             var fullButton = button('Full size', 'Edit in the whole window - Esc to come back',
-                'markdown-full', function () {
+                'code-full', function () {
                     setFull(!frame.classList.contains('is-full'));
                 });
             toolbar.appendChild(fullButton);
@@ -612,21 +631,22 @@
             wrapBox.type = 'checkbox';
             wrapBox.checked = wrapRemembered(!textarea.classList.contains('no-wrap'));
             var wrapLabel = document.createElement('label');
-            wrapLabel.className = 'markdown-wrap';
+            wrapLabel.className = 'code-wrap';
             wrapLabel.appendChild(wrapBox);
             wrapLabel.appendChild(document.createTextNode(' Wrap text'));
             toolbar.insertBefore(wrapLabel, toolbar.firstChild);
             textarea.parentNode.insertBefore(toolbar, textarea);
 
             // Last, because it wraps the textarea and the toolbar belongs above the wrapper
-            if (Dpress.markdown) {
-                Dpress.markdown.attach(textarea);
+            var grammar = grammarOf(language);
+            if (Dpress.backdrop && grammar) {
+                Dpress.backdrop.attach(textarea, grammar);
             }
 
             // One frame around the bars and the field, which is what goes full size
-            var field = textarea.parentNode.classList.contains('markdown-field') ? textarea.parentNode : textarea;
+            var field = textarea.parentNode.classList.contains('code-field') ? textarea.parentNode : textarea;
             frame = document.createElement('div');
-            frame.className = 'markdown-frame';
+            frame.className = 'code-frame';
             toolbar.parentNode.insertBefore(frame, toolbar);
             frame.appendChild(toolbar);
             frame.appendChild(field);
@@ -641,7 +661,7 @@
 
             function setFull(on) {
                 frame.classList.toggle('is-full', on);
-                document.documentElement.classList.toggle('markdown-full-open', on);
+                document.documentElement.classList.toggle('code-full-open', on);
                 fullButton.textContent = on ? 'Exit full size' : 'Full size';
                 fullButton.setAttribute('aria-pressed', on ? 'true' : 'false');
                 // the field's width changed, and the scrollbar's room with it
@@ -658,9 +678,21 @@
                 if (event.ctrlKey || event.altKey || event.metaKey || event.isComposing) {
                     return;
                 }
-                // a tab in a code block should indent, not leave the field - and Shift+Tab and
-                // Home work as they do in the CSS box below it
+                // a tab should indent, not leave the field - and Shift+Tab and Home work as
+                // they do in any editor
                 if (indentKeys(textarea, event)) {
+                    return;
+                }
+                // Enter starts the next line under this one. Shift+Enter is left a plain newline,
+                // for the one time the indent is not wanted.
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    var start = textarea.selectionStart;
+                    var newline = Dpress.codeNewline(
+                        textarea.value.slice(0, start), textarea.value.slice(textarea.selectionEnd), language
+                    );
+                    typeInto(textarea, newline.text);
+                    textarea.selectionStart = textarea.selectionEnd = start + newline.caret;
                     return;
                 }
                 // Shift is left alone: shift+PageDown selects a page, and taking that away to
@@ -674,7 +706,7 @@
     }
 
     /**
-     * Pages the markdown field, and never the page behind it
+     * Pages a code field, and never the page behind it
      *
      * The field is 540px inside a screen that scrolls, so the browser's own PageDown spends what
      * the field cannot absorb on the window - and not only at the boundary: measured in Chrome,
@@ -737,24 +769,26 @@
         }
     }
 
-    // --- a code field: a post's Additional CSS ---
+    // --- the keys of a code field ---
 
     /**
      * What Enter should type in a code field, and where the caret goes after it
      *
      * The indent of the line the caret is on, so the next line starts under this one; one step
      * more after an opening brace; and between a pair of braces - `{|}` - the closing one goes to
-     * a line of its own at the outer indent, the caret on the line between. Pure, so it is the
+     * a line of its own at the outer indent, the caret on the line between. The braces are CSS's:
+     * in any other language (`markdown`) it is the indent and nothing more - a list item is not
+     * continued with its bullet, which is a guess about what the next line is. Pure, so it is the
      * part a test can ask about.
      *
      * @return {{text: string, caret: number}} the caret as an offset into `text`
      */
     var CODE_INDENT = '    ';
 
-    Dpress.codeNewline = function (before, after) {
+    Dpress.codeNewline = function (before, after, language) {
         var line = before.slice(before.lastIndexOf('\n') + 1);
         var indent = /^[ \t]*/.exec(line)[0];
-        var opens = /\{\s*$/.test(line);
+        var opens = (language || 'css') === 'css' && /\{\s*$/.test(line);
         var inner = opens ? indent + CODE_INDENT : indent;
         var text = '\n' + inner;
         if (opens && /^[ \t]*\}/.test(after)) {
@@ -889,38 +923,6 @@
             return true;
         }
         return false;
-    }
-
-    function initCodeFields(root) {
-        root.querySelectorAll('textarea[data-code="css"]').forEach(function (textarea) {
-            if (textarea.dataset.codeBound) {
-                return;
-            }
-            textarea.dataset.codeBound = '1';
-            // the markdown field's backdrop, with the CSS tokenizer instead of the markdown one -
-            // and its line numbers, which every code field has
-            textarea.classList.add('numbered');
-            if (Dpress.markdown && Dpress.css) {
-                Dpress.markdown.attach(textarea, Dpress.css.grammar);
-            }
-            textarea.addEventListener('keydown', function (event) {
-                if (event.ctrlKey || event.altKey || event.metaKey || event.isComposing) {
-                    return;
-                }
-                if (indentKeys(textarea, event)) {
-                    return;
-                }
-                if (event.key === 'Enter' && !event.shiftKey) {
-                    event.preventDefault();
-                    var start = textarea.selectionStart;
-                    var newline = Dpress.codeNewline(
-                        textarea.value.slice(0, start), textarea.value.slice(textarea.selectionEnd)
-                    );
-                    typeInto(textarea, newline.text);
-                    textarea.selectionStart = textarea.selectionEnd = start + newline.caret;
-                }
-            });
-        });
     }
 
     // --- attachments, in the content editor ---
@@ -1784,8 +1786,7 @@
     Dpress.init = function (root) {
         root = root || document;
         initConfirms(root);
-        initMarkdown(root);
-        initCodeFields(root);
+        initCodeEditors(root);
         initMediaFields(root);
         initTargetFields(root);
         initPreviewCursor(root);

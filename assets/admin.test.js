@@ -491,6 +491,23 @@ const tests = {
         assert.strictEqual(window.Dpress.codeNewline('', '').text, '\n');
     },
 
+    'Enter in markdown keeps the indent and nothing more'() {
+        const answer = window.Dpress.codeNewline('    let a = 1;', '', 'markdown');
+        assert.strictEqual(answer.text, '\n    ');
+        assert.strictEqual(answer.caret, 5);
+        assert.strictEqual(window.Dpress.codeNewline('  - item', '', 'markdown').text, '\n  ');
+    },
+
+    /** a brace is CSS's: `{|}` on a markdown line is text, and opens nothing */
+    'Enter in markdown ignores braces'() {
+        assert.strictEqual(window.Dpress.codeNewline('  a {', '}', 'markdown').text, '\n  ');
+    },
+
+    /** carrying the `- ` on would be a guess about what the next line is */
+    'Enter in markdown does not continue a bullet'() {
+        assert.strictEqual(window.Dpress.codeNewline('- item', '', 'markdown').text, '\n');
+    },
+
     // --- Tab, Shift+Tab and Home in a code field ---
 
     /** What the whole value becomes, and what is selected in it afterwards */

@@ -142,7 +142,7 @@ touching a document.
   stylesheets and checking they do not leak. One theme, chosen, until that is worth doing.
 - **Highlighting by language in the admin editor.** The markdown field is still a textarea
   underneath, whatever it has grown on top - see `docs/media-in-the-editor.md` §1. Since 0.67.0
-  `assets/markdown-highlight.js` paints the *markdown* in colour behind it, fences included, but
+  `assets/markdown-highlight.js` colours the *markdown* (`code-backdrop.js` paints it) behind it, fences included, but
   the code inside a fence is one colour there: it is this site's markdown grammar, not
   EnlighterJS.
 

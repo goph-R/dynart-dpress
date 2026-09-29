@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.84.0] &ndash; 2026-09-29
+
+### Changed
+- **One editor for the markdown and the CSS.** The Additional CSS field gets everything the
+  markdown field had: *Wrap text* at the Line length with its dotted line, *Full size* with Save
+  under it, Esc, and PageUp/PageDown that stay in the field. Enter keeps the line's indent in the
+  markdown too (Shift+Enter for a plain newline); only CSS goes a step in after `{`.
+- `assets/code-backdrop.js` is the painter behind every code field (`Dpress.backdrop`);
+  `markdown-highlight.js` and `css-highlight.js` are the two grammars it paints with.
+  `Dpress.markdown.render()` and `.attach()` still work.
+- The editor's classes are `code-*` now: `code-frame`, `code-toolbar`, `code-full`, `code-wrap`,
+  `code-field`, `code-backdrop` (was `markdown-*`). Every bound field gets `code-editor`;
+  `textarea.markdown-editor` stays, and still finds the markdown field.
+
+---
+
 ## [0.83.2] &ndash; 2026-09-29
 
 ### Changed

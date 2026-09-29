@@ -1,9 +1,9 @@
 /**
- * Colour for a CSS field - a post's Additional CSS - painted by the markdown field's backdrop
+ * Colour for a CSS field - a post's Additional CSS - painted by the same backdrop as the markdown
  *
- * `markdown-highlight.js` owns the painting: the `<pre>` behind the textarea, the metrics copied
+ * `code-backdrop.js` owns the painting: the `<pre>` behind the textarea, the metrics copied
  * across, the scroll kept in step. What a second language needs is only a tokenizer, so this is
- * one, handed to `Dpress.markdown.attach()` as a grammar. It knows enough CSS to colour what
+ * one, handed to `Dpress.backdrop.attach()` as a grammar. It knows enough CSS to colour what
  * somebody types into a box for one post - selectors, properties, values, the at-rules around
  * them - and nothing about validating it: a highlighter that refused a rule would be a browser's
  * job done worse.

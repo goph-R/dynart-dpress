@@ -5,9 +5,10 @@
  * Colours, line numbers, a wrap column with a dotted line, Tab and Shift+Tab, a smart Home, full
  * size - and still a `<textarea>` holding exactly what was typed. Nothing replaces it and nothing
  * rewrites it: the colours and the numbers are drawn on a backdrop behind it, the rest is keys
- * and padding. `admin.js` binds anything matching `textarea.markdown-editor`, so the class is not
- * decoration - it is the binding, and it is what `markdown-highlight.js` paints behind. With the
- * scripts off this is a plain textarea and the field still works.
+ * and padding. `admin.js` makes an editor of every `textarea[data-code]` - this one and the CSS
+ * field alike - and `code-backdrop.js` paints behind it with the grammar `data-code` names. The
+ * `markdown-editor` class is the field's size, and what a plugin looks for to find the one on a
+ * screen. With the scripts off this is a plain textarea and the field still works.
  *
  * `attributes` is where the content builder puts `data-insert-media`, which is what grows the one
  * button the field has.
@@ -28,4 +29,4 @@ $id = $form->idByNameAndField($name, $field);
 $noWrap = ($field['wrap'] ?? true) === false;
 $numbered = ($field['numbers'] ?? true) !== false;
 ?>
-<textarea id="<?= $id ?>" name="<?= $form->inputName($name) ?>" class="markdown-editor<?= $noWrap ? ' no-wrap' : '' ?><?= $numbered ? ' numbered' : '' ?>" rows="26" spellcheck="false" autocorrect="off"<?= $noWrap ? ' wrap="off"' : '' ?><?= esc_attrs($field['attributes'] ?? []) ?>><?= $form->value($name, true) ?></textarea>
+<textarea id="<?= $id ?>" name="<?= $form->inputName($name) ?>" data-code="markdown" class="markdown-editor<?= $noWrap ? ' no-wrap' : '' ?><?= $numbered ? ' numbered' : '' ?>" rows="26" spellcheck="false" autocorrect="off"<?= $noWrap ? ' wrap="off"' : '' ?><?= esc_attrs($field['attributes'] ?? []) ?>><?= $form->value($name, true) ?></textarea>
