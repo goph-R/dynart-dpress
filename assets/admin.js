@@ -697,6 +697,9 @@
         if (language === 'css') {
             return Dpress.css ? Dpress.css.grammar : null;
         }
+        if (language === 'html') {
+            return Dpress.html ? Dpress.html.grammar : null;
+        }
         return null;
     }
 

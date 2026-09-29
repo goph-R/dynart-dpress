@@ -30,6 +30,7 @@ class AssetController extends AbstractController {
         'code-backdrop.js'      => 'application/javascript; charset=utf-8',
         'markdown-highlight.js' => 'application/javascript; charset=utf-8',
         'css-highlight.js'      => 'application/javascript; charset=utf-8',
+        'html-highlight.js'     => 'application/javascript; charset=utf-8',
         'emoji-words.js'        => 'application/javascript; charset=utf-8',
         'emoji.js'              => 'application/javascript; charset=utf-8',
         'admin.js'              => 'application/javascript; charset=utf-8',

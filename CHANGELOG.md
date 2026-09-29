@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.92.0] &ndash; 2026-09-29
+
+### Added
+- **An HTML grammar for the code editor**, `assets/html-highlight.js` (`data-code="html"`): a
+  theme's `.phtml` coloured as what it is, HTML with PHP in it. Tags, attributes, values,
+  comments, the doctype and character references; and the PHP - `<?php`, `<?=`, `?>`, strings,
+  variables, the control words of the alternative syntax, comments - between the tags and inside
+  attribute values. A `?>` in a PHP string does not end the block and one in a `//` comment does,
+  as PHP reads it. A `<script>` or `<style>` body is not taken for markup. Nothing uses it yet: it
+  is the first half of editing a theme's templates in the admin, and on its own it has no risk.
+
+---
+
 ## [0.91.0] &ndash; 2026-09-29
 
 ### Added

@@ -294,9 +294,11 @@ textarea.numbered { padding-left: 52px; }
     background-image: linear-gradient(to right, rgba(127, 127, 127, .09) 42px, transparent 42px);
 }
 .code-backdrop.numbered .md-line,
-.code-backdrop.numbered .css-line { display: block; position: relative; counter-increment: code-line; }
+.code-backdrop.numbered .css-line,
+.code-backdrop.numbered .html-line { display: block; position: relative; counter-increment: code-line; }
 .code-backdrop.numbered .md-line::before,
-.code-backdrop.numbered .css-line::before {
+.code-backdrop.numbered .css-line::before,
+.code-backdrop.numbered .html-line::before {
     content: counter(code-line);
     position: absolute; left: -52px; width: 34px;
     text-align: right; color: var(--md-marker); font-weight: 400; font-style: normal;
@@ -530,6 +532,21 @@ textarea.is-highlighted::selection { background: var(--md-selection); }
 .code-backdrop .css-number,
 .code-backdrop .css-color     { color: var(--md-strong); }
 .code-backdrop .css-important { color: var(--md-separator); font-weight: 700; }
+
+/* A template - `html-highlight.js` - in the same palette: a tag in the heading's colour as a
+   selector is, an attribute as a property, a value as a string; and the PHP set apart, its
+   delimiters bold, since in a template the PHP is what does the work. */
+.code-backdrop .html-tag      { color: var(--md-heading); }
+.code-backdrop .html-attr     { color: var(--md-link); }
+.code-backdrop .html-value    { color: var(--md-code); }
+.code-backdrop .html-punct,
+.code-backdrop .html-doctype  { color: var(--md-marker); }
+.code-backdrop .html-comment  { color: var(--md-marker); font-style: italic; }
+.code-backdrop .html-entity   { color: var(--md-strong); }
+.code-backdrop .html-php      { color: var(--md-list); font-weight: 700; }
+.code-backdrop .html-keyword  { color: var(--md-list); }
+.code-backdrop .html-variable { color: var(--md-strong); }
+.code-backdrop .html-string   { color: var(--md-em); }
 
 .filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
 /* the minimum is for the things somebody types or picks in, which is what a filter usually is.
