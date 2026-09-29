@@ -14,7 +14,7 @@ database, and there are no rename migrations.
 
 ![The post editor](docs/images/screenshot-post-edit-v2.jpg)
 
-![The list of posts: featured pictures, moving up and down, history and the trash](docs/images/screenshot-post-list.jpg)
+![The list of posts: featured pictures, moving up and down, history and the trash](docs/images/screenshot-post-list-v2.jpg)
 
 ## What it does
 
