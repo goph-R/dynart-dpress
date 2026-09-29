@@ -1,7 +1,8 @@
 # What is planned, and what each one has to decide first
 
 **Written against 0.38.0**, after a look at the blog that is moving here, so that the work would
-start with decisions rather than with guessing. Three of the four are built since.
+start with decisions rather than with guessing. Three of the four are built since. §7, the
+templates the 0.89.0 hierarchy leaves, was added later.
 
 | | | Status |
 |---|---|---|
@@ -214,3 +215,51 @@ argument for doing them first.
 - ~~Is the tag name `featured`, or a setting?~~ — a setting, `featured_tag`, defaulting to
   `featured`.
 - ~~**Weight**~~ — answered: a tiebreaker above the date.
+
+---
+
+## 7. Templates, after the hierarchy
+
+> **Written against 0.89.0**, which added WordPress's template hierarchy: `category-<slug>`,
+> `category-<id>`, `category`; the same for tags; `page-<slug>`/`page-<id>`; `single-<slug>`/
+> `single-<id>`; `home` - see [themes.md](themes.md) §4. It came out of wanting a **gallery for a
+> category** and **a page that links the categories with their pictures**, and these three are
+> what that leaves. None is built.
+
+| | | Status |
+|---|---|---|
+| 7.1 | A page's template chosen in the editor | planned |
+| 7.2 | A post's template by its category | planned |
+| 7.3 | The error pages from the theme | planned |
+
+### 7.1 A page's template chosen in the editor
+
+WordPress's *Template* dropdown. The hierarchy ties a layout to one page by its slug or its id,
+which is right for a theme made for one site and wrong for anything an author should decide: the
+"Categories" page and a second gallery page want the same layout without a file each. So the page
+form gets a **Template** select, filled from the theme's `dpress/content/page-template-*.phtml`
+(`page-template-gallery.phtml` shows as *Gallery*), and the page stores the name.
+
+**What to decide:** where it is stored - a column on `content` (a migration, and the revision
+history keeps it) or in the page's front matter; which wins when a page has both a chosen template
+and a `page-<slug>.phtml` (the chosen one, most likely: it is the explicit choice); and what a
+page whose template the new theme does not have falls back to (`page`, quietly, with the editor
+saying so). This is the one the category-pictures page needs most.
+
+### 7.2 A post's template by its category
+
+`single-category-<slug>.phtml`: every post in a gallery category gets the picture-first layout
+without a file per post. WordPress does not have it; it fits the gallery. **What to decide:** a
+post in two categories that both have one - the first by the category's position, probably - and
+whether it goes before or after `single-<slug>` (after: one post's own template is more
+particular than its category's).
+
+### 7.3 The error pages from the theme
+
+A 404 drawn by the site's own layout rather than a plain page. **Checked: a theme cannot today.**
+`WebApp::sendError()` (dynart-micro) prints a static `<code>.html` from the folder the
+`app.error_pages_folder` config names, or a bare placeholder - no layout, no menu, no way back
+into the site. The hierarchy's answer is `dpress/error-404.phtml`, then `dpress/error.phtml`, drawn
+with the layout like any page, then the static file as it is now. **What to decide:** where the
+hook is - Dpress overriding `sendError()` in `DpressWebApp` keeps micro as it is - and that an
+error inside the error template falls back to the static page rather than to a second error.

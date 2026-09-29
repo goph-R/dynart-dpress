@@ -158,6 +158,27 @@ is not one of them; it is passed per render. And never hand it `get_defined_vars
 body is `include`d inside `View::fetch()` and shares its scope, so that passes down the path of
 the file being included and the nested fetch includes its caller instead, forever.
 
+### One category, tag, page or post with a template of its own (0.89.0)
+
+WordPress's template hierarchy: a screen tries the most particular template first, in the theme's
+`dpress/content/` folder, and takes the first one there is.
+
+| Screen | Tried in order |
+|---|---|
+| A category | `category-<slug>`, `category-<id>`, `category`, `list` |
+| A tag | `tag-<slug>`, `tag-<id>`, `tag`, `list` |
+| A page | `page-<slug>`, `page-<id>`, `page` |
+| A post | `single-<slug>`, `single-<id>`, `single` |
+| The front page | `home`, `list` |
+
+So a gallery for one category is `dpress/content/category-photos.phtml`, and every category is
+`category.phtml` - with nothing to register. The slug first, as WordPress does it: it is what the
+author of a theme reads, and the id is for a slug that is going to change. Only a plain
+`[a-z0-9-]` slug is tried, since it becomes part of a file path.
+
+A category's templates get **`$category`** and a tag's **`$tag`** - the entity, with its
+`description` and a category's `thumbnail_media_id` - besides what `list` gets.
+
 ---
 
 ## 5. What a template is given

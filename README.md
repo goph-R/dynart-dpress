@@ -8,7 +8,7 @@ are rendered when they are saved, and a page view is a handful of queries and no
 front end ships **no JavaScript** — a page loads a script only if there is something on it that
 needs one, a code block or a plugin's widget.
 
-Status: **0.88.0**, feature complete and pre-1.0. Everything below is built. What 1.0 is waiting
+Status: **0.89.0**, feature complete and pre-1.0. Everything below is built. What 1.0 is waiting
 on is the schema settling down — until then a schema change means dropping and recreating the
 database, and there are no rename migrations.
 
@@ -49,7 +49,9 @@ thumbnails and SVGs sanitised on the way in.
 
 **Themes and blocks.** A theme is [a folder with a `theme.ini` in it](docs/themes.md) — dropping
 it in installs it, and which one renders is a setting. A theme may have a layout per kind of page
-(`home`, `archive`, `post`, `page`, `auth`) and having the file is the whole registration. A
+(`home`, `archive`, `post`, `page`, `auth`) and having the file is the whole registration - and,
+as in WordPress, a template for one category, tag, page or post (`category-retro.phtml`,
+`page-about.phtml`, by slug or by id), so a category can be a gallery. A
 [block](docs/blocks.md) is something in a place beside the content — a tag cloud, a category list,
 a piece of markdown — and a **menu** is assigned to the same places, its items storing a target
 rather than a URL so a rename moves them.

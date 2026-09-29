@@ -152,6 +152,45 @@ abstract class AbstractController {
     }
 
     /**
+     * The templates a screen tries, most particular first - WordPress's template hierarchy
+     *
+     *   templateCandidates('dpress:content/category', 'retro', 5, 'dpress:content/list')
+     *   // category-retro, category-5, category, list
+     *
+     * A theme gives one category, tag, page or post a layout of its own by adding
+     * `dpress/content/category-retro.phtml` (or `-5`, by id), and a whole kind by adding
+     * `category.phtml` - with nothing to register. The slug comes first, as in WordPress: it is
+     * what a theme author reads, and an id is for a slug that is going to change. A slug that is
+     * not plain `[a-z0-9-]` is left out rather than put into a file path.
+     *
+     * @return string[]
+     */
+    public static function templateCandidates(string $base, string $slug, int $id, string $fallback = ''): array {
+        $candidates = [];
+        if (preg_match('/^[a-z0-9][a-z0-9-]*$/', $slug) === 1) {
+            $candidates[] = $base.'-'.$slug;
+        }
+        if ($id > 0) {
+            $candidates[] = $base.'-'.$id;
+        }
+        $candidates[] = $base;
+        if ($fallback !== '') {
+            $candidates[] = $fallback;
+        }
+        return $candidates;
+    }
+
+    /** The first of the candidates the theme or the core has - the last one when none is there */
+    protected function firstTemplate(array $candidates): string {
+        foreach ($candidates as $candidate) {
+            if ($this->view->exists($candidate)) {
+                return $candidate;
+            }
+        }
+        return end($candidates);
+    }
+
+    /**
      * Renders a template with the variables every page needs
      *
      * **Shortcodes are expanded over the finished page**, not over `body_html` on the way to a
@@ -413,13 +452,17 @@ abstract class AbstractController {
             'mediaView'   => Micro::get(MediaView::class),
         ];
         if ($content->isPage()) {
-            return $this->render('dpress:content/page', $common + [
+            return $this->render($this->firstTemplate(self::templateCandidates(
+                'dpress:content/page', (string)$content->slug, (int)$content->id
+            )), $common + [
                 'ancestors' => $contents->ancestors($content),
                 'children'  => $contents->findChildren($content->id),
             ], 'page');
         }
         $taxonomy = Micro::get(TaxonomyService::class);
-        return $this->render('dpress:content/single', $common + [
+        return $this->render($this->firstTemplate(self::templateCandidates(
+            'dpress:content/single', (string)$content->slug, (int)$content->id
+        )), $common + [
             'tags'       => $taxonomy->tagsOf($content->id),
             'categories' => $taxonomy->categoriesOf($content->id),
         ], 'post');

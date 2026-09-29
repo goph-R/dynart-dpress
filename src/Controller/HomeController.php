@@ -57,7 +57,8 @@ class HomeController extends AbstractController {
             // emphasis, so a featured post is in one place on this page and not two
             'exclude_ids' => array_column($featured, 'id'),
         ]);
-        return $this->render('dpress:content/list', [
+        // `home` when the theme has one - WordPress's front-page.php - and the list otherwise
+        return $this->render($this->firstTemplate(['dpress:content/home', 'dpress:content/list']), [
             'title'           => '',
             'posts'           => $posts,
             // `featured_posts`, not `featured`: a single post's template has had `$featured` for

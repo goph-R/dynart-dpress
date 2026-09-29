@@ -45,7 +45,11 @@ class ContentController extends AbstractController {
             $this->app()->sendError(404);
         }
         $posts = $this->content->findByTag($tag->id);
-        return $this->render('dpress:content/list', [
+        // `tag-<slug>`, `tag-<id>`, `tag`, then the list every archive shares
+        return $this->render($this->firstTemplate(self::templateCandidates(
+            'dpress:content/tag', (string)$tag->slug, (int)$tag->id, 'dpress:content/list'
+        )), [
+            'tag' => $tag,
             'title' => 'Tagged '.$tag->name,
             'heading' => 'Tagged “'.$tag->name.'”',
             'posts' => $posts,
@@ -62,7 +66,12 @@ class ContentController extends AbstractController {
             $this->app()->sendError(404);
         }
         $posts = $this->content->findByCategory($category->id);
-        return $this->render('dpress:content/list', [
+        // `category-<slug>`, `category-<id>`, `category`, then the list every archive shares - a
+        // gallery for one category is a theme file, and its picture and description come along
+        return $this->render($this->firstTemplate(self::templateCandidates(
+            'dpress:content/category', (string)$category->slug, (int)$category->id, 'dpress:content/list'
+        )), [
+            'category' => $category,
             'title' => $category->name,
             'heading' => $category->name,
             'posts' => $posts,

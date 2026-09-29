@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.89.0] &ndash; 2026-09-29
+
+### Added
+- **A template for one category, tag, page or post** - WordPress's template hierarchy. A category
+  tries `category-<slug>`, `category-<id>`, `category`, then `list`; a tag the same with `tag-`;
+  a page `page-<slug>`, `page-<id>`, `page`; a post `single-<slug>`, `single-<id>`, `single`; the
+  front page `home`, then `list` - the first the theme has, in `dpress/content/`. A category's
+  templates get `$category` and a tag's `$tag`. See `docs/themes.md` §4.
+
+---
+
 ## [0.88.0] &ndash; 2026-09-29
 
 ### Added
