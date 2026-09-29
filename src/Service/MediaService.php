@@ -345,7 +345,9 @@ class MediaService {
     public function purge(Media $media): int {
         $path = $media->path;
         foreach (array_keys($this->images->presets()) as $preset) {
-            $this->storage->delete($this->storage->derivativePath($path, $preset));
+            foreach ($this->storage->derivativePaths($path, $preset) as $derivative) {
+                $this->storage->delete($derivative);
+            }
         }
         $this->storage->delete($path);
         $this->detachAll($media->id);
@@ -443,8 +445,10 @@ class MediaService {
         $count = 0;
         foreach ($items as $item) {
             foreach (array_keys($this->images->presets()) as $preset) {
-                if ($this->storage->delete($this->storage->derivativePath($item->path, $preset))) {
-                    $count++;
+                foreach ($this->storage->derivativePaths($item->path, $preset) as $derivative) {
+                    if ($this->storage->delete($derivative)) {
+                        $count++;
+                    }
                 }
             }
         }

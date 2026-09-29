@@ -5,6 +5,33 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.87.0] &ndash; 2026-09-29
+
+### Changed
+- **The `thumb` preset keeps the picture's shape** (320×320 at most, no longer cut to a square),
+  so a list shows a banner as a strip and a divider as a line. In a list it sits whole in the
+  middle of a 48×36 box, on a grey that follows the light or dark scheme (`--thumb-bg`).
+  **Run `dpress media:regenerate` after updating**: the thumbnails already made are the old,
+  square ones until they are cleared and rebuilt.
+- **A derivative's address carries its preset's fingerprint**, `…-thumb.jpg?v=40ff53`. Uploads
+  may be cached for a month and a derivative is rebuilt under the same name, so after a preset
+  changed a browser kept showing its cached copy - the media list's later pages stayed square.
+  A changed preset is now a new address everywhere at once (`ImageProcessor::presetVersion()`).
+- **A GIF's thumb is a JPEG of its first frame** (`…-thumb.jpg`), so a list does not move; `medium`
+  and `large` stay GIFs, so a post and Preview media still animate. What the GIF left see-through
+  is white. An optimised GIF's first frame is put back where it belongs on the canvas - GD
+  answers only the frame's own box, which made the still the wrong size and off its middle.
+  `media:regenerate` clears the old GIF thumbs too.
+
+### Added
+- **`MediaView::srcset($media, ['thumb', 'medium'])`**: the preset files at their real widths, for
+  `tag()`'s `srcset` - with a `sizes`, the browser takes the thumb where a card is small and a
+  bigger file where it is wide or the screen is dense. The widths come from
+  `ImageProcessor::outputSize()`, the arithmetic `resize()` uses, so nothing has to be generated
+  first. `tag()` leaves an empty `srcset` or `sizes` off. See `docs/themes.md`.
+
+---
+
 ## [0.86.0] &ndash; 2026-09-29
 
 ### Added

@@ -101,12 +101,37 @@ class MediaStorage {
     }
 
     /**
-     * The derivative path of a stored file: `my-photo-a1b2c3.jpg` -> `my-photo-a1b2c3-thumb.jpg`
+     * The preset whose file of a GIF is a still: a JPEG of its first frame (0.87.0)
+     *
+     * A thumbnail is a picture in a list, and a list of them moving is noise - so the small one
+     * is still, and the bigger ones, which a post shows, keep the animation.
+     */
+    const STILL_PRESET = 'thumb';
+
+    /**
+     * The derivative path of a stored file: `my-photo-a1b2c3.jpg` -> `my-photo-a1b2c3-thumb.jpg`,
+     * and `dance-a1b2c3.gif` -> `dance-a1b2c3-thumb.jpg` (`STILL_PRESET`)
      */
     public function derivativePath(string $relativePath, string $preset): string {
         $extension = pathinfo($relativePath, PATHINFO_EXTENSION);
         $withoutExtension = substr($relativePath, 0, -(strlen($extension) + 1));
-        return $withoutExtension.'-'.$preset.'.'.$extension;
+        $target = strtolower($extension) === 'gif' && $preset === self::STILL_PRESET ? 'jpg' : $extension;
+        return $withoutExtension.'-'.$preset.'.'.$target;
+    }
+
+    /**
+     * Every name a derivative may be on disk under - the one it has now, and the one it had
+     * before a GIF's thumb became a JPEG - so clearing and purging leave nothing behind
+     *
+     * @return string[]
+     */
+    public function derivativePaths(string $relativePath, string $preset): array {
+        $extension = pathinfo($relativePath, PATHINFO_EXTENSION);
+        $withoutExtension = substr($relativePath, 0, -(strlen($extension) + 1));
+        return array_values(array_unique([
+            $this->derivativePath($relativePath, $preset),
+            $withoutExtension.'-'.$preset.'.'.$extension,
+        ]));
     }
 
     /**

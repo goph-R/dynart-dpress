@@ -5,8 +5,7 @@
  * this is the baseline that makes the screens usable before anybody has styled anything.
  *
  * Corners are `--radius` everywhere - a single small value rather than one per component, so a
- * panel, a button and an input all read as the same material. The only exception is the avatar-
- * sized thumbnail in a list, which is square because the image is.
+ * panel, a button, an input and a list's thumbnail all read as the same material.
  */
 
 :root {
@@ -17,6 +16,7 @@
     --muted: #71717a;
     --line: #e4e4e7;
     --line-focus: #d4d4d8;   /* a field being typed in: a step from --line, towards the ink */
+    --thumb-bg: #e4e4e7;     /* behind a list's thumbnail, in the room its shape leaves */
     --accent: #18181b;
     --danger: #dc2626;
     --ok: #166534;
@@ -54,6 +54,7 @@
         --muted: #a1a1aa;
         --line: #3f3f46;
         --line-focus: #52525b;
+        --thumb-bg: #3f3f46;
         --accent: #fafafa;
 
         /* Dracula, unchanged: #282a36 ground, and the palette's own eight. The field keeps its
@@ -564,7 +565,12 @@ textarea.is-highlighted::selection { background: var(--md-selection); }
    to be read off when writing a `post#42` by hand, not to be the first thing on the row. */
 td[data-property="id"] { white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
 .dynamic-list .actions-column { text-align: right; }
-.dynamic-list td img { max-height: 36px; border-radius: var(--radius); display: block; }
+.dynamic-list td img {
+    /* One box for every row, the picture whole inside it and in its middle - a strip or a line
+       keeps its shape (the thumb preset is not cropped) and the rest of the box is the grey */
+    width: 48px; height: 36px; object-fit: contain; background: var(--thumb-bg);
+    border-radius: var(--radius); display: block;
+}
 .dynamic-list td svg { width: 22px; height: 22px; color: var(--muted); display: block; }
 
 /* --- row actions ---

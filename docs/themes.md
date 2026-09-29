@@ -186,6 +186,23 @@ Three of those are what a card-shaped listing needs, and both cost one query for
   nothing. A row carries `featured_media_id` and not the item, so without this a theme that wants
   a picture on a card has the id and nothing to do with it. A post with no picture and a post
   whose picture was deleted are both simply absent, so `isset()` is the whole check.
+
+  **The presets, and a `srcset` of them** (0.87.0). `thumb` is at most 320×320, `medium` 768 and
+  `large` 1600, and **none is cropped** - each keeps the picture's shape, so a card crops with
+  `object-fit` to whatever shape it is. `$mediaView->srcset($media, ['thumb', 'medium'])` lists
+  the files at their real widths, and with a `sizes` saying how wide the card is drawn the
+  browser takes the smallest one that is sharp there:
+
+  ```php
+  <?= $mediaView->tag($thumbnails[$post['id']], 'medium', [
+      'alt'    => '',
+      'srcset' => $mediaView->srcset($thumbnails[$post['id']], ['thumb', 'medium']),
+      'sizes'  => '(min-width: 1025px) 120px, 100vw',
+  ]) ?>
+  ```
+
+  An image `srcset()` cannot describe (an SVG, no stored size) answers '', and `tag()` leaves an
+  empty `srcset` or `sizes` off - `src` is the picture then.
 - **`$authors`**, on every listing, keyed by content id — a name, or nothing. Same reason as
   `$thumbnails`: a row carries `author_id` and not a name. A single post gets `$author` instead,
   as a plain string. So a byline is

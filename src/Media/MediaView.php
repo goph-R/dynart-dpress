@@ -36,10 +36,23 @@ class MediaView {
      * The public URL of an item, at a preset size when it has one
      */
     public function url(Media $media, string $preset = ''): string {
-        $relative = $preset !== '' && $media->isResizable() && $this->images->hasPreset($preset)
-            ? $this->storage->derivativePath($media->path, $preset)
-            : $media->path;
-        return $this->baseUrl().$this->storage->baseUrl().'/'.$relative;
+        if ($preset !== '' && $media->isResizable() && $this->images->hasPreset($preset)) {
+            return $this->urlOfPath($this->storage->derivativePath($media->path, $preset)).$this->presetQuery($preset);
+        }
+        return $this->baseUrl().$this->storage->baseUrl().'/'.$media->path;
+    }
+
+    /**
+     * `?v=` and the preset's fingerprint, on every derivative's address
+     *
+     * An upload may be cached for a month (`public/.htaccess`), and a derivative is rebuilt under
+     * the same name - so after a preset changed and `media:regenerate` cleared the files, a
+     * browser went on showing the old picture from its cache and never asked for the new one.
+     * With the preset's size and crop in the address, a changed preset is a new address
+     * everywhere at once. Apache still serves the file itself; the query only names it.
+     */
+    protected function presetQuery(string $preset): string {
+        return '?v='.$this->images->presetVersion($preset);
     }
 
     /**
@@ -71,9 +84,45 @@ class MediaView {
         }
         $parts = [];
         foreach ($attributes as $name => $value) {
+            // `srcset()` answers '' for an image it cannot describe, and an empty `srcset` is a
+            // broken one - the `src` alone is right then
+            if (($name === 'srcset' || $name === 'sizes') && (string)$value === '') {
+                continue;
+            }
             $parts[] = $name.'="'.htmlspecialchars((string)$value, ENT_QUOTES).'"';
         }
         return '<img '.join(' ', $parts).'>';
+    }
+
+    /**
+     * A `srcset` of an image's preset files, each at its real width - for `tag()`'s attributes
+     *
+     *   $mediaView->tag($media, 'medium', [
+     *       'srcset' => $mediaView->srcset($media, ['thumb', 'medium']),
+     *       'sizes'  => '(min-width: 1025px) 120px, 100vw',
+     *   ])
+     *
+     * With `sizes` saying how wide the picture is drawn, the browser takes the smallest file that
+     * is sharp there - the thumb in a small card, the medium where the card is the width of a
+     * phone, the bigger one on a screen with two pixels to a point. The widths are the ones
+     * `resize()` makes (`ImageProcessor::outputSize()`), so nothing has to exist yet to say them;
+     * two presets that come out the same size - a small original is a copy in both - are one.
+     *
+     * '' for anything it cannot describe: not a raster image, or no stored size.
+     */
+    public function srcset(Media $media, array $presets): string {
+        if (!$media->isResizable() || !$media->width || !$media->height) {
+            return '';
+        }
+        $candidates = [];
+        foreach ($presets as $preset) {
+            $size = $this->images->outputSize((int)$media->width, (int)$media->height, $preset);
+            if ($size !== null && !isset($candidates[$size[0]])) {
+                $candidates[$size[0]] = $this->url($media, $preset).' '.$size[0].'w';
+            }
+        }
+        ksort($candidates);
+        return implode(', ', $candidates);
     }
 
     /**
@@ -85,7 +134,7 @@ class MediaView {
     public function rowUrl(array $row, string $preset = ''): string {
         $path = (string)($row['path'] ?? '');
         if ($preset !== '' && $this->isRowResizable($row) && $this->images->hasPreset($preset)) {
-            $path = $this->storage->derivativePath($path, $preset);
+            return $this->urlOfPath($this->storage->derivativePath($path, $preset)).$this->presetQuery($preset);
         }
         return $this->urlOfPath($path);
     }

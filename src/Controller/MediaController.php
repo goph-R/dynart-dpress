@@ -51,6 +51,14 @@ class MediaController extends AbstractController {
             $this->app()->sendError(404);
         }
         $media = $this->media->findByPath($originalPath);
+        if ($media === null) {
+            // `dance-a1b2c3-thumb.jpg` is a GIF's still (`MediaStorage::STILL_PRESET`) - only
+            // when that is the name the GIF's derivative really has
+            $gif = substr($originalPath, 0, -strlen(pathinfo($originalPath, PATHINFO_EXTENSION))).'gif';
+            if ($this->storage->derivativePath($gif, $preset) === $requested) {
+                $media = $this->media->findByPath($gif);
+            }
+        }
         if ($media === null || $media->isDeleted()) {
             $this->app()->sendError(404);
         }
@@ -63,7 +71,9 @@ class MediaController extends AbstractController {
         if ($relative === null || !$this->storage->exists($relative)) {
             $this->app()->sendError(404);
         }
-        $this->send($this->storage->fullPath($relative), $media->mime_type);
+        // the file's own type, which a GIF's still is not
+        $still = in_array(strtolower(pathinfo($relative, PATHINFO_EXTENSION)), ['jpg', 'jpeg'], true);
+        $this->send($this->storage->fullPath($relative), $still ? 'image/jpeg' : $media->mime_type);
         return '';
     }
 
