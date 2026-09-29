@@ -37,6 +37,7 @@ node assets/admin.test.js
 node assets/markdown-highlight.test.js
 node assets/css-highlight.test.js
 node assets/html-highlight.test.js
+node assets/enlighter-tokenize.test.js
 node assets/enlighter-pascal.test.js   # after `node assets/enlighter/build.js`, if pascal.js changed
 node assets/emoji.test.js
 ```

@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.94.0] &ndash; 2026-09-29
+
+### Added
+- **The code editor colours every language EnlighterJS has** - Lua, Pascal, XML, JavaScript, JSON,
+  INI, YAML, SQL, shell and the forty others - with EnlighterJS's own rules, in the editor's
+  palette. `assets/enlighter/build.js` adds `EnlighterJS.tokenize(code, language)` to the bundle
+  (a language's tokens as `{start, end, type}`, found by any of its names; positions from the
+  lengths of the texts, since a token's own `index` can count from a substring), and
+  `Dpress.enlighterGrammar()` hands them to the backdrop, classed `enl-<type>`. The bundle is
+  loaded the first time a field needs it, so a screen without one does not pay its 62 KB.
+  **Our own grammars stay where they know better**: markdown (`media#12`, shortcodes, `---`),
+  HTML with PHP in it, and CSS.
+
+---
+
 ## [0.93.0] &ndash; 2026-09-29
 
 ### Added

@@ -703,6 +703,74 @@
         return null;
     }
 
+    /**
+     * Every other language, from EnlighterJS - the highlighter the site's code blocks use
+     *
+     * Our own grammars are for what EnlighterJS gets wrong for this site: markdown with `media#12`,
+     * shortcodes and `---`; a template, which is HTML *with PHP in it*; and CSS, which was first.
+     * For the rest - Lua, Pascal, XML, JavaScript, JSON, INI and the forty others - its own rules
+     * are good, and `EnlighterJS.tokenize()` (added by `assets/enlighter/build.js`) hands them over
+     * as the spans the backdrop paints, classed `enl-<type>`: `enl-k0` a keyword, `enl-s0` a string.
+     *
+     * A language it does not know either is left uncoloured - `text` is that on purpose.
+     */
+    Dpress.enlighterGrammar = function (language) {
+        var tokenize = global.EnlighterJS && global.EnlighterJS.tokenize;
+        if (typeof tokenize !== 'function' || tokenize('', language) === null) {
+            return null;
+        }
+        return {
+            prefix: 'enl-',
+            tokenize: function (text) {
+                // in order and never overlapping, which is what the backdrop reads them as
+                var spans = (tokenize(text, language) || []).slice().sort(function (a, b) {
+                    return a.start - b.start;
+                });
+                var at = 0;
+                return spans.filter(function (span) {
+                    if (span.start < at) {
+                        return false;
+                    }
+                    at = span.end;
+                    return true;
+                });
+            }
+        };
+    };
+
+    var enlighterWaiting = null;
+
+    /**
+     * The EnlighterJS bundle, the first time a field needs it - 62 KB that a screen with no such
+     * field never loads. The layout says where it is (`data-enlighter-script`).
+     */
+    function withEnlighter(done) {
+        if (global.EnlighterJS && global.EnlighterJS.tokenize) {
+            done();
+            return;
+        }
+        if (enlighterWaiting !== null) {
+            enlighterWaiting.push(done);
+            return;
+        }
+        var src = document.body.getAttribute('data-enlighter-script');
+        if (!src) {
+            return;
+        }
+        enlighterWaiting = [done];
+        var script = document.createElement('script');
+        script.src = src;
+        script.onload = function () {
+            var waiting = enlighterWaiting;
+            enlighterWaiting = null;
+            waiting.forEach(function (fn) { fn(); });
+        };
+        script.onerror = function () {
+            enlighterWaiting = null;   // the field stays a plain one, which it is anyway
+        };
+        document.head.appendChild(script);
+    }
+
     function initCodeEditors(root) {
         // A screen left while a field was full size took its field with it, and would leave the
         // page it arrives at unable to scroll
@@ -818,6 +886,16 @@
             var grammar = grammarOf(language);
             if (Dpress.backdrop && grammar) {
                 Dpress.backdrop.attach(textarea, grammar);
+            } else if (Dpress.backdrop && language !== 'text') {
+                // a language of EnlighterJS's: coloured once its bundle is here - the field works
+                // as a plain one until then, and the ruler goes on when the backdrop does
+                withEnlighter(function () {
+                    var borrowed = Dpress.enlighterGrammar(language);
+                    if (borrowed && textarea.isConnected) {
+                        Dpress.backdrop.attach(textarea, borrowed);
+                        placeColumns(textarea, !textarea.classList.contains('no-wrap'));
+                    }
+                });
             }
 
             // One frame around the bars and the field, which is what goes full size

@@ -295,10 +295,12 @@ textarea.numbered { padding-left: 52px; }
 }
 .code-backdrop.numbered .md-line,
 .code-backdrop.numbered .css-line,
-.code-backdrop.numbered .html-line { display: block; position: relative; counter-increment: code-line; }
+.code-backdrop.numbered .html-line,
+.code-backdrop.numbered .enl-line { display: block; position: relative; counter-increment: code-line; }
 .code-backdrop.numbered .md-line::before,
 .code-backdrop.numbered .css-line::before,
-.code-backdrop.numbered .html-line::before {
+.code-backdrop.numbered .html-line::before,
+.code-backdrop.numbered .enl-line::before {
     content: counter(code-line);
     position: absolute; left: -52px; width: 34px;
     text-align: right; color: var(--md-marker); font-weight: 400; font-style: normal;
@@ -547,6 +549,22 @@ textarea.is-highlighted::selection { background: var(--md-selection); }
 .code-backdrop .html-keyword  { color: var(--md-list); }
 .code-backdrop .html-variable { color: var(--md-strong); }
 .code-backdrop .html-string   { color: var(--md-em); }
+
+/* Every other language, from EnlighterJS's own rules (`Dpress.enlighterGrammar()`): its token
+   types by their letter, in the same palette - `k` keywords, `s` strings, `c` comments, `n`
+   numbers, `m` functions, `g` brackets, `x` markup, `e` and `t` the rest - so a Lua or a Pascal
+   file looks like it belongs with the markdown beside it. */
+.code-backdrop [class^="enl-k"] { color: var(--md-list); }
+.code-backdrop [class^="enl-s"] { color: var(--md-code); }
+.code-backdrop [class^="enl-c"] { color: var(--md-marker); font-style: italic; }
+.code-backdrop [class^="enl-n"] { color: var(--md-strong); }
+.code-backdrop [class^="enl-m"] { color: var(--md-link); }
+.code-backdrop [class^="enl-g"] { color: var(--md-marker); }
+.code-backdrop [class^="enl-x"] { color: var(--md-heading); }
+.code-backdrop [class^="enl-e"] { color: var(--md-em); }
+.code-backdrop [class^="enl-t"] { color: var(--md-heading); }
+/* the line spans are `enl-line`, and are not a token */
+.code-backdrop .enl-line { color: inherit; font-style: normal; }
 
 .filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
 /* the minimum is for the things somebody types or picks in, which is what a filter usually is.

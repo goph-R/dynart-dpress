@@ -508,6 +508,34 @@ const tests = {
         assert.strictEqual(window.Dpress.codeNewline('- item', '', 'markdown').text, '\n');
     },
 
+    // --- a language from EnlighterJS ---
+
+    'a language EnlighterJS has is a grammar, its spans in order and never overlapping'() {
+        const saved = global.EnlighterJS;
+        global.EnlighterJS = {tokenize: (text, language) => language === 'lua'
+            ? [{start: 6, end: 8, type: 's0'}, {start: 0, end: 5, type: 'k0'}, {start: 7, end: 9, type: 'c0'}]
+            : null};
+        try {
+            const grammar = window.Dpress.enlighterGrammar('lua');
+            assert.strictEqual(grammar.prefix, 'enl-');
+            assert.deepStrictEqual(grammar.tokenize('local "x" y').map(s => s.type), ['k0', 's0']);
+            assert.strictEqual(window.Dpress.enlighterGrammar('klingon'), null);
+        } finally {
+            global.EnlighterJS = saved;
+        }
+    },
+
+    /** before the bundle is loaded - or on a site that never loads it - a field stays plain */
+    'no EnlighterJS is no grammar'() {
+        const saved = global.EnlighterJS;
+        delete global.EnlighterJS;
+        try {
+            assert.strictEqual(window.Dpress.enlighterGrammar('lua'), null);
+        } finally {
+            global.EnlighterJS = saved;
+        }
+    },
+
     // --- where a list was left ---
 
     'each list on each screen is remembered on its own'() {

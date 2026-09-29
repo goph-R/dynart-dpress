@@ -48,11 +48,28 @@ function build() {
         declarations += `,${variable}=(${source})(${tokenizer},${rules})`;
         entries += `${name}:${variable},`;
     });
+    // `EnlighterJS.tokenize(code, language)`: a language's tokens as `{start, end, type}`, the
+    // plain text left out - what the admin's code editor paints a backdrop from (`code-backdrop.js`)
+    // for any language it has no grammar of its own for. The name is a language's or one of its
+    // aliases (`html` is `xml`), as a code block names it; null for one there is not. Declared
+    // before the table and reading it when called, so it sees the languages added above too.
+    declarations += ',dpress_tokenize=function(code,name){'
+        + 'name=String(name||"").toLowerCase();var L=he[name];'
+        + 'if(!L){Object.keys(he).some(function(k){var a=he[k].alias?he[k].alias():[];if(a.indexOf(name)>=0){L=he[k];return true}return false})}'
+        // where a token is comes from the lengths of the ones before it, not from its `index`: the
+        // texts always add up to the code, and an index is sometimes counted from a substring a
+        // rule looked inside (a JavaScript file's docblock, from token 71 on) and runs backwards
+        + 'if(!L)return null;var out=[],at=0;'
+        + '(function w(t){if(Array.isArray(t)){t.forEach(w)}else if(t){var n=String(t.text).length;if(t.type!=="text"&&n>0){out.push({start:at,end:at+n,type:t.type})}at+=n}})(new L().analyze(String(code)));'
+        + 'return out}';
+    once(bundle, /e\.version="3\.4\.0"/, 'the version, where the API is put together');
+
     bundle = bundle.replace(',he=Object.freeze({__proto__:null,generic:x,',
         `${declarations},he=Object.freeze({__proto__:null,generic:x,${entries}`);
+    bundle = bundle.replace('e.version="3.4.0"', 'e.version="3.4.0",e.tokenize=dpress_tokenize');
 
     return '/*! EnlighterJS 3.4.0, with the languages dpress adds (' + Object.keys(LANGUAGES).join(', ')
-        + ') - made by assets/enlighter/build.js from the unmodified enlighterjs.min.js */\n' + bundle;
+        + ') and EnlighterJS.tokenize() - made by assets/enlighter/build.js from the unmodified enlighterjs.min.js */\n' + bundle;
 }
 
 module.exports = {build, OUTPUT: path.join(DIR, 'enlighterjs.dpress.min.js')};

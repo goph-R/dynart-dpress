@@ -52,6 +52,7 @@ use Dynart\Dpress\Controller\Admin\AssetController;
       data-media-upload="<?= esc_attr($media_upload_url ?? '') ?>"
       data-media-preview="<?= esc_attr(route_url('/admin/media/preview')) ?>"
       data-site-url="<?= esc_attr(route_url('/')) ?>"
+      data-enlighter-script="<?= esc_attr(route_url('/assets/enlighter/'.\Dynart\Dpress\Content\CodeAssets::SCRIPT, ['v' => \Dynart\Dpress\Dpress::VERSION])) ?>"
       data-admin-url="<?= esc_attr($admin_url ?? '') ?>"
       data-route-param="<?= esc_attr($admin_route_param ?? '') ?>">
 
