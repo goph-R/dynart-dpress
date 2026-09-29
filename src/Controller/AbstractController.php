@@ -225,6 +225,7 @@ abstract class AbstractController {
         // the layout's way to fill a place with what a site put there. A variable, so a template
         // still looks up nothing itself, and lazy, so a theme that renders no places reads nothing
         $this->view->set('places', Micro::get(Places::class));
+        $this->addSiteStyle();
         $html = Micro::get(Shortcodes::class)->expand($this->view->fetch($template, $variables));
         return $this->withPageAssets($html);
     }
@@ -365,12 +366,32 @@ abstract class AbstractController {
      * two characters to a CSS parser inside a string or a comment, and nothing at all outside
      * one, so the escape changes no rule anybody meant to write.
      */
-    public static function contentStyle(?string $css): string {
+    public static function contentStyle(?string $css, string $marker = 'data-content-css'): string {
         $css = trim((string)$css);
         if ($css === '') {
             return '';
         }
-        return '<style data-content-css>'.str_ireplace('</', '<\/', $css).'</style>';
+        return '<style '.$marker.'>'.str_ireplace('</', '<\/', $css).'</style>';
+    }
+
+    /** The `PageAssets` name of the site's Additional CSS (Settings > Theme) */
+    const SITE_STYLE = 'site:css';
+
+    /**
+     * The whole site's Additional CSS in the head of the page being rendered
+     *
+     * **Before a post's own**: `PageAssets` prints in the order things were first added, so this
+     * is added ahead of the post's (`addContentStyle()` calls it first) and a post's Additional
+     * CSS still has the last word on its own page. Added again by `render()` for every other
+     * page, which only confirms it where it already is.
+     */
+    protected function addSiteStyle(): void {
+        $style = self::contentStyle(
+            (string)Micro::get(SettingService::class)->get(Setting::SITE_CSS, ''), 'data-site-css'
+        );
+        if ($style !== '') {
+            Micro::get(PageAssets::class)->add(self::SITE_STYLE, $style);
+        }
     }
 
     /**
@@ -381,6 +402,7 @@ abstract class AbstractController {
      * turned into a page: `renderContent()`, and the editor's preview.
      */
     protected function addContentStyle(Content $content): void {
+        $this->addSiteStyle();
         $style = self::contentStyle($content->css);
         if ($style !== '') {
             Micro::get(PageAssets::class)->add(self::CONTENT_STYLE, $style);

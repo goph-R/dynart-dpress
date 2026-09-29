@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.90.0] &ndash; 2026-09-29
+
+### Added
+- **Additional CSS for the whole site**, on Settings > Theme: the same CSS editor a post has, and
+  its styles in the head of every page a visitor sees, after the theme's stylesheet. A post's or a
+  page's own Additional CSS comes after it, so one post can still say otherwise. It cannot close
+  its `<style>` early, the same as a post's. The `site_css` setting.
+
+---
+
 ## [0.89.0] &ndash; 2026-09-29
 
 ### Added

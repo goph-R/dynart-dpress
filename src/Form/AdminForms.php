@@ -4,6 +4,7 @@ namespace Dynart\Dpress\Form;
 
 use Dynart\Dpress\Entity\Content;
 use Dynart\Dpress\Entity\MenuItem;
+use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Entity\User;
 use Dynart\Dpress\Form\Validator\EmailValidator;
 use Dynart\Dpress\Form\Validator\IntegerValidator;
@@ -375,6 +376,12 @@ class AdminForms {
             'code_theme' => ['type' => 'select', 'label' => 'Code theme', 'required' => false,
                              'options' => $context['code_themes'] ?? [],
                              'description' => 'Colours the fenced code blocks. Off loads no script at all.'],
+            // the post editor's Additional CSS, for every page: `data-code` makes it the same editor
+            Setting::SITE_CSS => ['type' => 'textarea', 'label' => 'Additional CSS', 'required' => false,
+                             'attributes' => ['rows' => '12', 'spellcheck' => 'false', 'class' => 'code numbered',
+                                              'data-code' => 'css'],
+                             'description' => "Added to the head of every page of the site, after the theme's stylesheet."
+                                 ." A post's or a page's own Additional CSS comes after it, so one post can still say otherwise."],
         ], false);
         $form->addValues($context['values'] ?? []);
     }

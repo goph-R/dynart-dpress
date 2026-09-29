@@ -93,6 +93,13 @@ class Setting extends Entity {
      */
     const CODE_THEME = 'code_theme';
 
+    /**
+     * Additional CSS for the whole site (Settings > Theme): after the theme's stylesheet on every
+     * page a visitor sees, and before a post's or a page's own, so one post can still say
+     * otherwise. For the small things a site wants without forking its theme.
+     */
+    const SITE_CSS = 'site_css';
+
     const REGISTRATION_OPEN = 'registration_open';
     const POSTS_PER_PAGE = 'posts_per_page';
 

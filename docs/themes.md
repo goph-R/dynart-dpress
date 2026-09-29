@@ -99,6 +99,12 @@ A theme keeps its stylesheet, fonts and pictures in its own `assets/`, and they 
 <img src="<?= esc_attr($theme->url('hero.png')) ?>" alt="">
 ```
 
+**What a site adds on top** comes after the theme's stylesheet, before `</head>`, with nothing for
+a theme to print: the site's **Additional CSS** (Settings > Theme, `<style data-site-css>`, since
+0.90.0), then a post's or a page's own (`<style data-content-css>`) - so a site can adjust a
+theme without forking it, and one post can still say otherwise. A theme whose stylesheet link is
+not in `<head>` loses that order.
+
 `$theme` is a `ThemeAssets`, set on every render like `$places` is, so a template looks nothing
 up itself. Two more things it answers:
 
