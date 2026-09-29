@@ -735,11 +735,19 @@ dialog.media-preview audio { width: min(480px, 90vw); }
 dialog.media-preview figcaption { font-size: 13px; opacity: .85; text-align: center; overflow-wrap: anywhere; }
 dialog.media-preview .media-preview-note { margin: 0; padding: 18px 24px; background: var(--panel); color: var(--ink); border-radius: var(--radius); }
 dialog.media-preview a { color: #fff; }
+/* A square with the × in its middle: the glyph sits low in its own line box, so a ring drawn round
+   the text alone came out lopsided, raised at the top */
 dialog.media-preview .close {
-    position: fixed; top: 12px; right: 16px; background: none; border: 0;
-    font-size: 30px; line-height: 1; color: #fff; cursor: pointer; opacity: .8;
+    position: fixed; top: 12px; right: 16px; width: 40px; height: 40px; padding: 0;
+    display: grid; place-items: center; background: none; border: 0; border-radius: var(--radius);
+    font-size: 30px; line-height: 0; color: #fff; cursor: pointer; opacity: .8;
 }
 dialog.media-preview .close:hover { opacity: 1; }
+dialog.media-preview .close:focus { outline: none; }
+dialog.media-preview .close:focus-visible { outline: 2px solid #fff; outline-offset: 0; opacity: 1; }
+/* the dialog takes the focus when it opens (`admin.js`) rather than the close button, so nothing
+   is ringed until somebody tabs to it */
+dialog.media-preview:focus { outline: none; }
 
 /* --- narrow screens --- */
 

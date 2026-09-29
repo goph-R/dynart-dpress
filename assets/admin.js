@@ -1461,7 +1461,11 @@
                 close();
             }
         });
+        // the focus on the dialog, not on its first button: opened with Alt+P, a focused × is a
+        // ringed ×, and nothing is to be pressed yet - Esc closes it either way
+        dialog.tabIndex = -1;
         dialog.showModal();
+        dialog.focus();
         return dialog;
     };
 

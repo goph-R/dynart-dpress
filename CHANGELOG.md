@@ -5,6 +5,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.85.1] &ndash; 2026-09-29
+
+### Fixed
+- **Preview media's close button** had its focus ring drawn round the × alone, which sits low in
+  its line - lopsided, raised at the top. It is a square with the × in its middle now, and the
+  dialog takes the focus when it opens, so nothing is ringed until somebody tabs to it.
+
+---
+
 ## [0.85.0] &ndash; 2026-09-29
 
 ### Added
