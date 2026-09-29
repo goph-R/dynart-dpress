@@ -12,7 +12,7 @@ Status: **0.83.2**, feature complete and pre-1.0. Everything below is built. Wha
 on is the schema settling down — until then a schema change means dropping and recreating the
 database, and there are no rename migrations.
 
-![The post editor](docs/images/screenshot-post-edit.jpg)
+![The post editor](docs/images/screenshot-post-edit-v2.jpg)
 
 ![The list of posts: featured pictures, moving up and down, history and the trash](docs/images/screenshot-post-list.jpg)
 
