@@ -11,6 +11,7 @@ use Dynart\Micro\ViewInterface;
 use Dynart\Micro\WebApp;
 use Dynart\Dpress\Security\DpressUser;
 use Dynart\Dpress\Theme\PageAssets;
+use Dynart\Dpress\Theme\ThemeService;
 use Dynart\Dpress\Content\Shortcodes;
 use Dynart\Dpress\Entity\Setting;
 use Dynart\Dpress\Media\MediaView;
@@ -474,8 +475,12 @@ abstract class AbstractController {
             'mediaView'   => Micro::get(MediaView::class),
         ];
         if ($content->isPage()) {
-            return $this->render($this->firstTemplate(self::templateCandidates(
-                'dpress:content/page', (string)$content->slug, (int)$content->id
+            // the template chosen in the editor first - it is the explicit choice - then the
+            // hierarchy, which is also where a template the theme no longer has falls back to
+            $chosen = ContentService::templateName($content->template);
+            return $this->render($this->firstTemplate(array_merge(
+                $chosen !== null ? ['dpress:content/'.ThemeService::PAGE_TEMPLATE_PREFIX.$chosen] : [],
+                self::templateCandidates('dpress:content/page', (string)$content->slug, (int)$content->id)
             )), $common + [
                 'ancestors' => $contents->ancestors($content),
                 'children'  => $contents->findChildren($content->id),

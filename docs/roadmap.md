@@ -228,11 +228,15 @@ argument for doing them first.
 
 | | | Status |
 |---|---|---|
-| 7.1 | A page's template chosen in the editor | planned |
+| 7.1 | A page's template chosen in the editor | **built in 0.91.0** |
 | 7.2 | A post's template by its category | planned |
 | 7.3 | The error pages from the theme | planned |
 
 ### 7.1 A page's template chosen in the editor
+
+> **Built in 0.91.0**, as below: a `content.template` column (so revisions keep it, and the first
+> migration since the schema was squashed adds it), the chosen template before `page-<slug>`,
+> and a template the theme no longer has kept on the select, marked, and falling back to `page`.
 
 WordPress's *Template* dropdown. The hierarchy ties a layout to one page by its slug or its id,
 which is right for a theme made for one site and wrong for anything an author should decide: the

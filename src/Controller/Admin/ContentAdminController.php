@@ -5,6 +5,7 @@ namespace Dynart\Dpress\Controller\Admin;
 use Dynart\Micro\Attribute\Route;
 use Dynart\Micro\ConfigInterface;
 use Dynart\Micro\JwtAuthInterface;
+use Dynart\Micro\Micro;
 use Dynart\Micro\RequestInterface;
 use Dynart\Micro\RouterInterface;
 use Dynart\Micro\SessionInterface;
@@ -28,6 +29,7 @@ use Dynart\Dpress\Service\MediaService;
 use Dynart\Dpress\Service\SettingService;
 use Dynart\Dpress\Service\TaxonomyService;
 use Dynart\Dpress\Service\UserService;
+use Dynart\Dpress\Theme\ThemeService;
 
 /**
  * Posts and pages
@@ -612,6 +614,10 @@ class ContentAdminController extends AbstractAdminController {
         if (array_key_exists('css', $data)) {
             $content->css = $data['css'];
         }
+        // and the template, so the preview is drawn the way the page will be
+        if (array_key_exists('template', $data)) {
+            $content->template = ContentService::templateName($data['template']);
+        }
         $this->content->renderInto($content);
         return $content;
     }
@@ -827,6 +833,7 @@ class ContentAdminController extends AbstractAdminController {
         ];
         if ($type === Content::TYPE_PAGE) {
             $context['pages'] = $this->pageOptions($content);
+            $context['page_templates'] = $this->pageTemplateOptions($content);
         } else {
             $context['categories'] = $this->categoryOptions();
             if ($content !== null) {
@@ -938,6 +945,24 @@ class ContentAdminController extends AbstractAdminController {
     }
 
     /**
+     * The page editor's *Template* select: the usual one, then the active theme's page templates
+     *
+     * A page set to one the theme no longer has keeps it on the list, marked, rather than
+     * losing it on the next save because the select could not show it - switching back to the
+     * theme that has it should find the page as it was.
+     *
+     * @return array<string, string> name => label, '' for the usual template
+     */
+    protected function pageTemplateOptions(?Content $content): array {
+        $options = ['' => 'Default'] + Micro::get(ThemeService::class)->pageTemplates();
+        $chosen = (string)($content?->template ?? '');
+        if ($chosen !== '' && !isset($options[$chosen])) {
+            $options[$chosen] = $chosen.' (not in this theme - the default is used)';
+        }
+        return $options;
+    }
+
+    /**
      * The Posts list's category filter: every category, a child under its parent and indented
      * by an em space a level, so a subcategory reads as one without a tree widget
      *
@@ -1001,6 +1026,9 @@ class ContentAdminController extends AbstractAdminController {
         }
         if (array_key_exists('css', $values)) {
             $data['css'] = (string)$values['css'];
+        }
+        if (array_key_exists('template', $values)) {
+            $data['template'] = (string)$values['template'];
         }
         return $data;
     }

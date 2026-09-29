@@ -185,6 +185,21 @@ author of a theme reads, and the id is for a slug that is going to change. Only 
 A category's templates get **`$category`** and a tag's **`$tag`** - the entity, with its
 `description` and a category's `thumbnail_media_id` - besides what `list` gets.
 
+**A page's template chosen in the editor** (0.91.0): every `dpress/content/page-template-<name>.phtml`
+in the theme is an option of the page editor's **Template** select, labelled by a
+`Template Name: Photo gallery` line near the top of the file (WordPress's header) or by the name,
+`wide-page` as *Wide page*. The chosen one comes **before** `page-<slug>` - it is the explicit
+choice - and a page whose template the theme no longer has falls back to the order above, with the
+editor saying so. The select only appears when the theme has one to choose.
+
+```php
+<?php
+/**
+ * Template Name: Photo gallery
+ */
+$this->useLayout($layout ?? 'dpress:layout') ?>
+```
+
 ---
 
 ## 5. What a template is given

@@ -85,6 +85,7 @@ use Dynart\Dpress\Security\AuthCookies;
 use Dynart\Dpress\Mail\LogMailer;
 use Dynart\Dpress\Mail\MailerInterface;
 use Dynart\Dpress\Mail\NativeMailer;
+use Dynart\Dpress\Migration\AddContentTemplate;
 use Dynart\Dpress\Migration\CreateSchema;
 use Dynart\Dpress\Plugin\PluginService;
 use Dynart\Dpress\Plugin\PluginCliCommands;
@@ -140,6 +141,7 @@ class DpressServices {
      */
     const MIGRATIONS = [
         CreateSchema::class,
+        AddContentTemplate::class,
     ];
 
     /** The entities the CMS provides, registered explicitly rather than by a namespace scan */

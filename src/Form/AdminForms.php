@@ -171,6 +171,16 @@ class AdminForms {
                 'parent_id' => ['type' => 'select', 'label' => 'Parent page', 'required' => false,
                                 'options' => $context['pages'] ?? [0 => '(none)']],
             ], false);
+            // Only when the theme has a page template to choose: a select whose one option is
+            // "Default" is a question with one answer. Not on the form, it is not in the values,
+            // and a save leaves whatever the page had.
+            if (count($context['page_templates'] ?? []) > 1) {
+                $form->addFields([
+                    'template' => ['type' => 'select', 'label' => 'Template', 'required' => false,
+                                   'options' => $context['page_templates'],
+                                   'description' => "The layout this page is drawn with - the theme's page templates."],
+                ], false);
+            }
         } else {
             $form->addFields([
                 'categories' => ['type' => 'checkboxes', 'label' => 'Categories', 'required' => false,
@@ -194,6 +204,7 @@ class AdminForms {
                 'featured_media_id' => (string)($content->featured_media_id ?? ''),
                 'weight'   => (string)$content->weight,
                 'css'      => (string)($content->css ?? ''),
+                'template' => (string)($content->template ?? ''),
                 'author_id' => (string)$content->author_id,
                 'parent_id' => (string)($content->parent_id ?? ''),
                 'tags'      => $context['tags'] ?? '',

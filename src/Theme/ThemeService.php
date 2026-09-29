@@ -119,6 +119,40 @@ class ThemeService {
         return $name !== '' && $this->has($name) ? $name : self::FALLBACK;
     }
 
+    /** A page template's file name, before its name: `page-template-gallery.phtml` */
+    const PAGE_TEMPLATE_PREFIX = 'page-template-';
+
+    /**
+     * The page templates the active theme has, for the page editor's *Template* select (0.91.0)
+     *
+     * `dpress/content/page-template-<name>.phtml` in the theme. The label is the file's
+     * `Template Name: Gallery` line when it has one near the top - WordPress's header - and the
+     * name otherwise, `gallery` as *Gallery*. A name that is not plain `[a-z0-9-]` is not offered,
+     * since it is stored and becomes part of a file path again.
+     *
+     * @return array<string, string> name => label, by label
+     */
+    public function pageTemplates(): array {
+        $theme = $this->active();
+        if ($theme === '') {
+            return [];
+        }
+        $templates = [];
+        $folder = $this->path().'/'.$theme.'/'.Dpress::VIEW_NAMESPACE.'/content';
+        foreach (glob($folder.'/'.self::PAGE_TEMPLATE_PREFIX.'*.phtml') ?: [] as $file) {
+            $name = substr(basename($file, '.phtml'), strlen(self::PAGE_TEMPLATE_PREFIX));
+            if (preg_match('/^[a-z0-9][a-z0-9-]*$/', $name) !== 1) {
+                continue;
+            }
+            $head = (string)@file_get_contents($file, false, null, 0, 2048);
+            $templates[$name] = preg_match('/Template Name:[ \t]*([^\r\n*?]+)/', $head, $match) === 1
+                ? trim($match[1])
+                : ucfirst(str_replace('-', ' ', $name));
+        }
+        asort($templates, SORT_NATURAL | SORT_FLAG_CASE);
+        return $templates;
+    }
+
     /**
      * The places the active theme declares, so the menu editor can offer them
      *

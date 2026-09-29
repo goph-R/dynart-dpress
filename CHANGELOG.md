@@ -5,6 +5,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.91.0] &ndash; 2026-09-29
+
+### Added
+- **A page's template, chosen in the editor** - WordPress's *Template* dropdown. The theme's
+  `dpress/content/page-template-<name>.phtml` files are the options, labelled by a
+  `Template Name:` line in the file or by the name. The chosen one is tried before
+  `page-<slug>`; one the theme no longer has stays on the select, marked, and the page falls
+  back to its usual template. Kept with a revision, like the CSS. The select appears only when
+  the theme has a page template. `docs/themes.md` §4.
+
+### Notes
+**Run `dpress upgrade`** before serving the new code: `0002_add_content_template` adds
+`content.template` and its audit mirror - the first column that comes by migration rather than by
+an `alter table` in these notes. On a fresh install it finds the column already there and does
+nothing.
+
+---
+
 ## [0.90.0] &ndash; 2026-09-29
 
 ### Added

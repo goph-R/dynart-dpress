@@ -308,6 +308,7 @@ class ContentService {
         $content->featured_media_id = $this->nullableId($data['featured_media_id'] ?? null);
         $content->weight = (int)($data['weight'] ?? 0);
         $content->css = $this->nullableText($data['css'] ?? null);
+        $content->template = self::templateName($data['template'] ?? null);
         if ($content->isPage()) {
             $content->position = $this->nextPosition($content);
         }
@@ -368,6 +369,9 @@ class ContentService {
         }
         if (array_key_exists('css', $data)) {
             $content->css = $this->nullableText($data['css']);
+        }
+        if (array_key_exists('template', $data)) {
+            $content->template = self::templateName($data['template']);
         }
         // Whose name goes on it. Checked by the caller against the people it actually
         // offered, because this is a foreign key: an id that is not a user is a database
@@ -695,7 +699,18 @@ class ContentService {
     // --- Revisions ---
 
     /** What restoring a revision takes from it: what somebody wrote, and nothing about where it lives */
-    const REVISION_FIELDS = ['title', 'markdown', 'featured_media_id', 'css'];
+    const REVISION_FIELDS = ['title', 'markdown', 'featured_media_id', 'css', 'template'];
+
+    /**
+     * A page template's name as it is stored: plain `[a-z0-9-]`, or null for the usual template
+     *
+     * Anything else is null rather than an error: it goes into a file name, and a name that
+     * cannot be one is no template at all.
+     */
+    public static function templateName(mixed $value): ?string {
+        $name = trim((string)$value);
+        return preg_match('/^[a-z0-9][a-z0-9-]{0,63}$/', $name) === 1 ? $name : null;
+    }
 
     /**
      * Puts a revision's writing back, as a new revision - the ones in between stay in the history

@@ -152,6 +152,15 @@ class Content extends Entity {
     #[Column(type: Column::TYPE_STRING)]
     public ?string $css = null;
 
+    /**
+     * The page template chosen in the editor (0.91.0): `gallery` for the theme's
+     * `dpress/content/page-template-gallery.phtml`, or null for the usual one. A name, not a
+     * path, and only ever `[a-z0-9-]` - it becomes part of a file name. A page whose theme does
+     * not have it any more renders with the usual template, and the editor says so.
+     */
+    #[Column(type: Column::TYPE_STRING, size: 64)]
+    public ?string $template = null;
+
     #[Column(type: Column::TYPE_DATETIME, notNull: true)]
     public ?string $created_at = null;
 
