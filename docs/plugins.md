@@ -295,6 +295,27 @@ is accepted by every command, a plugin's too. `dpress help` lists it under *Plug
 - **Only inside a site.** Plugins load when there is a database to read the enabled list from, so a
   plugin's command run outside one is an unknown command, answered with the help.
 
+## 5e. Files in a git clone
+
+For a plugin that edits files on the server - the Docs plugin's pages, a theme's templates, a
+game's scripts - Dpress has the three things that are easy to get wrong, in
+`Dynart\Dpress\Repository` (0.93.0, moved from the Docs plugin so the next editor does not copy
+them). `Git`, `RepositoryStatus` and `RepositoryUpdater` are services; take them in a constructor.
+
+| | |
+|---|---|
+| `RepositoryFiles($folder)` | `read($path)` and `write($path, $text, $openedHash)`: a path is relative and stays inside the folder; the file's own line endings and final newline are kept, so a one-word edit is one word in `git diff`; a file changed on disk since it was opened is not written over (`hash()` it when you draw the editor); text that is not UTF-8 is refused |
+| `RepositoryStatus::changes($folder)` | path => `uncommitted` or `unpushed`, submodules included and asked of themselves - what an editor warns about. Null when the folder is not a clone |
+| `RepositoryUpdater::update($folder)` | `git pull --ff-only` and the submodules; `ok`, a `message`, and the commits `before` and `after` |
+| `Git::run($folder, $arguments)` | one command: an argument list, never a shell line; nobody for git to ask for a password; a stalled connection given up |
+
+**Which files may be opened is the plugin's decision** - the Docs plugin opens only a page the
+build published, never a path from a query string. These are the floor under that, not the
+policy. And a plugin that writes `.phtml` or `.php` is running code on the server: give it a
+permission of its own, and keep it out of core, where not installing it is the off switch.
+
+---
+
 ## 6. Turning one on
 
 ```bash

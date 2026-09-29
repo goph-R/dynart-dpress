@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.93.0] &ndash; 2026-09-29
+
+### Added
+- **`Dynart\Dpress\Repository`: files in a git clone, for any plugin** - `Git`, `RepositoryStatus`,
+  `RepositoryUpdater` (services) and `RepositoryFiles`, moved here from the Docs plugin so the next
+  editor - a theme's templates, a game's scripts - does not copy them. Unchanged in what they do;
+  the messages say "the folder" instead of "the source folder", and `update()` also answers the
+  commits `before` and `after`. `docs/plugins.md` §5e.
+
+### Notes
+**The Docs plugin 0.7.0 needs this version** - it uses these and no longer has its own. Update
+Dpress first, then the plugin.
+
+---
+
 ## [0.92.0] &ndash; 2026-09-29
 
 ### Added

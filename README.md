@@ -8,7 +8,7 @@ are rendered when they are saved, and a page view is a handful of queries and no
 front end ships **no JavaScript** — a page loads a script only if there is something on it that
 needs one, a code block or a plugin's widget.
 
-Status: **0.92.0**, feature complete and pre-1.0. Everything below is built. What 1.0 is waiting
+Status: **0.93.0**, feature complete and pre-1.0. Everything below is built. What 1.0 is waiting
 on is the schema settling down — until then a schema change means dropping and recreating the
 database, and there are no rename migrations.
 

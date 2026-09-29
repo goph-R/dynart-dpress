@@ -86,6 +86,9 @@ use Dynart\Dpress\Mail\LogMailer;
 use Dynart\Dpress\Mail\MailerInterface;
 use Dynart\Dpress\Mail\NativeMailer;
 use Dynart\Dpress\Migration\AddContentTemplate;
+use Dynart\Dpress\Repository\Git;
+use Dynart\Dpress\Repository\RepositoryStatus;
+use Dynart\Dpress\Repository\RepositoryUpdater;
 use Dynart\Dpress\Migration\CreateSchema;
 use Dynart\Dpress\Plugin\PluginService;
 use Dynart\Dpress\Plugin\PluginCliCommands;
@@ -260,6 +263,10 @@ class DpressServices {
         Micro::add(Blocks::class);
         Micro::add(BlockService::class);
         Micro::add(Places::class);
+        // git and the files of a clone, for an editor in the admin - the Docs plugin's, a theme's
+        Micro::add(Git::class);
+        Micro::add(RepositoryStatus::class);
+        Micro::add(RepositoryUpdater::class);
         Micro::add(TagCloudBlock::class);
         Micro::add(CategoryListBlock::class);
         Micro::add(MarkdownBlock::class);
