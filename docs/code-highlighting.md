@@ -8,6 +8,8 @@ echo "hello";
 ```
 ````
 
+(This is the published page. The admin editor's colours are [code-editor.md](code-editor.md).)
+
 The word after the backticks names the language. Thirteen themes ship; one is chosen in
 **Settings → Theme → Code theme**, and *No highlighting* is one of the choices.
 

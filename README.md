@@ -332,6 +332,7 @@ it did. The `docs/` folder is a page per feature:
 | [callouts.md](docs/callouts.md) | `> [!WARNING]` |
 | [fenced-divs.md](docs/fenced-divs.md) | Boxes: `::: {.center}` ... `:::` |
 | [code-highlighting.md](docs/code-highlighting.md) | Fenced code, and why the colours are not stored |
+| [code-editor.md](docs/code-editor.md) | The admin editor's colours: three grammars of our own, EnlighterJS for the rest, and why |
 | [autolinks.md](docs/autolinks.md) | Bare URLs in prose |
 | [pages-in-content.md](docs/pages-in-content.md) | Long posts, served a page at a time |
 | [media-in-the-editor.md](docs/media-in-the-editor.md) | Attachments against references, which are not the same thing |
