@@ -108,6 +108,12 @@ abstract class AbstractAdminController extends AbstractController {
         $this->view->set('editor_columns', max(Setting::MIN_EDITOR_COLUMNS, min(Setting::MAX_EDITOR_COLUMNS,
             Micro::get(SettingService::class)->getInt(Setting::ADMIN_EDITOR_COLUMNS, Setting::DEFAULT_EDITOR_COLUMNS)
                 ?: Setting::DEFAULT_EDITOR_COLUMNS)));
+        // which colour scheme to force, '' to leave it to the machine. On the `<html>` element
+        // rather than the body, because the tokens the whole page is drawn from are declared on
+        // `:root` and a stylesheet cannot reach up out of `body` to redefine them. It survives a
+        // partial navigation for free - that replaces `<main>` - and a save redirects, which
+        // admin.js hands to the browser as a real navigation, so a change is seen at once.
+        $this->view->set('admin_theme', $this->adminTheme());
         // a plugin's stylesheet and script go in the layout rather than in its widget's own
         // template: a screen reached by a partial navigation is inserted HTML, and inserted HTML
         // does not run its scripts. The layout is only rendered on a real page load, which is
@@ -381,6 +387,21 @@ abstract class AbstractAdminController extends AbstractController {
 
     protected function notice(): string {
         return (string)$this->request->get('notice', '');
+    }
+
+    /**
+     * The colour scheme the admin was told to force, or '' to follow the machine
+     *
+     * Only the two overrides are answered. `system`, unset, and anything a hand-edited row or a
+     * newer version might hold all come back as '' - the layout then writes no attribute, and
+     * `prefers-color-scheme` decides as it always did. The alternative, passing the word through,
+     * would put `data-theme="system"` on the element, which nothing styles: the admin would fall
+     * to the stylesheet's bare `:root`, which is the light palette, and a dark desktop would have
+     * been quietly ignored by the setting that says it is following it.
+     */
+    protected function adminTheme(): string {
+        $theme = (string)Micro::get(SettingService::class)->get(Setting::ADMIN_THEME, Setting::ADMIN_THEME_SYSTEM);
+        return in_array($theme, Setting::ADMIN_THEME_OVERRIDES, true) ? $theme : '';
     }
 
     /**

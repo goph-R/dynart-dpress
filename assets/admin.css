@@ -46,8 +46,27 @@
     --md-separator: var(--danger);
 }
 
+/* The two schemes, and the Admin UI setting that overrides the machine
+ *
+ * `:root` above is the light palette and the default. What picks the dark one is either the
+ * machine, through `prefers-color-scheme`, or the Colour scheme setting, which writes
+ * `data-theme` on `<html>` - and the setting has to win **in both directions**, because a light
+ * admin on a dark desktop is half of what the setting is for. Hence the shape of the next two
+ * rules rather than the single `:root` that was here:
+ *
+ * - the media query is guarded with `:not([data-theme="light"])`, so asking for Light beats a
+ *   dark desktop instead of merely failing to add to it;
+ * - `[data-theme="dark"]` is stated outside any media query, because Dark asked for on a light
+ *   machine is the one case no `prefers-color-scheme` rule will ever fire for.
+ *
+ * **The palette is therefore written twice, and the two copies are one palette.** A plain
+ * stylesheet with no build step cannot put a single declaration list behind two conditions when
+ * one of them is a media query, so a token added or a value tuned in either block belongs in the
+ * other. The alternative is `light-dark()`, which would collapse both into the `:root` above and
+ * wants a browser baseline about a year newer than the `color-mix()` this file already uses.
+ */
 @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
         --bg: #18181b;
         --panel: #27272a;
         --ink: #e4e4e7;
@@ -79,6 +98,49 @@
         --md-shortcode: #bd93f9;
         --md-separator: #ff5555;
     }
+}
+
+/* Dark, asked for rather than inherited from the machine. The same palette as the block above,
+   and the note on it is the one to read before touching either. */
+:root[data-theme="dark"] {
+    /* stated rather than left as the `light dark` on `:root`, so the scrollbars, the form
+       controls and the caret follow the override too - the browser picks those off
+       `color-scheme`, and a forced-dark admin on a light desktop otherwise draws a white
+       scrollbar down a dark page. */
+    color-scheme: dark;
+
+    --bg: #18181b;
+    --panel: #27272a;
+    --ink: #e4e4e7;
+    --muted: #a1a1aa;
+    --line: #3f3f46;
+    --line-focus: #52525b;
+    --thumb-bg: #3f3f46;
+    --accent: #fafafa;
+
+    --md-bg: #282a36;
+    --md-ink: #f8f8f2;
+    --md-selection: rgba(68, 71, 90, .6);
+    --md-marker: #6272a4;
+    --md-heading: #bd93f9;
+    --md-strong: #ffb86c;
+    --md-em: #f1fa8c;
+    --md-code: #50fa7b;
+    --md-quote: #6272a4;
+    --md-callout: #ffb86c;
+    --md-list: #ff79c6;
+    --md-link: #8be9fd;
+    --md-url: #ff79c6;
+    --md-ref-hash: #ffffff;
+    --md-shortcode: #bd93f9;
+    --md-separator: #ff5555;
+}
+
+/* Light, asked for. The palette is `:root`'s already, so this has nothing to restate: the guard
+   on the media query is what keeps the machine's dark rule off, and all that is left is to pin
+   `color-scheme` so the native widgets come back light too. */
+:root[data-theme="light"] {
+    color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -851,15 +913,26 @@ dialog.media-preview:focus { outline: none; }
 .count-pages  { --card-bg: #ede9fe; --card-ink: #6d28d9; }
 .count-media  { --card-bg: #dcfce7; --card-ink: #15803d; }
 .count-users  { --card-bg: #fce7f3; --card-ink: #be185d; }
+/* The cards in dark, the two ways of getting there - the palette note near the top of the file is
+   the one to read before touching either copy. These carry the scheme on a selector rather than
+   on `:root` because what changes is a value per card, which `:root` has no way to say. */
 @media (prefers-color-scheme: dark) {
-    .count-posts  { --card-ink: #7dd3fc; }
-    .count-drafts { --card-ink: #fcd34d; }
-    .count-pages  { --card-ink: #c4b5fd; }
-    .count-media  { --card-ink: #86efac; }
-    .count-users  { --card-ink: #f9a8d4; }
-    .count-posts, .count-drafts, .count-pages, .count-media, .count-users {
+    :root:not([data-theme="light"]) .count-posts  { --card-ink: #7dd3fc; }
+    :root:not([data-theme="light"]) .count-drafts { --card-ink: #fcd34d; }
+    :root:not([data-theme="light"]) .count-pages  { --card-ink: #c4b5fd; }
+    :root:not([data-theme="light"]) .count-media  { --card-ink: #86efac; }
+    :root:not([data-theme="light"]) .count-users  { --card-ink: #f9a8d4; }
+    :root:not([data-theme="light"]) :is(.count-posts, .count-drafts, .count-pages, .count-media, .count-users) {
         --card-bg: color-mix(in srgb, var(--card-ink) 11%, var(--panel));
     }
+}
+:root[data-theme="dark"] .count-posts  { --card-ink: #7dd3fc; }
+:root[data-theme="dark"] .count-drafts { --card-ink: #fcd34d; }
+:root[data-theme="dark"] .count-pages  { --card-ink: #c4b5fd; }
+:root[data-theme="dark"] .count-media  { --card-ink: #86efac; }
+:root[data-theme="dark"] .count-users  { --card-ink: #f9a8d4; }
+:root[data-theme="dark"] :is(.count-posts, .count-drafts, .count-pages, .count-media, .count-users) {
+    --card-bg: color-mix(in srgb, var(--card-ink) 11%, var(--panel));
 }
 
 /* --- plain tables, for the screens that are not a dynamic list --- */

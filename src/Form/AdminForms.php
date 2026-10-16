@@ -399,6 +399,11 @@ class AdminForms {
 
     public function adminSettings(DpressForm $form, array $context): void {
         $form->addFields([
+            'admin_theme' => ['type' => 'select', 'label' => 'Colour scheme', 'required' => false,
+                              'options' => $context['admin_themes'] ?? [],
+                              'description' => 'The admin only - the site is drawn by its theme. Following the system is '
+                                  .'the default; Light and Dark each override it, so a light admin on a dark desktop is '
+                                  .'as available as the other way round.'],
             'admin_pages_thumbnail' => ['type' => 'checkbox', 'label' => 'Pages list', 'required' => false,
                                         'text' => 'Show the featured picture on the Pages list',
                                         'description' => 'The Posts list always shows it. Most pages have none, so it is off unless yours do.'],

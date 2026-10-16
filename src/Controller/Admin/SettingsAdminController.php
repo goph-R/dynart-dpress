@@ -171,7 +171,18 @@ class SettingsAdminController extends AbstractAdminController {
     #[Route('POST', '/admin/settings/admin')]
     public function adminTab(): string {
         $this->requirePermission(Permissions::SETTING_VIEW);
-        $form = $this->forms->create(AdminForms::ADMIN_SETTINGS, ['values' => $this->currentValues()]);
+        $form = $this->forms->create(AdminForms::ADMIN_SETTINGS, [
+            'values' => $this->currentValues(),
+            // `system` is a word rather than '', for the reason the code theme's "off" is one:
+            // an empty setting is read as absent and answers with the default. The label says
+            // what following the machine means, because "System" alone is a word about the
+            // setting rather than about the screen it changes.
+            'admin_themes' => [
+                Setting::ADMIN_THEME_SYSTEM => 'Follow the operating system',
+                Setting::ADMIN_THEME_LIGHT  => 'Light',
+                Setting::ADMIN_THEME_DARK   => 'Dark',
+            ],
+        ]);
         if ($form->process()) {
             $this->requirePermission(Permissions::SETTING_UPDATE);
             $form->handle(fn($form) => $this->save($form->values()));

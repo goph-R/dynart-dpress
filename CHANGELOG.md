@@ -5,6 +5,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.95.0] &ndash; 2026-10-17
+
+### Added
+- **The admin's colour scheme, chosen on the Admin UI tab** - *Follow the operating system*, which
+  is what the admin has always done and is still the default, or *Light* or *Dark* for where the
+  machine is not the answer: a shared desktop nobody wants to re-theme, a laptop whose dark mode
+  follows the sunset while the person using it does not. `admin_theme` is a setting like any other,
+  so it is stored and audited and "who turned it which way" is answerable;
+  `AbstractAdminController::adminTheme()` resolves it and `views/admin/layout.phtml` writes
+  `data-theme` on `<html>` for an override and **nothing at all** for `system` - the word is not
+  passed through, because `data-theme="system"` is an attribute no rule selects and the admin would
+  fall to the bare `:root`, which is the light palette, on a dark desktop. The site's own pages are
+  untouched: a visitor's page is the theme's business.
+
+  It is an **override in both directions**, since a light admin on a dark desktop is half of what
+  the setting is for. That is the shape of the change in `admin.css`: the `prefers-color-scheme`
+  rules are guarded with `:not([data-theme="light"])`, so asking for Light beats a dark desktop
+  instead of merely failing to add to it, and the dark palette is stated a second time for
+  `[data-theme="dark"]` - the one case no media query will ever fire for. **The two copies are one
+  palette and must change together**, which the note above them in the file says: a stylesheet with
+  no build step cannot put a single declaration list behind two conditions when one of them is a
+  media query. `color-scheme` is pinned on both overrides as well, or the scrollbars and the form
+  controls stay the machine's while everything the stylesheet draws has changed.
+
+---
+
 ## [0.94.0] &ndash; 2026-09-29
 
 ### Added

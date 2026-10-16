@@ -215,6 +215,33 @@ class Setting extends Entity {
     const MIN_EDITOR_COLUMNS = 20;
     const MAX_EDITOR_COLUMNS = 300;
 
+    /**
+     * Which of the admin's two colour schemes is drawn, whatever the machine asks for
+     *
+     * **`system` by default**, which is what the admin did before this existed and is right for
+     * almost everybody: `prefers-color-scheme` decides, and somebody who has set their desktop
+     * dark has already said what they want. The other two are for where the machine is not the
+     * answer - a shared desktop nobody wants to re-theme, a laptop whose dark mode follows the
+     * sunset while the person using it does not - and they are an **override in both
+     * directions**, so Light on a dark desktop is as available as Dark on a light one. A setting
+     * that could only ask for dark would be half of the answer.
+     *
+     * An admin setting, like the two above: the site's own pages are the theme's business and
+     * nothing here touches them. **One per site rather than one per user** - every setting is,
+     * and this one is stored and audited beside the rest; who turned it which way is answerable.
+     *
+     * The value is a word rather than a flag because there are three states, and because `''`
+     * reads as absent through `SettingService::get()` and answers with the default - the reason
+     * the code theme's "off" is `none`. Anything else at all is read as `system`.
+     */
+    const ADMIN_THEME = 'admin_theme';
+    /** Follow `prefers-color-scheme`, which is what an unset or unknown value means too */
+    const ADMIN_THEME_SYSTEM = 'system';
+    const ADMIN_THEME_LIGHT = 'light';
+    const ADMIN_THEME_DARK = 'dark';
+    /** The two that override the machine. `system` is the absence of an override, not a third palette */
+    const ADMIN_THEME_OVERRIDES = [self::ADMIN_THEME_LIGHT, self::ADMIN_THEME_DARK];
+
     const DATE_FORMAT = 'date_format';
     const TIMEZONE = 'timezone';
 

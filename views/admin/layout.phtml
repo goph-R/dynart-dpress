@@ -13,7 +13,10 @@
 use Dynart\Dpress\Controller\Admin\AssetController;
 ?>
 <!DOCTYPE html>
-<html lang="<?= esc_attr($locale ?? 'en') ?>">
+<?php // `data-theme` is written only when the Admin UI setting forces one of the two schemes;
+      // without it the stylesheet is left to `prefers-color-scheme`, which is the default and
+      // what the admin did before the setting existed. ?>
+<html lang="<?= esc_attr($locale ?? 'en') ?>"<?= empty($admin_theme) ? '' : ' data-theme="'.esc_attr($admin_theme).'"' ?>>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

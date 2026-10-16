@@ -8,7 +8,7 @@ are rendered when they are saved, and a page view is a handful of queries and no
 front end ships **no JavaScript** — a page loads a script only if there is something on it that
 needs one, a code block or a plugin's widget.
 
-Status: **0.94.0**, feature complete and pre-1.0. Everything below is built. What 1.0 is waiting
+Status: **0.95.0**, feature complete and pre-1.0. Everything below is built. What 1.0 is waiting
 on is the schema settling down — until then a schema change means dropping and recreating the
 database, and there are no rename migrations.
 
@@ -25,7 +25,10 @@ dressed rather than replaced: the colours and the numbers are a backdrop behind 
 the value, the selection and the undo stack are untouched. Two insert buttons, for the two things a
 keyboard cannot do - inserting from the media library, which needs an id nobody memorises, and
 picking an emoji - and **Preview media** (Alt+P), which shows the image, video or audio the cursor
-is on, `media#12` or a relative path, over the dimmed page.
+is on, `media#12` or a relative path, over the dimmed page. The admin follows the machine's light
+or dark scheme and can be **pinned to either** on the Admin UI tab, which is also what chooses
+between the editor's two palettes - Dracula in the dark one, the same roles at 4.5:1 on white in
+the light. The site's own pages are the theme's business and are not touched by it.
 
 - The first line that is only `---` splits the **lead** from the body; every one after that is a
   **page break**, so a long post is served a page at a time with *Previous* and *Next*
