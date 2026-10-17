@@ -248,8 +248,8 @@ body.admin {
 .tabs { display: flex; gap: 4px; align-items: flex-end; margin: 0; overflow-x: auto; }
 .tabs a {
     background: var(--bg); border: 1px solid var(--line); border-bottom: 0;
-    border-radius: var(--radius) var(--radius) 0 0; padding: 10px 22px;
-    font-size: 15px; color: var(--muted); text-decoration: none; white-space: nowrap;
+    border-radius: var(--radius) var(--radius) 0 0; padding: 7px 16px;
+    font-size: 12px; color: var(--muted); text-decoration: none; white-space: nowrap;
 }
 .tabs a:hover { color: var(--ink); }
 .tabs a.current { background: var(--panel); border-color: var(--panel); color: var(--ink); font-weight: 600; }

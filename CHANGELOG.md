@@ -5,6 +5,33 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.95.1] &ndash; 2026-10-17
+
+### Fixed
+- **The CLI could not find the autoloader when dpress is symlinked through a path repository**,
+  which is how this package is developed - every command died with "Could not find the Composer
+  autoloader. Run `composer install` first." `__DIR__` **resolves symlinks**, so with
+  `symlink: true` it is the checkout's own `bin/`, outside the site altogether, and no number of
+  `..` from there reaches the site's vendor folder: the candidate in `bin/autoload.php` written
+  for exactly that case could never match. Composer's generated bin proxy sets
+  `$GLOBALS['_composer_autoload_path']` to its own `vendor/autoload.php` before including the
+  file, and that is the one answer a symlink cannot defeat, so it is checked first. The walk-up
+  candidates stay for `php bin/dpress` run directly, where there is no proxy and so no global.
+
+### Changed
+- **The admin's tab row is smaller** - 12px rather than 15px, and the padding comes down with it
+  (`7px 16px` from `10px 22px`) so the tab loses its height rather than only its text. Settings
+  and Taxonomy both use it.
+- **The drag handle is the six-dot grip** rather than two horizontal lines. Two lines are a real
+  convention (Material's `drag_handle`) but the weaker one, and in this admin they read as two
+  things that are also here: the Menus section, and the `resize: vertical` handle on every code
+  field. The grip (Material's `drag_indicator`, `grip-vertical` elsewhere) reads as nothing but a
+  handle. Drawn in the icon set's own idiom - zero-length round-capped segments, the trick the
+  callout icons already use - at `stroke-width` 2.2, because six small dots carry less weight than
+  two solid lines at 1.8. Taxonomy, Menus and Blocks all show it.
+
+---
+
 ## [0.95.0] &ndash; 2026-10-17
 
 ### Added
