@@ -5,6 +5,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.97.0] &ndash; 2026-11-19
+
+### Changed
+- **A page named by the Front page setting is rendered at `/`**, not redirected to. The setting
+  sent `/` to `/about` with a 302, so the site's own address never showed anything and a query
+  string on it was dropped on the way - a music site whose old share links were `/?track=area-67`
+  lost the track. Now `/` *is* that page: its template, its paged parts at `/?page=2`, and
+  whatever the link carried.
+- **The page's own address sends a visitor to `/`**, with the query string, so the page still has
+  one URL. A 302, like the setting's other redirect: the setting can be changed back.
+- **Anything else the setting names is unchanged**: a plugin's screen, a category or a post is
+  still a 302 from the front page. So is an address that is not exactly where the page lives.
+- `HomeController::frontPage()` is `ContentService::frontPageAddress()` now; the old name still
+  answers.
+
+### Notes
+Nothing to migrate. A site whose Front page setting names a page changes behaviour on upgrade:
+visitors stay on `/` where they were sent on to the page's address.
+
 ## [0.96.0] &ndash; 2026-11-19
 
 Two things a plugin that keeps media ids in a table of its own could not do, found by writing

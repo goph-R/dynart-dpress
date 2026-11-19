@@ -47,6 +47,13 @@ class HomeController extends AbstractController {
     public function index(): string {
         $front = self::frontPage((string)$this->settings->get(Setting::FRONT_PAGE, ''));
         if ($front !== '') {
+            // a page is rendered here, at the site's own address (0.97.0). Anything else the
+            // setting names - a plugin's screen, a category - is somewhere this cannot render,
+            // and is still a redirect: temporary, so the setting can be changed back
+            $page = $this->content->frontPage();
+            if ($page !== null) {
+                return $this->renderContent($page, '/');
+            }
             $this->app()->redirect($front, [], 302);
         }
         $featured = $this->featured();
@@ -74,21 +81,11 @@ class HomeController extends AbstractController {
     /**
      * The address a Front page setting names, or '' for the latest posts
      *
-     * **Only an address on this site.** A redirect from the front page to wherever a setting says
-     * is an open redirect waiting for the setting to hold `//elsewhere.example` - so anything
-     * with a scheme, anything starting `//`, a backslash anywhere and whitespace is the latest posts
-     * rather than a guess. `/` is too: sending the front page to itself is a loop.
+     * `ContentService::frontPageAddress()`, which is where the rule lives now that two
+     * controllers ask it. Kept here for whoever was calling it.
      */
     public static function frontPage(string $setting): string {
-        $path = trim($setting);
-        if ($path === '' || $path === '/') {
-            return '';
-        }
-        if ($path[0] !== '/' || str_starts_with($path, '//') || str_contains($path, '\\')
-            || preg_match('/[\x00-\x20]/', $path) === 1) {
-            return '';
-        }
-        return rtrim($path, '/');
+        return ContentService::frontPageAddress($setting);
     }
 
     /**

@@ -455,8 +455,10 @@ abstract class AbstractController {
      * answering for a post it rendered one with the **page** template: no byline, no categories,
      * no tags, and a featured image the post template had deliberately left out. One method, so
      * a post is a post wherever it was reached from.
+     *
+     * @param string|null $route where it is being served from, when not from its own address
      */
-    protected function renderContent(Content $content): string {
+    protected function renderContent(Content $content, ?string $route = null): string {
         // What the page is about, for anything rendered inside it that needs to know - a
         // comments block has to name the thread it belongs to, and a block renderer is handed
         // nothing but its own settings. Here rather than in the two controllers, because this
@@ -466,7 +468,9 @@ abstract class AbstractController {
         $this->addContentStyle($content);
         $contents = Micro::get(ContentService::class);
         $media = Micro::get(MediaService::class);
-        $common = $this->pagedBody($content, $contents->publicPath($content)) + [
+        // `$route` is where the parts of a long text are linked from, when that is not where the
+        // content lives: the page that is the front page has its second part at `/?page=2`
+        $common = $this->pagedBody($content, $route ?? $contents->publicPath($content)) + [
             'title'       => $content->title,
             'content'     => $content,
             'author'      => $this->authorOf($content),

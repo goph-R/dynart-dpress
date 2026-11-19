@@ -198,6 +198,62 @@ class ContentService {
     }
 
     /**
+     * The address a Front page setting names, or '' for the latest posts
+     *
+     * **Only an address on this site.** A page is rendered there and anything else is redirected
+     * to, and a redirect from the front page to wherever a setting says is an open redirect
+     * waiting for the setting to hold `//elsewhere.example` - so anything with a scheme, anything
+     * starting `//`, a backslash anywhere and whitespace is the latest posts rather than a guess.
+     * `/` is too: the front page being itself is a loop.
+     */
+    public static function frontPageAddress(string $setting): string {
+        $path = trim($setting);
+        if ($path === '' || $path === '/') {
+            return '';
+        }
+        if ($path[0] !== '/' || str_starts_with($path, '//') || str_contains($path, '\\')
+            || preg_match('/[\x00-\x20]/', $path) === 1) {
+            return '';
+        }
+        return rtrim($path, '/');
+    }
+
+    /**
+     * The page that **is** the front page, or null when the front page is something else (0.97.0)
+     *
+     * The Front page setting names an address. When a published page lives at exactly that
+     * address, `/` renders it - no redirect, so the site's own address is the page's, and a
+     * query string somebody's old link carries arrives where it was sent. Anything else the
+     * setting can name - a plugin's screen, a category, a post - is not something this can
+     * render and stays a redirect, as it was.
+     *
+     * **Exactly that address**: `/old/path/about` naming a page that lives at `/about` is a
+     * redirect too, to wherever `PageController` then sends it.
+     */
+    public function frontPage(): ?Content {
+        $address = self::frontPageAddress((string)$this->settings->get(Setting::FRONT_PAGE, ''));
+        if ($address === '') {
+            return null;
+        }
+        [$content, $isCanonical] = $this->findByPath($address);
+        return $content !== null && $content->isPage() && $isCanonical ? $content : null;
+    }
+
+    /**
+     * Whether this page is the one `/` renders - so its own address can send a visitor there
+     *
+     * Published only: a draft is not what the front page shows, and an editor previewing one
+     * should see it where it is.
+     */
+    public function isFrontPage(Content $content): bool {
+        if (!$content->isPage() || !$content->isPublished()) {
+            return false;
+        }
+        $address = self::frontPageAddress((string)$this->settings->get(Setting::FRONT_PAGE, ''));
+        return $address !== '' && $this->publicPath($content) === $address;
+    }
+
+    /**
      * Finds a page by its full path, and says whether that path was the canonical one
      *
      * The slug is globally unique, so the last segment identifies the page on its own and the
