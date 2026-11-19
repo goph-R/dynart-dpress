@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.97.2] &ndash; 2026-11-19
+
+### Fixed
+- **A media field looked empty after choosing a file that is not a picture.** The field drew an
+  `<img>` whenever the chosen item had a `thumbnail_url`, and every item has one - for a file
+  that cannot be resized it is the file's own address. So an mp3 dropped into a track's Audio
+  file field was an image pointing at an mp3: nothing to see, though the id was in the field and
+  the name appeared after a save. It goes by the category now (`Dpress.fieldPreview()`): a
+  picture is its thumbnail and anything else is its file name.
+
 ## [0.97.1] &ndash; 2026-11-19
 
 ### Fixed

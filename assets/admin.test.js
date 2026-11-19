@@ -272,6 +272,27 @@ const tests = {
         assert.strictEqual(Dpress.pickerAccepts(null, 'image'), false);
     },
 
+    // --- what a media field shows for what was just chosen ---
+
+    'a chosen picture is shown as its thumbnail'() {
+        var item = Object.assign({}, IMAGE, {thumbnail_url: '/uploads/a-thumb.jpg', alt: 'A fox'});
+        assert.deepStrictEqual(Dpress.fieldPreview(item), {image: '/uploads/a-thumb.jpg', alt: 'A fox'});
+    },
+
+    // every row has a `thumbnail_url`; for a file that cannot be resized it is the file itself,
+    // and an <img> pointing at an mp3 is a field that looks empty with an id in it
+    'a chosen file that is not a picture is shown by its name'() {
+        var mp3 = {id: 5, category: 'audio', file_name: 'area-67.mp3', thumbnail_url: '/uploads/area-67.mp3'};
+        assert.deepStrictEqual(Dpress.fieldPreview(mp3), {text: 'area-67.mp3'});
+        var pdf = Object.assign({}, DOCUMENT, {thumbnail_url: '/uploads/manual.pdf'});
+        assert.deepStrictEqual(Dpress.fieldPreview(pdf), {text: pdf.file_name});
+    },
+
+    'a picture with no thumbnail, and nothing at all, are a name and an empty one'() {
+        assert.deepStrictEqual(Dpress.fieldPreview({category: 'image', file_name: 'a.svg'}), {text: 'a.svg'});
+        assert.deepStrictEqual(Dpress.fieldPreview(null), {text: ''});
+    },
+
     'a video is a player, not a picture'() {
         assert.strictEqual(window.Dpress.mediaMarkdown(VIDEO), "{{ video('media#13') }}");
     },

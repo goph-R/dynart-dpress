@@ -1739,13 +1739,14 @@
                 Dpress.pickMedia(function (item) {
                     input.value = item.id;
                     preview.innerHTML = '';
-                    if (item.thumbnail_url) {
+                    var shown = Dpress.fieldPreview(item);
+                    if (shown.image) {
                         var image = document.createElement('img');
-                        image.src = item.thumbnail_url;
-                        image.alt = item.alt || '';
+                        image.src = shown.image;
+                        image.alt = shown.alt;
                         preview.appendChild(image);
                     } else {
-                        preview.textContent = item.file_name;
+                        preview.textContent = shown.text;
                     }
                     clear.hidden = false;
                 }, {category: category});
@@ -1765,6 +1766,24 @@
      * The list is already narrowed by the filter, so this is for the other way in: a file
      * **uploaded** into the dialog is whatever somebody dropped on it. No category means any.
      */
+    /**
+     * What a media field shows for the item just chosen: a picture, or the file's name
+     *
+     * **By the category, not by whether there is a `thumbnail_url`** - every row has one. For a
+     * file that cannot be resized it is the file's own address, so an mp3 chosen for a track was
+     * drawn as an `<img>` pointing at an mp3: nothing on screen, the id in the field, and the
+     * name only appearing after a save, when the server rendered the preview instead. The same
+     * mistake `mediaMarkdown()` exists to avoid in the text.
+     *
+     * @returns {{image: string, alt: string}|{text: string}}
+     */
+    Dpress.fieldPreview = function (item) {
+        if (item && item.category === 'image' && item.thumbnail_url) {
+            return {image: item.thumbnail_url, alt: item.alt || ''};
+        }
+        return {text: item ? (item.file_name || item.title || '') : ''};
+    };
+
     Dpress.pickerAccepts = function (item, category) {
         return !category || (!!item && item.category === category);
     };
