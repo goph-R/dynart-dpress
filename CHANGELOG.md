@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.97.1] &ndash; 2026-11-19
+
+### Fixed
+- **`dpress init` died as anybody but root, and as root left a `/logs` behind.** The commands
+  that run without a `dpress.ini` - `init`, `help`, `version` - still built the site's logger,
+  whose `~/logs` is the site root's; with no config the root is empty and that is `/logs`, at the
+  top of the filesystem. As the web server's user it could not be made and the command ended in
+  a stack trace about `Logger::class`; as root it was made, and a server that was set up that way
+  has a `/logs` with empty files in it, safe to delete. A command with no site now logs to the
+  terminal (`ConsoleLogger`) and writes no file anywhere.
+
 ## [0.97.0] &ndash; 2026-11-19
 
 ### Changed

@@ -323,7 +323,17 @@ class DpressCliApp extends CliApp {
     public function __construct(array $configPaths) {
         parent::__construct($configPaths);
         $this->hasConfig = !empty($configPaths);
-        Micro::add(LoggerInterface::class, DpressLogger::class);
+        Micro::add(LoggerInterface::class, self::loggerFor($this->hasConfig));
+    }
+
+    /**
+     * Which logger a command gets: the site's, or the terminal when there is no site (0.97.1)
+     *
+     * Without a config there is no site root, and `DpressLogger`'s `~/logs` is `/logs` - see
+     * `ConsoleLogger`. A site that has a config keeps its log file, whatever the command.
+     */
+    public static function loggerFor(bool $hasConfig): string {
+        return $hasConfig ? DpressLogger::class : ConsoleLogger::class;
     }
 
     public function init(): void {
