@@ -20,6 +20,7 @@ use Dynart\Dpress\Security\Permissions;
 use Dynart\Dpress\Service\AdminSections;
 use Dynart\Dpress\Service\SettingService;
 use Dynart\Dpress\Theme\PageAssets;
+use Dynart\Dpress\Theme\PageTemplates;
 use Throwable;
 
 /**
@@ -309,6 +310,17 @@ class PluginService {
             Micro::get(Blocks::class)->add($type, $definition);
         }
         $this->contributePageAssets($record, $plugin);
+        foreach ($plugin->pageTemplates() as $name => $declared) {
+            $added = is_array($declared) && Micro::get(PageTemplates::class)->add(
+                (string)$name, (string)($declared['label'] ?? ''), (string)($declared['template'] ?? ''), $record->name
+            );
+            if (!$added) {
+                $this->logger->warning(
+                    "Dpress: the plugin '{$record->name}' offers a page template '$name' that"
+                        ." cannot be one: the name is plain a-z, 0-9 and -, and it needs a `template`."
+                );
+            }
+        }
         foreach ($plugin->shortcodes() as $name => $declared) {
             // `name => handler` or `name => [handler, kind]`, so the common case stays one line
             [$handler, $kind] = is_array($declared) && isset($declared[1])

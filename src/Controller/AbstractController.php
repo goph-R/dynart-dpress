@@ -11,6 +11,7 @@ use Dynart\Micro\ViewInterface;
 use Dynart\Micro\WebApp;
 use Dynart\Dpress\Security\DpressUser;
 use Dynart\Dpress\Theme\PageAssets;
+use Dynart\Dpress\Theme\PageTemplates;
 use Dynart\Dpress\Theme\ThemeService;
 use Dynart\Dpress\Content\Shortcodes;
 use Dynart\Dpress\Entity\Setting;
@@ -478,8 +479,12 @@ abstract class AbstractController {
             // the template chosen in the editor first - it is the explicit choice - then the
             // hierarchy, which is also where a template the theme no longer has falls back to
             $chosen = ContentService::templateName($content->template);
+            // a plugin's template of that name comes after the theme's: the plugin ships one
+            // that works and the theme may answer it with a file of its own
+            $plugins = $chosen !== null ? Micro::get(PageTemplates::class)->templateOf($chosen) : null;
             return $this->render($this->firstTemplate(array_merge(
                 $chosen !== null ? ['dpress:content/'.ThemeService::PAGE_TEMPLATE_PREFIX.$chosen] : [],
+                $plugins !== null ? [$plugins] : [],
                 self::templateCandidates('dpress:content/page', (string)$content->slug, (int)$content->id)
             )), $common + [
                 'ancestors' => $contents->ancestors($content),

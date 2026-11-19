@@ -8,7 +8,10 @@
 $id = $form->idByNameAndField($name, $field);
 $value = (string)$form->value($name);
 ?>
-<div class="media-field" data-media-field>
+<?php // `'category' => 'audio'` on the field narrows the picker to that kind of file. Matched
+      // against the categories the library has, so a typo offers everything rather than nothing. ?>
+<?php $category = in_array($field['category'] ?? '', \Dynart\Dpress\Entity\Media::CATEGORIES, true) ? $field['category'] : '' ?>
+<div class="media-field" data-media-field<?= $category === '' ? '' : ' data-media-category="'.esc_attr($category).'"' ?>>
     <input type="hidden" id="<?= $id ?>" name="<?= $form->inputName($name) ?>" value="<?= esc_attr($value) ?>" data-media-input>
     <?php // The preview is the field's own, not a view variable: a form may hold more than one
           // media field - a featured image and a thumbnail - and one variable cannot be the

@@ -1731,6 +1731,10 @@
                 }
             });
 
+            // `'category' => 'audio'` on the field: the dialog lists that kind and nothing else.
+            // What the form accepts is still the server's to check - this is what is offered.
+            var category = field.getAttribute('data-media-category') || '';
+
             field.querySelector('[data-media-pick]').addEventListener('click', function () {
                 Dpress.pickMedia(function (item) {
                     input.value = item.id;
@@ -1744,7 +1748,7 @@
                         preview.textContent = item.file_name;
                     }
                     clear.hidden = false;
-                });
+                }, {category: category});
             });
 
             clear.addEventListener('click', function () {
@@ -1756,9 +1760,25 @@
     }
 
     /**
-     * Opens the library in a dialog and calls back with the chosen item
+     * May this item be chosen in a picker opened for one kind of file?
+     *
+     * The list is already narrowed by the filter, so this is for the other way in: a file
+     * **uploaded** into the dialog is whatever somebody dropped on it. No category means any.
      */
-    Dpress.pickMedia = function (chosen) {
+    Dpress.pickerAccepts = function (item, category) {
+        return !category || (!!item && item.category === category);
+    };
+
+    /**
+     * Opens the library in a dialog and calls back with the chosen item
+     *
+     * `options.category` narrows it to one kind of file - `audio`, `image`, ... - for a field
+     * that can only use that kind. It rides in the filter form as a hidden input, because the
+     * filter form is the list's state: the endpoint already answers `category`, so nothing is
+     * told about it twice.
+     */
+    Dpress.pickMedia = function (chosen, options) {
+        var category = (options && options.category) || '';
         var endpoint = document.body.getAttribute('data-media-endpoint');
         if (!endpoint) {
             console.error('Dpress: the page does not say where the media list is');
@@ -1783,12 +1803,28 @@
 
         if (uploadUrl) {
             initPickerUpload(dialog, uploadUrl, function (item) {
+                if (!Dpress.pickerAccepts(item, category)) {
+                    // it is in the library now - an upload is an upload - but it is not what
+                    // this field takes, and choosing it would only be refused on Save
+                    var error = dialog.querySelector('[data-upload-error]');
+                    error.textContent = item.file_name + ' was uploaded to the library, but only '
+                        + category + ' files can be chosen here.';
+                    error.hidden = false;
+                    return;
+                }
                 close();
                 chosen(item);
             });
         }
 
         var filterForm = dialog.querySelector('.picker-filters');
+        if (category) {
+            var only = document.createElement('input');
+            only.type = 'hidden';
+            only.name = 'category';
+            only.value = category;
+            filterForm.appendChild(only);
+        }
 
         var list = new global.DynamicList(dialog.querySelector('.picker-list'), {
             filterForm: filterForm,

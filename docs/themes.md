@@ -192,6 +192,10 @@ in the theme is an option of the page editor's **Template** select, labelled by 
 choice - and a page whose template the theme no longer has falls back to the order above, with the
 editor saying so. The select only appears when the theme has one to choose.
 
+**A plugin can offer one too** (0.96.0, `pageTemplates()` in [plugins.md](plugins.md)). It is on
+the same select under the same kind of name, and a theme overrides it the way it would add one:
+a `dpress/content/page-template-<that name>.phtml` is rendered instead of the plugin's view.
+
 ```php
 <?php
 /**

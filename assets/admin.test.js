@@ -258,6 +258,20 @@ const tests = {
      * picture on the page, with nothing on it to say why. It is a player, and the shortcode for
      * one is core.
      */
+    // --- a picker opened for one kind of file ---
+
+    'a picker with no category takes anything'() {
+        assert.strictEqual(Dpress.pickerAccepts(IMAGE, ''), true);
+        assert.strictEqual(Dpress.pickerAccepts(DOCUMENT, undefined), true);
+    },
+
+    // the list is narrowed by the filter; this is the upload, which is whatever was dropped
+    'a picker for one category refuses an upload of another'() {
+        assert.strictEqual(Dpress.pickerAccepts(IMAGE, 'image'), true);
+        assert.strictEqual(Dpress.pickerAccepts(DOCUMENT, 'image'), false);
+        assert.strictEqual(Dpress.pickerAccepts(null, 'image'), false);
+    },
+
     'a video is a player, not a picture'() {
         assert.strictEqual(window.Dpress.mediaMarkdown(VIDEO), "{{ video('media#13') }}");
     },

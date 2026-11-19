@@ -5,6 +5,55 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [0.96.0] &ndash; 2026-11-19
+
+Two things a plugin that keeps media ids in a table of its own could not do, found by writing
+one: [dynart-dpress-music-list](https://github.com/goph-R/dynart-dpress-music-list), whose tracks
+are an audio file and a cover out of the library.
+
+### Added
+- **A plugin's references to a media item count as uses of it** - `media:usage_counted`.
+  `MediaService::usageCount()` reads the three places the CMS itself points at a file from - an
+  attachment, a featured image, a `media#12` in the markdown - so an mp3 that a plugin's track
+  plays was "unused", and both the media screen and `media:purge` let it go without a word. The
+  event carries a `MediaUsage`, and a subscriber calls `add()` on it. It only ever adds, the
+  direction a query subscriber is held to: a plugin cannot make a picture an article shows look
+  unused. Still advisory - it warns before a purge and never refuses one.
+- **A media field can ask for one kind of file** - `'category' => 'audio'` on a field of type
+  `media`, and the picker lists that kind and nothing else. `Dpress.pickMedia(chosen, {category})`
+  is the same thing from a script. The category rides in the picker's filter form as a hidden
+  input, because the filter form is the list's state and the endpoint already answered
+  `category` - nothing is told about it twice. A file **uploaded** into a picker opened for
+  another kind is kept in the library, where an upload belongs, and not chosen: the dialog says
+  so rather than handing the field something its form would refuse on Save. What is offered is
+  not what is accepted - a form that takes a media id still has to check what the id is.
+
+### Added (page templates)
+- **A plugin can offer a page template.** `PluginInterface::pageTemplates()` answers with
+  `name => ['label' => ..., 'template' => 'namespace:view']`, and the name joins the theme's in
+  the page editor's *Template* select. Until now only a theme could, by having a
+  `page-template-<name>.phtml` - so a plugin whose whole point is a kind of page (a full-window
+  music player) ended with *"now copy this file into your theme"*. Kept in the new
+  `Theme\PageTemplates` registry.
+- **The theme still has the last word**: a page set to a plugin's template tries the theme's
+  `dpress/content/page-template-<name>.phtml` first and the plugin's view after.
+- **A plugin that implements `PluginInterface` directly needs the new method**; one that extends
+  `AbstractPlugin` - every one there is - gets an empty answer.
+
+### Fixed
+- **`media:import` refused a file for being larger than PHP's *upload* limit.** A 9 MB mp3 was
+  "larger than the 2 MB limit" - `upload_max_filesize`, out of a php.ini the command line never
+  uploads anything under. `importFile()` takes a file that is already on disk, so it is checked
+  against `media.max_size` alone (`MediaService::maxSize()`); `maxUploadSize()` is still that
+  capped by PHP's limits, and is still what an upload and the upload screen's hint go by.
+
+### Notes
+Nothing to migrate and nothing changes for a field without a `category`. A plugin that wants to
+load on an older Dpress as well subscribes by the event's name, `'media:usage_counted'`, rather
+than by the constant, and leaves the `MediaUsage` argument untyped.
+
+---
+
 ## [0.95.1] &ndash; 2026-10-17
 
 ### Fixed

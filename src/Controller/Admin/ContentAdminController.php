@@ -29,6 +29,7 @@ use Dynart\Dpress\Service\MediaService;
 use Dynart\Dpress\Service\SettingService;
 use Dynart\Dpress\Service\TaxonomyService;
 use Dynart\Dpress\Service\UserService;
+use Dynart\Dpress\Theme\PageTemplates;
 use Dynart\Dpress\Theme\ThemeService;
 
 /**
@@ -954,8 +955,26 @@ class ContentAdminController extends AbstractAdminController {
      * @return array<string, string> name => label, '' for the usual template
      */
     protected function pageTemplateOptions(?Content $content): array {
-        $options = ['' => 'Default'] + Micro::get(ThemeService::class)->pageTemplates();
-        $chosen = (string)($content?->template ?? '');
+        return self::templateOptions(
+            Micro::get(ThemeService::class)->pageTemplates(),
+            Micro::get(PageTemplates::class)->labels(),
+            (string)($content?->template ?? '')
+        );
+    }
+
+    /**
+     * The theme's and the plugins' templates as one list (0.96.0)
+     *
+     * The theme's label wins a name both have, because the theme's file is the one rendered.
+     *
+     * @param array<string, string> $theme name => label
+     * @param array<string, string> $plugins name => label
+     * @return array<string, string>
+     */
+    public static function templateOptions(array $theme, array $plugins, string $chosen): array {
+        $offered = $theme + $plugins;
+        asort($offered, SORT_NATURAL | SORT_FLAG_CASE);
+        $options = ['' => 'Default'] + $offered;
         if ($chosen !== '' && !isset($options[$chosen])) {
             $options[$chosen] = $chosen.' (not in this theme - the default is used)';
         }

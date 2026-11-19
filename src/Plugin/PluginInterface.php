@@ -79,6 +79,22 @@ interface PluginInterface {
      */
     public function pageAssets(): array;
 
+    /**
+     * Page templates, for the page editor's *Template* select (0.96.0)
+     *
+     * What a theme does with a `dpress/content/page-template-<name>.phtml` file, from a plugin:
+     *
+     *     ['music-player' => ['label' => 'Music player, full window', 'template' => 'music_list:page-player']]
+     *
+     * The key is what a page stores, plain `[a-z0-9-]`; `template` is a view under a namespace
+     * `views()` declares. It is rendered with everything `dpress:content/page` gets. A theme
+     * with a `page-template-<name>.phtml` of the same name is rendered instead - see
+     * `PageTemplates`.
+     *
+     * @return array<string, array{label?: string, template: string}>
+     */
+    public function pageTemplates(): array;
+
 
     /**
      * Shortcodes, as `name => handler` or `name => [handler, kind]`

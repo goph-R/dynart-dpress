@@ -83,11 +83,29 @@ plugins without building them", and it was accurate.
 | add a table | `entities()` + `migrations()`, then `dpress upgrade` |
 | add a permission | `permissions()` — the role editor picks it up, and the admin role holds it implicitly |
 | add a field type | `widgets()` + `views()` |
+| choose a file from the library in a form | a field of type `media`; `'category' => 'audio'` narrows the picker to one kind (0.96.0) |
+| say that a file is in use | subscribe to `media:usage_counted`, then `$usage->add($count)` (0.96.0) - see below |
 
 **Subscribe with a Micro callable**, `[MyThing::class, 'onEvent']`, never a closure. The event
 service resolves it through the container *when the event fires*, so an enabled plugin that hooks
 the content form builds nothing on a page view. That is what keeps the mechanism free — see
 [performance.md](performance.md).
+
+**A media id kept in a table of your own is a use the library cannot see.** `usageCount()` reads
+the CMS's tables, so a file only your plugin points at looks unused and is purged without the
+warning. Subscribe to `media:usage_counted` (0.96.0); the event carries a `MediaUsage`:
+
+```php
+public function onMediaUsage(MediaUsage $usage): void {
+    $usage->add($this->countOfRowsPointingAt($usage->mediaId()));
+}
+```
+
+And the reverse: **what a `media` field offers is not what your form accepts.** `'category'`
+narrows the picker; the value that arrives is still a number somebody could have typed, so check
+the item's category where you save it. Do not put a foreign key on `media` from a plugin's table -
+`MediaService::purge()` deletes the row, and yours would turn that into an integrity error the
+core knows nothing about. Treat a missing item as missing.
 
 Two rules about queries worth knowing before you attach a condition to one you did not write:
 
@@ -232,6 +250,30 @@ Micro::get(PageAssets::class)->add('myplugin:og', [MyPlugin::class, 'openGraphTa
 
 The callable is handed the finished page and answers with markup. It is resolved through the
 container **only when its needle matches**, so registering one costs nothing.
+
+### A page template (0.96.0)
+
+A theme offers a page template by having a `page-template-<name>.phtml`. A plugin declares one:
+
+```php
+public function views(): array {
+    return ['music_list' => dirname(__DIR__).'/views'];
+}
+
+public function pageTemplates(): array {
+    return ['music-player' => ['label' => 'Music player, full window', 'template' => 'music_list:page-player']];
+}
+```
+
+The name - plain `[a-z0-9-]`, it is what a page stores - joins the theme's in the page editor's
+**Template** select, and a page set to it renders that view with everything `dpress:content/page`
+gets (`$content`, `$body_html`, `$show_lead`, `$ancestors`, `$children`, ...). The view may use
+the theme's layout, `$this->useLayout($layout ?? 'dpress:layout')`, or be a whole document of its
+own - as long as it has a `</head>`, the page's assets still find their way in.
+
+**The theme gets the last word**: `dpress/content/page-template-music-player.phtml` in the active
+theme is rendered instead of the plugin's view. And print `$content->lead_html` as well as the
+body: a page with no separator in it is all lead.
 
 ## 5c. A place in the admin's navigation
 

@@ -196,6 +196,12 @@ The uploads `.htaccess` still sends a strict CSP for `.svg`. That is the second 
 
 **`media:sanitize` is the only thing that rewrites a stored file**, for a library that predates the sanitiser. Write-once exists so a historical revision keeps showing the image it showed; here the point is that what a file used to contain must stop being served. It reports by default and needs `-confirm`.
 
+**A plugin's references count as uses** (0.96.0). `usageCount()` reads the three places the CMS points at a file from; a plugin that keeps a media id in its own table - the music plugin's tracks - was invisible to it, so the purge warning said "unused" about an mp3 a page plays. `media:usage_counted` carries a `MediaUsage` and a subscriber calls `add()`. It only adds, like a query subscriber only narrows, and the count stays advisory. A plugin's table must **not** carry a foreign key to `media`: `purge()` deletes the row.
+
+**A plugin can offer a page template** (0.96.0). `PluginInterface::pageTemplates()` answers `name => ['label', 'template' => 'namespace:view']`; `PluginService` puts them in the `Theme\PageTemplates` registry, `ContentAdminController::templateOptions()` merges them with the theme's for the editor's select, and `AbstractController` tries `dpress:content/page-template-<name>` (the theme's) **before** the plugin's view - a theme overrides a plugin's template by having a file of that name. The name rule is `ContentService::templateName()`'s, because a page stores one and cannot tell where it came from.
+
+**A `media` field may name one category** (0.96.0) - `'category' => 'audio'` - and the picker then lists only that kind, through a hidden `category` input in its filter form (the filter form is the list's state). `Dpress.pickerAccepts()` is the check for the other way in, an upload dropped into the dialog. This narrows what is *offered*; whatever saves the id still checks what it is.
+
 **A joined query must qualify overlapping field names.** `tag_cloud` joins `content`, which also has `id` and `slug`; MariaDB rejects the unqualified select as ambiguous. `CoreQueries::table()` gives the unescaped name for that.
 
 ### Presentation

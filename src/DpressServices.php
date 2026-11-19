@@ -117,6 +117,7 @@ use Dynart\Dpress\Service\TaxonomyService;
 use Dynart\Dpress\Theme\Places;
 use Dynart\Dpress\Theme\ThemeService;
 use Dynart\Dpress\Theme\PageAssets;
+use Dynart\Dpress\Theme\PageTemplates;
 use Dynart\Dpress\Theme\ThemeAssets;
 use Dynart\Dpress\Content\Dates;
 use Dynart\Dpress\Content\Feed;
@@ -253,6 +254,7 @@ class DpressServices {
         Micro::add(ThemeService::class);
         Micro::add(ThemeAssets::class);
         Micro::add(PageAssets::class);
+        Micro::add(PageTemplates::class);
         Micro::add(Dates::class);
         Micro::add(Feed::class);
         Micro::add(Sitemap::class);

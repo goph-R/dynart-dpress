@@ -15,6 +15,7 @@ use Dynart\Dpress\Entity\Media;
 use Dynart\Dpress\Media\ImageProcessor;
 use Dynart\Dpress\Media\MediaStorage;
 use Dynart\Dpress\Media\MediaTypes;
+use Dynart\Dpress\Media\MediaUsage;
 use Dynart\Dpress\Media\SvgSanitizerInterface;
 use Dynart\Dpress\Query\QueryFactory;
 
@@ -35,6 +36,11 @@ class MediaService {
     const EVENT_ATTACHED = 'media:attached';
     const EVENT_DETACHED = 'media:detached';
     const EVENT_DERIVATIVE_CREATED = 'media:derivative_created';
+
+    /**
+     * Carries a `MediaUsage` for subscribers to add to - a plugin's own references to the item
+     */
+    const EVENT_USAGE_COUNTED = 'media:usage_counted';
 
     const CONFIG_MAX_SIZE = 'media.max_size';
 
@@ -117,6 +123,11 @@ class MediaService {
      *
      * Distinct content, not distinct mentions: a post that attaches a file *and* shows it in the
      * body is one thing that breaks, not two.
+     *
+     * **A plugin's references count too**, through `media:usage_counted`. The three sources above
+     * are the tables the CMS has; a plugin that keeps a media id in a table of its own - a
+     * track's audio file - was invisible here, so the file looked unused and a purge went through
+     * without a word. The event carries a `MediaUsage` and a subscriber calls `add()` on it.
      */
     public function usageCount(int $mediaId): int {
         $content = $this->em->safeTableName(\Dynart\Dpress\Entity\Content::class);
@@ -127,7 +138,9 @@ class MediaService {
             .' union select `id` from '.$content.' where `markdown` like :mentioned',
             [':attached' => $mediaId, ':featured' => $mediaId, ':mentioned' => '%media#'.$mediaId.'%']
         );
-        return count($ids);
+        $usage = new MediaUsage($mediaId);
+        $this->events->emit(self::EVENT_USAGE_COUNTED, [$usage]);
+        return count($ids) + $usage->count();
     }
 
     // --- Uploading ---
@@ -161,7 +174,10 @@ class MediaService {
      */
     protected function store(string $sourcePath, string $fileName, int $userId, array $meta, bool $isUpload): Media {
         $size = (int)@filesize($sourcePath);
-        $limit = (int)$this->maxUploadSize();
+        // PHP's own limits are about a request body, and a file already on disk never was one:
+        // `media:import` of a 9 MB mp3 was refused for being "larger than the 2 MB limit", which
+        // is `upload_max_filesize` in a php.ini the command line never uploads anything under
+        $limit = $isUpload ? $this->maxUploadSize() : $this->maxSize();
         if ($size > $limit) {
             throw new DpressException('That file is larger than the '.$this->humanSize($limit).' limit.');
         }
@@ -553,9 +569,19 @@ class MediaService {
      * with a less helpful message.
      */
     public function maxUploadSize(): int {
-        $configured = (int)$this->config->get(self::CONFIG_MAX_SIZE, self::DEFAULT_MAX_SIZE);
+        $configured = $this->maxSize();
         $phpLimit = $this->phpUploadLimit();
         return $phpLimit > 0 ? min($configured, $phpLimit) : $configured;
+    }
+
+    /**
+     * The largest file the library holds, however it arrives: `media.max_size`
+     *
+     * What an import is checked against. `maxUploadSize()` is this capped by PHP's limits on a
+     * request, which only an upload goes through.
+     */
+    public function maxSize(): int {
+        return (int)$this->config->get(self::CONFIG_MAX_SIZE, self::DEFAULT_MAX_SIZE);
     }
 
     protected function phpUploadLimit(): int {
