@@ -18,7 +18,6 @@
     "bin": [
         "bin/dpress"
     ],
-    "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
         "php": ">=8.0",
@@ -32,21 +31,5 @@
         "ext-gd": "*",
         "league/commonmark": "^2.4",
         "rhukster/dom-sanitizer": "^1.0"
-    },
-    "repositories": {
-        "dynart-micro": {
-            "type": "path",
-            "url": "../dynart-micro",
-            "options": {
-                "symlink": true
-            }
-        },
-        "dynart-micro-entities": {
-            "type": "path",
-            "url": "../dynart-micro-entities",
-            "options": {
-                "symlink": true
-            }
-        }
     }
 }
