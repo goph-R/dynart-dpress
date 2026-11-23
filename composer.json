@@ -22,8 +22,8 @@
     "prefer-stable": true,
     "require": {
         "php": ">=8.0",
-        "dynart/micro": "@stable",
-        "dynart/micro-entities": "@stable",
+        "dynart/micro": "^1.0",
+        "dynart/micro-entities": "^1.0",
         "ext-mbstring": "*",
         "ext-json": "*",
         "ext-pdo": "*",
